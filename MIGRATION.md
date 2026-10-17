@@ -7,7 +7,8 @@ The current test release is **Morphe preview 1**. It provides our `.mpp` patches
 ## Download these files
 
 - [Morphe Manager for Android — official Releases](https://github.com/MorpheApp/morphe-manager/releases).
-- [Our Morphe preview 1 patch bundle](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp).
+- Preferred: [Add our TEST patch source to Morphe](https://morphe.software/add-source?github=romanchukg-cloud/maps-automotive-for-byd-patches&name=Maps%20Automotive%20for%20BYD%20%28TEST%29), or paste `https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches` in **Sources → + → Remote**. Morphe fetches the `.mpp`; this source currently serves TEST previews only, including its default main feed.
+- [Our Morphe preview 1 patch bundle — Local fallback](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp).
 - [MicroG-RE 7.2.1 for ARM64 — official download](https://github.com/MorpheApp/MicroG-RE/releases/download/7.2.1/microg-7.2.1-icon-arm64-v8a.apk).
 - Your own **clean original Maps Automotive 26.09.280001.E**, version code **1068809778**, ARM64 APK file. We do not distribute Google's original APK. Obtain the matching original file yourself and compare it with the exact input below.
 
@@ -32,10 +33,10 @@ Patches are applied to this **APK file**. You do not patch the phone app already
 
 ## Build your Automotive APK with Morphe Manager
 
-1. Install **Morphe Manager**. Copy the clean original APK and our `.mpp` file to that Android device.
-2. Open **Home → Sources → + → Local** and select `maps-automotive-for-byd-morphe-preview.1.mpp`. Choose the Automotive app if an app selection is offered.
+1. Install **Morphe Manager**. Copy the clean original APK to that Android device.
+2. **Preferred: Remote source.** Open [Add Maps Automotive for BYD (TEST)](https://morphe.software/add-source?github=romanchukg-cloud/maps-automotive-for-byd-patches&name=Maps%20Automotive%20for%20BYD%20%28TEST%29) and confirm, or use **Home → Sources → + → Remote** with `https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches`. Morphe downloads the patch bundle. **Local fallback:** download our `.mpp`, then select it in **Sources → + → Local**.
 3. Open **Settings → Advanced → Expert settings → Expert mode** and enable it. Leave **Optimize for device architecture OFF**, especially when preparing the APK on a different device from the car.
-4. Select Google Maps from our local source, then **26.09.280001.E → No, I already have an APK**. Choose the clean original file described above.
+4. Select **Maps Automotive 26.09 TEST** from our source; if several sources are offered, choose ours and leave other sources' patches unselected for this app. Then choose **26.09.280001.E → No, I already have an APK** and select the clean original file described above. Automatic original-APK Download has not been verified for this AAOS build.
 5. Select only **Maps Automotive for BYD (MicroG-RE TEST)**. For ordinary map use, leave its **Battery electric vehicle (CCS2)** option OFF. Enable that option only for a confirmed battery electric vehicle when you want the experimental CCS2 route integration; it is not a PHEV mode.
 6. Choose **Proceed to patching** and keep Manager in the foreground. When it finishes, choose **Save** to export the signed APK. Transfer the saved APK to the head unit. Install it by opening the file with the normal Android file manager; do not rely on Manager's Install status. That button reported Installed without installing in the API32 test; a separate installation of the exported file succeeded through ADB.
 7. **Back up the signing key:** open **Settings → System → Import & export → Signing key → Export** in Manager. Keep that private backup separately from Manager settings. Import the same key before patching on another device. Do not create a new signing identity for every update.
@@ -48,7 +49,7 @@ Morphe Manager creates a signing key for your output. This personal key is what 
 
 If you already have an older **Automotive** build such as `automotive.6`, your new locally signed APK normally has a different signing key. Android cannot update that old installation with the new key. Note the Automotive settings you want to reproduce, uninstall **only the old Automotive app**, then install your locally created APK. This migration removes that Automotive app's local data and settings. Do not uninstall phone Maps or microG to solve an Automotive signature mismatch.
 
-For later patch updates, use the supported clean original again, apply the new `.mpp`, and sign with the **same backed-up key**. Matching package and signer allow an update instead of another reinstall. This preview does not provide an automatic OTA migration from old Automotive or an automatic update channel for local `.mpp` sources.
+For later patch updates, use the supported clean original again, apply the new `.mpp`, and sign with the **same backed-up key**. Matching package and signer allow an update instead of another reinstall. There is no automatic OTA migration from old Automotive and no in-app APK updater for this preview. Morphe can refresh our remote patch source automatically or through its source-card **Update** action, but you still need to repatch and install the output with the same key. Local `.mpp` sources require importing the replacement file manually. This source is TEST only; the default main feed does not mean the app is stable.
 
 ## Google sign-in
 
@@ -70,6 +71,8 @@ If you want live battery/range data, enable network ADB on the head unit, then t
 After that setup, the reader can start without a computer. It samples about once a minute; values expire after 90 seconds. Experimental native EV planning additionally needs the confirmed-BEV/CCS2 patch option and your own battery capacity in **BYD vehicle data → EV routing profile**. Other firmware, PHEVs and other station connectors are not confirmed. Read the [full setup and limitations](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md) before enabling this optional feature.
 
 ## What has been checked
+
+The published Remote feed and `.mpp` URL have been checked. Remote import, the source card and its patch/version details passed in Manager 1.35.0 on clean Android API32 with Pre-release OFF. Patching was not repeated for that Remote check; the completed Local patching tests below are separate evidence. The original AAOS APK must still be supplied manually until its Download flow is verified.
 
 Morphe25 on one BYD Tang supplied fresh charge/range after a full head-unit reboot without a computer and produced a Paris route preview with two automatic charging stops. The public revision26 retains that runtime apart from its version marker; its own clean Manager API32 test checked patch/export, separate APK installation, missing-provider handling and settings. The clean emulator had no Google account and did not prove map tiles, live car data or physical cluster output. Road accuracy, other BYD firmware and the remaining limits are listed in the release notes.
 

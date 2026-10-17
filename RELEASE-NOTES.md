@@ -10,12 +10,19 @@ Select **Maps Automotive for BYD (MicroG-RE TEST)** in Morphe. This public bundl
 
 ## Included
 
+- A [Remote patch source](https://morphe.software/add-source?github=romanchukg-cloud/maps-automotive-for-byd-patches&name=Maps%20Automotive%20for%20BYD%20%28TEST%29) for Morphe: add `https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches` in **Sources → + → Remote**. It serves **TEST previews only**, including the default main feed. The existing [Local `.mpp` download](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp) remains available as a fallback.
 - MicroG-RE provider checks with an explanation when the required provider is missing or unsuitable.
 - Instrument cluster controls, route-card placement and map-style settings UI.
 - Optional read-only BYD battery/range reader, firmware selection and conservative Unknown/Unverified diagnostics.
 - One-minute sampling with 90-second expiry; stale values are withdrawn from EV predictions.
 - Optional automatic reader startup using the head unit's local ADB service, after initial authorization and BYD background/startup permission.
 - Experimental native EV planning for confirmed BEVs using CCS2 stations, with owner-entered battery capacity.
+
+## Patch updates versus Maps updates
+
+Morphe can refresh the Remote `.mpp` source automatically according to its update settings or through the source-card **Update** action. Updating the installed Maps app still means repatching the supported clean original and installing the output with your same signing key. There is no in-app APK OTA or automatic migration from old Automotive.
+
+Only our source's patch should be selected for this app. The feed and `.mpp` downloads have been checked. Remote import, the source card and patch/version details passed in Manager 1.35.0 on clean Android API32 with Pre-release OFF. That check did not repeat patching; the completed Local patch/export/install test below is separate evidence. Automatic downloading of the correct original AAOS APK has not been verified: use **No, I already have an APK** and supply the exact original file.
 
 ## Tested on one BYD Tang
 
@@ -33,7 +40,7 @@ For automatic reading, enable both Maps reader opt-ins, authorize its ADB key wi
 
 ## Known limits
 
-Only one Tang firmware has device evidence. Route-preview results are not driving validation; charging power/duration and charging-inclusive ETA are not verified. BEV/CCS2 integration is opt-in, not PHEV or universal connector support. Physical cluster/HUD/audio, current-bundle PiP and other Manager/Android/device combinations require further validation. Morphe cluster satellite imagery remains unresolved. The general native navigation-service startup timeout is not declared solved. Cover and lock-feedback codes remain unverified physical indicators. No automatic patch-update channel is included.
+Only one Tang firmware has device evidence. Route-preview results are not driving validation; charging power/duration and charging-inclusive ETA are not verified. BEV/CCS2 integration is opt-in, not PHEV or universal connector support. Physical cluster/HUD/audio, current-bundle PiP and other Manager/Android/device combinations require further validation. Morphe cluster satellite imagery remains unresolved. The general native navigation-service startup timeout is not declared solved. Cover and lock-feedback codes remain unverified physical indicators. Morphe can refresh the Remote patch bundle; installed Maps updates still require repatching and installation with the same key. In-app APK OTA is not provided.
 
 Patch bundle: [maps-automotive-for-byd-morphe-preview.1.mpp](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp)
 Patch SHA-256: `4be9eecff4c37199d06e3474a1d416dec8107f685c189d51daa4e4b669bca3bf`
