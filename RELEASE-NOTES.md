@@ -2,7 +2,7 @@
 
 **Release tag: `morphe-preview.1` · patch revision26.**
 
-This is our first test preview distributed as Morphe patches. It uses the Automotive edition of Google Maps, built for Android automotive systems, with our Instrument cluster controls and optional BYD battery/range integration. You create and sign the Maps APK locally from the matching original; no patched Maps APK is distributed in this preview.
+This is our first test preview distributed as Morphe patches. It uses the Automotive edition of Google Maps, built for Android automotive systems, with our Instrument cluster controls and optional BYD battery/range integration. **GitHub distributes our own patches and code only, without a Maps APK.** For self-build, create and sign the Maps APK locally from the matching original. A separate project-signed **ready APK for confirmed BEVs using CCS2** is supplied through its Telegram announcement; its [installation guide](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/READY-APK.md) lists the exact file, SHA-256, signing certificate and setup. That APK uses patch revision26; its production signature and ZIP payload were checked, without a new car test of26.
 
 Google sign-in uses MicroG-RE 7.2.1 independently of the phone edition of Google Maps for BYD. The Automotive package remains separate, so both Maps editions can be installed together.
 
