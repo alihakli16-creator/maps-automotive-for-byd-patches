@@ -1,15 +1,15 @@
-🗺 Maps Automotive for BYD — Morphe preview 1
+🗺 Google Maps for BYD: moving to Automotive
 
-Google Maps for Android head units, separate from phone Maps.
+We are ending support for our phone edition. Development continues with Automotive, the edition for Android head units.
 
-Build your APK locally with our patches + the original Automotive 26.09. MicroG-RE 7.2.1 provides sign-in; phone Maps is not needed.
+Build your own APK:
+1. Install Morphe Manager.
+2. Use a clean original Maps Automotive 26.09.280001.E APK, not installed phone Maps or an already patched APK.
+3. Import our .mpp, patch and Save.
+4. Install MicroG-RE 7.2.1 and your new APK.
 
-Optional BYD ADB reader and CCS2 BEV routes need ADB authorization and BYD background/startup permission.
+Phone Maps can stay installed. Replacing old project-signed Automotive with your own key requires uninstalling/reinstalling it, which clears its local data. Back up your key for later updates. Keep old microG if other apps need it.
 
-Tang: reader starts after reboot; Paris preview has 2 charging stops, 30% arrival. Manager 1.35 patch/export tested on API32; other firmware unconfirmed.
-
-⚠️ No OTA from automotive.6. Use your own signing key; migration requires reinstalling and clears local data.
-
+Morphe: https://github.com/MorpheApp/morphe-manager/releases
 Patch: https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp
-Guide: https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md
-Notes: https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/tag/morphe-preview.1
+Full steps and exact input: https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/MIGRATION.md

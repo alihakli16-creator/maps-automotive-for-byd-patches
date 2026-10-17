@@ -2,6 +2,8 @@
 
 **Morphe preview 1 · patch revision26 · release tag `morphe-preview.1`.**
 
+We have ended development and support for **our phone edition of Google Maps for BYD**. Future work focuses on Automotive. Start with the [migration and self-build guide](MIGRATION.md): it explains which APK to use, how to build it in Morphe, and when an old installation needs replacing. **Phone Maps can remain installed** alongside the new Automotive app.
+
 This is the Automotive edition of Google Maps, designed for Android automotive systems. It is a different app from the phone edition. Our patches add the Instrument cluster controls and optional BYD battery/range integration.
 
 This preview distributes **patches (`.mpp`), not a ready-made Maps APK**. You apply the patches to your own matching original APK and sign the result locally, using Morphe Manager on Android or the Desktop workflow. Google sign-in uses **MicroG-RE 7.2.1**; the phone edition of Google Maps for BYD is not required. The Automotive package is `com.google.android.apps.maps.automotive`, so it can coexist with the phone edition.
@@ -31,6 +33,12 @@ The tested MicroG-RE download SHA-256 is:
 ```text
 3425e46e95cd45012892cfaa23061b70db0a25affffcfcb84e3df4511d63eb82
 ```
+
+## Can I patch the Maps already installed on my head unit?
+
+Morphe needs the **clean original Maps Automotive 26.09.280001.E ARM64 APK file**, version code 1068809778, matching the SHA-256 below. Installed phone Maps, APKs exported from phone Maps, old Automotive for BYD and already patched APKs are not supported input. You do not need to install the original file before patching it. Both the correct original and phone Maps can use `com.google.android.apps.maps`, so the package name alone is not enough to identify the right input.
+
+The patched output uses `com.google.android.apps.maps.automotive` and can coexist with phone Maps. A different signer affects an existing **Automotive** installation: a one-time reinstall loses its local data/settings. Do not remove phone Maps or older microG to resolve that mismatch. Keep older microG if other apps use it; MicroG-RE needs a separate sign-in. See the [complete migration steps](MIGRATION.md).
 
 ## First installation and migration
 
