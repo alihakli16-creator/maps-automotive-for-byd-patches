@@ -35,7 +35,7 @@ This is the existing project signing identity used by our earlier Automotive bui
 ## Install and sign in
 
 1. Save the APK document from the ready-APK Telegram announcement. Compare its filename, size and SHA-256 with the values above. Install it by opening the saved file in the head unit's normal Android file manager.
-2. Install [MicroG-RE 7.2.1 for ARM64](https://github.com/MorpheApp/MicroG-RE/releases/download/7.2.1/microg-7.2.1-icon-arm64-v8a.apk). Its package is `app.revanced.android.gms`. Ordinary microG under `com.google.android.gms` does not replace this dependency. **Keep older microG if other apps use it; do not delete its accounts.**
+2. Open the official [MicroG-RE Releases](https://github.com/MorpheApp/MicroG-RE/releases) and install the matching **ARM64 APK**. This preview requires at least 7.2.1, which is the tested version; newer releases are not automatically verified. Its package is `app.revanced.android.gms`. Ordinary microG under `com.google.android.gms` does not replace this dependency. **Keep older microG if other apps use it; do not delete its accounts.**
 3. Add your Google account in MicroG-RE. This is a separate sign-in; an account in older microG does not transfer automatically. Never share your password, tokens or account screenshot in a support report.
 4. Open Maps Automotive, allow **Contacts** and **Location**, and finish sign-in if requested. Check that the map and your account work before enabling vehicle integration.
 

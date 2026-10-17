@@ -2,14 +2,14 @@
 
 We have ended development and support for **our phone edition of Google Maps for BYD**. Our work now focuses on the **Automotive edition**, designed for Android automotive systems. You can keep your existing phone edition installed while you try Automotive; it is not required by the new version.
 
-The current test release is **Morphe preview 1**. It provides our `.mpp` patches. You create the Maps APK locally by applying them to the matching clean original Maps Automotive APK. Google sign-in is provided by **MicroG-RE 7.2.1**, independently of phone Maps.
+The current test release is **Morphe preview 1**. It provides our `.mpp` patches. You create the Maps APK locally by applying them to the matching clean original Maps Automotive APK. Google sign-in is provided by **MicroG-RE (7.2.1 tested)**, independently of phone Maps.
 
 ## Download these files
 
 - [Morphe Manager for Android — official Releases](https://github.com/MorpheApp/morphe-manager/releases).
 - Preferred: [Add our TEST patch source to Morphe](https://morphe.software/add-source?github=romanchukg-cloud/maps-automotive-for-byd-patches&name=Maps%20Automotive%20for%20BYD%20%28TEST%29), or paste `https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches` in **Sources → + → Remote**. Morphe fetches the `.mpp`; this source currently serves TEST previews only, including its default main feed.
 - [Our Morphe preview 1 patch bundle — Local fallback](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp).
-- [MicroG-RE 7.2.1 for ARM64 — official download](https://github.com/MorpheApp/MicroG-RE/releases/download/7.2.1/microg-7.2.1-icon-arm64-v8a.apk).
+- [MicroG-RE — official Releases](https://github.com/MorpheApp/MicroG-RE/releases). Choose the matching **ARM64 APK**. This preview requires at least 7.2.1, which is the tested version; newer releases are not automatically verified.
 - Your own **clean original Maps Automotive 26.09.280001.E**, version code **1068809778**, ARM64 APK file. We do not distribute Google's original APK. Obtain the matching original file yourself and compare it with the exact input below.
 
 The resulting Automotive app requires an ARM64 head unit with Android 11 or newer. You can patch on an Android device and transfer the result to the head unit. The workflow was tested with **Morphe Manager 1.35.0 on Android API32**; a newer release is not automatically verified and can change its UI. On-head-unit patching performance is not established across BYD firmware. For a computer, use [Morphe Desktop from its official Releases page](https://github.com/MorpheApp/morphe-desktop/releases) and the [Desktop fallback guide](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md#computer-fallback-morphe-desktop-cli), tested with Desktop 1.18.1.
@@ -53,7 +53,7 @@ For later patch updates, use the supported clean original again, apply the new `
 
 ## Google sign-in
 
-1. Install the supplied official **MicroG-RE 7.2.1** ARM64 download. It uses package `app.revanced.android.gms` and is separate from older microG under `com.google.android.gms`.
+1. Install the matching ARM64 APK from the official [MicroG-RE Releases](https://github.com/MorpheApp/MicroG-RE/releases). Version 7.2.1 is tested; newer releases need their own verification. It uses package `app.revanced.android.gms` and is separate from older microG under `com.google.android.gms`.
 2. Add your Google account to **MicroG-RE**. An account in older microG does not automatically become a MicroG-RE account.
 3. Open your new Maps Automotive APK. Allow Contacts and Location and finish sign-in if requested.
 4. Check that the map and your account work before changing anything else.

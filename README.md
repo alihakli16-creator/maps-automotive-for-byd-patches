@@ -6,7 +6,7 @@ We have ended development and support for **our phone edition of Google Maps for
 
 This is the Automotive edition of Google Maps, designed for Android automotive systems. It is a different app from the phone edition. Our patches add the Instrument cluster controls and optional BYD battery/range integration.
 
-This **GitHub repository and its Releases distribute only our own patches (`.mpp`) and code**, without a Maps APK. For self-build, apply the patches to your own matching original APK and sign the result locally, using Morphe Manager on Android or the Desktop workflow. A separate project-signed **ready APK for confirmed BEVs using CCS2** is supplied through its Telegram announcement; see the [ready-APK installation guide](READY-APK.md) for its exact file, hash and setup. Google sign-in uses **MicroG-RE 7.2.1**; the phone edition of Google Maps for BYD is not required. The Automotive package is `com.google.android.apps.maps.automotive`, so it can coexist with the phone edition.
+This **GitHub repository and its Releases distribute only our own patches (`.mpp`) and code**, without a Maps APK. For self-build, apply the patches to your own matching original APK and sign the result locally, using Morphe Manager on Android or the Desktop workflow. A separate project-signed **ready APK for confirmed BEVs using CCS2** is supplied through its Telegram announcement; see the [ready-APK installation guide](READY-APK.md) for its exact file, hash and setup. Google sign-in uses **MicroG-RE (7.2.1 tested)**; the phone edition of Google Maps for BYD is not required. The Automotive package is `com.google.android.apps.maps.automotive`, so it can coexist with the phone edition.
 
 The patch is named **Maps Automotive for BYD (MicroG-RE TEST)** in Morphe. The app's diagnostic version is `patch-lab.26`; the public preview name is Morphe preview 1. This revision retains Morphe25's runtime apart from its version marker. The Tang reboot and Paris results below were captured with Morphe25, not a separate repeat on26.
 
@@ -19,7 +19,7 @@ The patch is named **Maps Automotive for BYD (MicroG-RE TEST)** in Morphe. The a
 - An ARM64 Android head unit running Android 11 or newer. Device testing so far is on one BYD Tang; other firmware is not confirmed.
 - The original **Maps Automotive 26.09.280001.E**, version code **1068809778**, ARM64 APK. The phone Maps APK and other versions are not interchangeable with this input. Obtain your own original; this project does not distribute it.
 - Either [Morphe Manager for Android](https://github.com/MorpheApp/morphe-manager/releases), or [Morphe Desktop](https://github.com/MorpheApp/morphe-desktop/releases) with Java and Android SDK Build Tools. Download the application from its official Releases page.
-- [MicroG-RE 7.2.1, ARM64](https://github.com/MorpheApp/MicroG-RE/releases/download/7.2.1/microg-7.2.1-icon-arm64-v8a.apk). Its package is `app.revanced.android.gms`; ordinary microG under `com.google.android.gms` does not replace this dependency.
+- [MicroG-RE — official Releases](https://github.com/MorpheApp/MicroG-RE/releases). Choose the matching **ARM64 APK**. This preview requires at least 7.2.1, which is the tested version; newer releases are not automatically verified. Its package is `app.revanced.android.gms`; ordinary microG under `com.google.android.gms` does not replace this dependency.
 - Our patch source: [Add Maps Automotive for BYD (TEST) to Morphe](https://morphe.software/add-source?github=romanchukg-cloud/maps-automotive-for-byd-patches&name=Maps%20Automotive%20for%20BYD%20%28TEST%29), or add `https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches` in **Sources → + → Remote**. The source currently serves **TEST previews only**, including its default main channel; this is not a stable channel.
 - Optional Local/CLI fallback bundle: [maps-automotive-for-byd-morphe-preview.1.mpp](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp). Its SHA-256 is `4be9eecff4c37199d06e3474a1d416dec8107f685c189d51daa4e4b669bca3bf`.
 
@@ -31,7 +31,7 @@ The exact tested original APK SHA-256 is:
 a9ecc4c18fac089c3c55fd20bed65233b7ea4db029da9b824305bf0b4b5716c9
 ```
 
-The tested MicroG-RE download SHA-256 is:
+The tested MicroG-RE **7.2.1 ARM64** download SHA-256 is (not the hash of future releases):
 
 ```text
 3425e46e95cd45012892cfaa23061b70db0a25affffcfcb84e3df4511d63eb82
@@ -46,7 +46,7 @@ The patched output uses `com.google.android.apps.maps.automotive` and can coexis
 ## First installation and migration
 
 1. Keep your existing Maps working while you prepare the new output APK. Save the settings you want to reproduce.
-2. Install MicroG-RE 7.2.1 and add your Google account to it. This is a separate sign-in from older microG. Do not remove another Google-services provider or its accounts as part of these steps.
+2. Install the matching ARM64 APK from [MicroG-RE Releases](https://github.com/MorpheApp/MicroG-RE/releases) and add your Google account to it. Version 7.2.1 is tested; newer releases need their own verification. This is a separate sign-in from older microG. Do not remove another Google-services provider or its accounts as part of these steps.
 3. Apply the release `.mpp` to the exact original APK using the Manager steps below, or the Desktop fallback. Select **Maps Automotive for BYD (MicroG-RE TEST)**. Leave the patch options at their defaults for ordinary map use. Enable `known_bev` only for a confirmed battery electric vehicle when you intend to use the experimental CCS2 EV routing integration below. It is not a PHEV mode.
 4. Manager signs with a key it creates for you; export a private backup as described below. With Desktop, sign using **your own key**. Keep the keystore and its password backed up separately, and reuse that same key for every later patch update.
 5. Install the APK you created. A public `automotive.6` installation uses a different signing key: Android will normally reject installing your locally signed APK over it. Migrating then requires uninstalling the old Automotive app and installing yours, which removes its local data/settings. Your regular phone Maps is a separate app. Do not uninstall it or MicroG-RE to solve this signature mismatch.
