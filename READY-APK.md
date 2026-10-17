@@ -2,7 +2,7 @@
 
 **TEST · Android 11+ · ARM64 · confirmed battery electric vehicles using CCS2.**
 
-This guide describes the project-signed APK supplied as a document with the separate ready-APK announcement in [BYD Apps on Telegram](https://t.me/byd_apps_updates). It is the Automotive edition of Google Maps for Android head units, independent of phone Maps. **Phone Maps can stay installed.**
+This guide describes the project-signed APK supplied with the [ready-APK announcement in BYD Apps](https://t.me/byd_apps_updates/23). Download the [APK document attached to that announcement](https://t.me/byd_apps_updates/24). It is the Automotive edition of Google Maps for Android head units, independent of phone Maps. **Phone Maps can stay installed.**
 
 The ready APK was created with our Morphe preview 1 patches and `known_bev=true`. This fixes its BEV identity at patch time; the supplied APK is **not a PHEV or universal-connector build**. For self-build with a different patch option, use the [Morphe guide](README.md). GitHub contains our own patches/code and documentation only; the ready Maps APK and signing keys are not GitHub assets.
 
