@@ -18,9 +18,11 @@ The patch is named **Maps Automotive for BYD (MicroG-RE TEST)** in Morphe. The a
 
 - An ARM64 Android head unit running Android 11 or newer. Device testing so far is on one BYD Tang; other firmware is not confirmed.
 - The original **Maps Automotive 26.09.280001.E**, version code **1068809778**, ARM64 APK. The phone Maps APK and other versions are not interchangeable with this input. Obtain your own original; this project does not distribute it.
-- Either [Morphe Manager 1.35.0 for Android](https://github.com/MorpheApp/morphe-manager/releases/download/v1.35.0/morphe-manager-1.35.0.apk), or [Morphe Desktop 1.18.1](https://github.com/MorpheApp/morphe-desktop/releases) with Java and Android SDK Build Tools. Actual patching and signed-APK export passed in Manager on a disposable Android API32 emulator. The exported APK installed through ADB and passed first-run/provider-guard/settings checks there. The Desktop CLI path also passed.
+- Either [Morphe Manager for Android](https://github.com/MorpheApp/morphe-manager/releases), or [Morphe Desktop](https://github.com/MorpheApp/morphe-desktop/releases) with Java and Android SDK Build Tools. Download the application from its official Releases page.
 - [MicroG-RE 7.2.1, ARM64](https://github.com/MorpheApp/MicroG-RE/releases/download/7.2.1/microg-7.2.1-icon-arm64-v8a.apk). Its package is `app.revanced.android.gms`; ordinary microG under `com.google.android.gms` does not replace this dependency.
 - The patch bundle: [maps-automotive-for-byd-morphe-preview.1.mpp](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp). Its SHA-256 is `4be9eecff4c37199d06e3474a1d416dec8107f685c189d51daa4e4b669bca3bf`.
+
+Tool verification used **Morphe Manager 1.35.0 on Android API32** and **Morphe Desktop 1.18.1**. Manager patch/export, separate APK installation and first-run/provider-guard/settings checks passed; the Desktop CLI also passed. These are the tested versions, not a requirement to use a fixed download link or a claim that every newer release is verified. Later releases can change their UI or CLI.
 
 The exact tested original APK SHA-256 is:
 
@@ -51,9 +53,9 @@ The patched output uses `com.google.android.apps.maps.automotive` and can coexis
 
 Do not use a key from someone else's APK or expect the old in-app APK updater to convert the installation. Automatic migration from `automotive.6` to this patch preview is not provided. For later updates, patch the supported original again and sign with the same backed-up key; same package and signer are required to retain local data.
 
-### Android: Morphe Manager 1.35.0
+### Android: Morphe Manager
 
-1. Copy the release `.mpp` and matching original Maps Automotive APK to the Android device where you will patch. Install Manager 1.35.0. Patching on a phone and transferring the exported APK to the car is possible; leave architecture optimization off.
+1. Copy the release `.mpp` and matching original Maps Automotive APK to the Android device where you will patch. Install Morphe Manager. Patching on a phone and transferring the exported APK to the car is possible; leave architecture optimization off.
 2. Open **Home → Sources → + → Local** and choose `maps-automotive-for-byd-morphe-preview.1.mpp`. Choose the Automotive app if Manager offers app selection. A local source does not update itself; import each new bundle manually.
 3. Open **Settings → Advanced → Expert settings → Expert mode** and enable it. Keep **Optimize for device architecture OFF**.
 4. Choose Google Maps from this local source, select **26.09.280001.E → No, I already have an APK**, then select your clean original APK. Do not choose a phone Maps APK or an already patched output.
@@ -63,13 +65,13 @@ Do not use a key from someone else's APK or expect the old in-app APK updater to
 
 On the disposable Android API32 emulator, actual patching, Save/export and a separate ADB installation succeeded. With MicroG-RE absent, the app displayed the required-provider explanation and **Not now** dismissed it without a crash. After installing fresh MicroG-RE 7.2.1 without an account, first-run and Instrument cluster settings opened. The exported APK also passed signature/alignment, manifest, original-class preservation and written EV/navigation/cluster hook checks. This clean-emulator test did not sign in to Google or prove map tiles, live vehicle data or physical cluster output. A Manager-generated signer differs from the existing public Automotive signer; the same migration and data-loss warning above applies. Patching on the head unit itself has not been established across BYD firmware.
 
-### Computer fallback: tested Desktop CLI
+### Computer fallback: Morphe Desktop CLI
 
-Use the downloaded filenames in place of the example filenames below. Keep the original input unchanged. The first command checks the original APK's signature; also compare its SHA-256 with the value above.
+Use the downloaded filenames in place of the example filenames below; `morphe-desktop.jar` means the Desktop JAR you downloaded from its official Releases page. The command was verified with Desktop 1.18.1, and a later release may change CLI options. Keep the original input unchanged. The first command checks the original APK's signature; also compare its SHA-256 with the value above.
 
 ```sh
 apksigner verify original-maps-automotive.apk
-java -Xmx2g -jar morphe-desktop-1.18.1-all.jar patch --unsigned -p maps-automotive-for-byd-morphe-preview.1.mpp -o maps-automotive-unsigned.apk -r patch-result.json -t patch-scratch original-maps-automotive.apk
+java -Xmx2g -jar morphe-desktop.jar patch --unsigned -p maps-automotive-for-byd-morphe-preview.1.mpp -o maps-automotive-unsigned.apk -r patch-result.json -t patch-scratch original-maps-automotive.apk
 ```
 
 For a confirmed BEV using CCS2 station planning, add `-O known_bev=true` to the patch command. Do not add `--force` or `--continue-on-error`; a failed compatibility check means the input or tool combination needs checking.

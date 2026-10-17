@@ -6,12 +6,12 @@ The current test release is **Morphe preview 1**. It provides our `.mpp` patches
 
 ## Download these files
 
-- [Morphe Manager 1.35.0 for Android — official download](https://github.com/MorpheApp/morphe-manager/releases/download/v1.35.0/morphe-manager-1.35.0.apk).
+- [Morphe Manager for Android — official Releases](https://github.com/MorpheApp/morphe-manager/releases).
 - [Our Morphe preview 1 patch bundle](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.1/maps-automotive-for-byd-morphe-preview.1.mpp).
 - [MicroG-RE 7.2.1 for ARM64 — official download](https://github.com/MorpheApp/MicroG-RE/releases/download/7.2.1/microg-7.2.1-icon-arm64-v8a.apk).
 - Your own **clean original Maps Automotive 26.09.280001.E**, version code **1068809778**, ARM64 APK file. We do not distribute Google's original APK. Obtain the matching original file yourself and compare it with the exact input below.
 
-The resulting Automotive app requires an ARM64 head unit with Android 11 or newer. You can patch on an Android device and transfer the result to the head unit. Manager 1.35.0 patch/export was tested on Android API32; on-head-unit patching performance is not established across BYD firmware.
+The resulting Automotive app requires an ARM64 head unit with Android 11 or newer. You can patch on an Android device and transfer the result to the head unit. The workflow was tested with **Morphe Manager 1.35.0 on Android API32**; a newer release is not automatically verified and can change its UI. On-head-unit patching performance is not established across BYD firmware. For a computer, use [Morphe Desktop from its official Releases page](https://github.com/MorpheApp/morphe-desktop/releases) and the [Desktop fallback guide](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md#computer-fallback-morphe-desktop-cli), tested with Desktop 1.18.1.
 
 ## Which Maps file should I select?
 
@@ -32,7 +32,7 @@ Patches are applied to this **APK file**. You do not patch the phone app already
 
 ## Build your Automotive APK with Morphe Manager
 
-1. Install **Morphe Manager 1.35.0**. Copy the clean original APK and our `.mpp` file to that Android device.
+1. Install **Morphe Manager**. Copy the clean original APK and our `.mpp` file to that Android device.
 2. Open **Home → Sources → + → Local** and select `maps-automotive-for-byd-morphe-preview.1.mpp`. Choose the Automotive app if an app selection is offered.
 3. Open **Settings → Advanced → Expert settings → Expert mode** and enable it. Leave **Optimize for device architecture OFF**, especially when preparing the APK on a different device from the car.
 4. Select Google Maps from our local source, then **26.09.280001.E → No, I already have an APK**. Choose the clean original file described above.
