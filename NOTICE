@@ -1,0 +1,5 @@
+Maps Automotive for BYD — Morphe TEST preview.1
+Copyright romanchukg-cloud. Licensed under GPL-3.0-only.
+Protocol routing approach informed by fangkampanat/gmaps-patches (GPL-3.0); its upstream NOTICE is retained in UPSTREAM-NOTICE.
+This bundle contains only owned patch and runtime code plus corresponding source and notices. No Google application implementation classes, Maps APK, signing keys, tokens or account data are bundled.
+This is an experimental Desktop preview, not a stable application release.
