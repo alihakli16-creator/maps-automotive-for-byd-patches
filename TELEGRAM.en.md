@@ -1,17 +1,18 @@
-🗺 Maps Automotive for BYD — Morphe preview 2 (TEST)
+🗺 Maps Automotive for BYD — ready APK
+Preview 2 / build 34 (TEST)
 
-• 100/90/80% UI size with automatic apply; deferred during navigation.
-• 3D Buildings switch and aligned Search.
-• Optional rounded app corners, off by default.
+• 100/90/80% interface size with automatic apply.
+• 3D Buildings switch, aligned Search and optional rounded corners.
 
-Update our source in Morphe, repatch original Automotive 26.09 and reuse your signing key. No APK auto-update.
+Project-signed APK for confirmed BYD BEVs using CCS2, not PHEVs. Vehicle-data options start OFF.
 
-MicroG-RE (7.2.1 tested):
+Requires MicroG-RE (7.2.1 tested):
 https://github.com/MorpheApp/MicroG-RE/releases
+Sign in separately; allow Contacts/Location.
 
-UI checked on one Tang; other firmware and full build34 regression remain unverified. Image: laboratory 3D settings.
+Same project key as earlier Automotive APKs. A personal or different key requires reinstalling and loses local Automotive data. Phone Maps can stay installed.
 
-Patch:
-https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.2/maps-automotive-for-byd-morphe-preview.2.mpp
-Guide / release notes:
-https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/tag/morphe-preview.2
+Main-screen appearance checked on one Tang; other firmware and full regression remain unverified. Image: laboratory settings.
+
+APK attached below. Setup and exact file/hash:
+https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/READY-APK-preview.2.md
