@@ -12,8 +12,8 @@ import sys
 import zipfile
 
 CLI_SHA256 = "1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b"
-ARTIFACT = "maps-automotive-for-byd-morphe-preview.1.mpp"
-VERSION = "0.1.0-preview.1"
+ARTIFACT = "maps-automotive-for-byd-morphe-preview.2.mpp"
+VERSION = "0.1.0-preview.2"
 PATCH_NAME = "Maps Automotive for BYD (MicroG-RE TEST)"
 ROOT = Path(__file__).resolve().parent
 
@@ -48,8 +48,8 @@ def main():
     require(match and int(match.group(1)) >= 17, "JDK17 or newer is required on PATH.")
     patch_sources = sorted((ROOT / "src").rglob("*.java"))
     runtime_sources = sorted((ROOT / "runtime").rglob("*.java"))
-    require(len(patch_sources) == 7 and len(runtime_sources) == 62,
-            "The complete7-file patch and62-file staged runtime source trees are required.")
+    require(len(patch_sources) == 10 and len(runtime_sources) == 64,
+            "The complete 10-file patch and 64-file staged runtime source trees are required.")
     for name in ("LICENSE", "UPSTREAM-NOTICE", "NOTICE"):
         require((ROOT / name).is_file(), "Missing required notice: " + name)
     # A fresh directory gives every build an immutable output location.
@@ -78,7 +78,7 @@ def main():
     manifest = (
         "Manifest-Version: 1.0\r\n"
         "Name: Maps Automotive for BYD (MicroG-RE TEST)\r\n"
-        "Description: Experimental Desktop patch preview for original AAOS26.09\r\n"
+        "Description: TEST native3D, UI scale, search, optional rounded corners\r\n"
         "Version: " + VERSION + "\r\n"
         "Author: romanchukg-cloud\r\n"
         "License: GPL-3.0-only\r\n"
@@ -111,8 +111,8 @@ def main():
         "bytes": bundle.stat().st_size,
         "version": VERSION,
         "patch_name": PATCH_NAME,
-        "internal_revision": 26,
-        "internal_runtime_version": "patch-lab.26",
+        "internal_revision": 34,
+        "internal_runtime_version": "patch-lab.34",
         "desktop_version": "1.18.1",
         "desktop_api_sha256": CLI_SHA256,
         "extension_sha256": sha256(extension / "classes.dex"),

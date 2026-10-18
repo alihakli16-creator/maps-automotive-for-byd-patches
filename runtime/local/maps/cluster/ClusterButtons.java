@@ -80,7 +80,7 @@ final class ClusterButtons {
             if(right.width!=anchor.width()||right.height!=anchor.height()||right.leftMargin!=settingsX||right.topMargin!=top){right.width=anchor.width();right.height=anchor.height();right.gravity=Gravity.TOP|Gravity.LEFT;right.leftMargin=settingsX;right.rightMargin=0;right.topMargin=top;settingsSlot.setLayoutParams(right);}
             FrameLayout.LayoutParams sb=(FrameLayout.LayoutParams)settings.getLayoutParams();if(sb.width!=anchor.width()||sb.height!=anchor.height()){sb.width=anchor.width();sb.height=anchor.height();settings.setLayoutParams(sb);}
             settingsSlot.setVisibility(View.VISIBLE);
-            if(height<dp(activity,48)){column.setVisibility(View.INVISIBLE);style();updateState();return true;}
+            if(height<dp(template.getContext(),48)){column.setVisibility(View.INVISIBLE);style();updateState();return true;}
             int x=area.left-origin[0], y=end-origin[1], width=area.width();
             if(tx!=x||ty!=y||tw!=width||th!=height){
                 tx=x;ty=y;tw=width;th=height;FrameLayout.LayoutParams lp=(FrameLayout.LayoutParams)column.getLayoutParams();lp.width=width;lp.height=height;lp.leftMargin=x;lp.topMargin=y;column.setLayoutParams(lp);

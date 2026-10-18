@@ -160,6 +160,8 @@ public final class AutomotiveMicrogPatch {
   patch.extendWith(()->{var stream=AutomotiveMicrogPatch.class.getClassLoader().getResourceAsStream(EXTENSION);if(stream==null)throw new IllegalStateException("Missing "+EXTENSION);return stream;});
   patch.execute(context->{
    requireInput(context.getPackageMetadata());
+   Buildings3dHooks.apply(context);
+   SearchAlignmentHooks.apply(context);
    int routes=0,classes=0,gates=0;
    for(var source:context.getAllClassesWithStrings()){
     if(source.getType().startsWith(OWN)||!routed(source))continue;
@@ -186,6 +188,7 @@ public final class AutomotiveMicrogPatch {
    InstructionExtensions.INSTANCE.addInstructions(notification,0,"iget v0, p2, "+errorCode(notification)+"\ninvoke-static {v0}, "+PROVIDER+"->suppressesNotification(I)Z\nmove-result v0\nif-eqz v0, :notify\nreturn-void\n:notify\nnop");
    ClusterHooks.location(context);
    ClusterHooks.apply(context);
+   UiScaleHooks.apply(context);
    NavigationHooks.apply(context);
    VehicleEvHooks.apply(context);
    KnownBevOption.apply(context,knownBev.getValue());

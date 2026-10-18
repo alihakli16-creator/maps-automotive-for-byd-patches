@@ -34,7 +34,7 @@ final class ClusterMenu {
     private long pageGeneration;
     private final Map<String,MapsSwitch> switches=new HashMap<>();
     private final SharedPreferences.OnSharedPreferenceChangeListener changes=(p,key)->{
-        MapsSwitch control=switches.get(key);if(control!=null){boolean checked=p.getBoolean(key,false);if(control.isChecked()!=checked)control.setChecked(checked);}
+        MapsSwitch control=switches.get(key);if(control!=null){boolean checked=AppCorners.KEY.equals(key)?AppCorners.enabled(p):p.getBoolean(key,false);if(control.isChecked()!=checked)control.setChecked(checked);}
     };
     static void show(Activity activity,SharedPreferences prefs){
         if(activity.isFinishing()||activity.isDestroyed())return;
@@ -123,7 +123,7 @@ final class ClusterMenu {
     private void toggle(String name,String description,String key,boolean checked){
         LinearLayout r=row(name,null);MapsSwitch sw=new MapsSwitch(context);sw.setChecked(checked);sw.setContentDescription(description);
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);r.addView(sw,lp);
-        switches.put(key,sw);sw.setOnCheckedChangeListener((b,on)->{if(prefs.getBoolean(key,!on)!=on)prefs.edit().putBoolean(key,on).apply();});
+        switches.put(key,sw);sw.setOnCheckedChangeListener((b,on)->{if((AppCorners.KEY.equals(key)?AppCorners.enabled(prefs):prefs.getBoolean(key,!on))!=on)prefs.edit().putBoolean(key,on).apply();});
         r.setBackground(ripple(0));r.setOnClickListener(v->sw.performClick());rule();
     }
     private void note(String value){TextView v=text(value,22,secondary);v.setPadding(dp(18),dp(18),dp(18),dp(18));body.addView(v,new LinearLayout.LayoutParams(-1,-2));}
@@ -160,11 +160,27 @@ final class ClusterMenu {
             else if(AccountAccess.microg(activity)&&!AccountAccess.granted(activity))AccountAccess.request(activity);
             else SignInAccess.show(activity);
         });
+        action("Interface size",MainUiScale.selected(prefs)+"% · main Maps screen",this::interfaceSize);
+        toggle("Rounded app corners","Rounded outer corners on central Maps screens",AppCorners.KEY,AppCorners.enabled(prefs));
         action("Updates",BuildInfo.VERSION,()->AppUpdater.show(activity));
         action("Support",null,()->Diagnostics.show(activity));
         action("BYD vehicle data","ADB battery and electric range",this::vehicle);
         if(EvTest.available())action("Test EV data","Synthetic values",()->EvTest.show(activity));
         note("Changes are saved automatically.");
+    }
+    private void interfaceSize(){
+        start("interface_size","Interface size");int selected=MainUiScale.selected(prefs);
+        int[] values={100,90,80};String[] names={"100% · Standard","90% · Compact","80% · Smaller"};
+        for(int i=0;i<values.length;i++){
+            final int value=values[i];LinearLayout r=row(names[i],null);
+            ImageView radio=new ImageView(context);radio.setImageDrawable(new Mark(value==selected?4:3,value==selected?accent:ink));
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(28),dp(36));lp.leftMargin=dp(12);r.addView(radio,lp);
+            r.setBackground(ripple(0));r.setFocusable(true);r.setContentDescription(names[i]+(value==selected?", selected":""));
+            r.setOnClickListener(v->{prefs.edit().putInt(MainUiScale.KEY,value).apply();interfaceSize();MainUiScale.changed(activity);});rule();
+        }
+        note("Changes the central Maps interface, icons and text. The instrument cluster and Android settings keep their own size. Your Android font-size preference is preserved.");
+        note("Saved: "+selected+"%. Applied to this screen: "+MainUiScale.applied(activity)+"%. Changes apply automatically when Maps is ready and navigation is inactive. During navigation, your choice is saved and applied afterwards while Maps is on screen.");
+        note("Local experiment. Choose 100% to restore standard Maps size.");
     }
     private void layout(){
         start("layout","Map layout");ClusterSettings.State s=ClusterSettings.state();

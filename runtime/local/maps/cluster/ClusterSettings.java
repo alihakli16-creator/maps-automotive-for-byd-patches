@@ -32,6 +32,7 @@ public final class ClusterSettings {
     private static android.content.SharedPreferences preferences;
     private static volatile State current;
     private static final android.content.SharedPreferences.OnSharedPreferenceChangeListener changes=(p,key)->{
+        if(AppCorners.KEY.equals(key)){AppCorners.refresh();return;}
         current=new State(p); CardPlacement.refresh();
         if("pointer_vertical".equals(key))ClusterHost.refreshClusterCamera();
         if("map_enabled".equals(key))ClusterHost.mapSettingChanged();
@@ -75,17 +76,18 @@ public final class ClusterSettings {
         current=new State(preferences); preferences.registerOnSharedPreferenceChangeListener(changes);
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks(){
             public void onActivityResumed(Activity a){
+                AppCorners.resumed(a);
                 if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")) {
-                    resumedMaps=new java.lang.ref.WeakReference<>(a);applyPictureInPicture(a);
+                    resumedMaps=new java.lang.ref.WeakReference<>(a);applyPictureInPicture(a);MainUiScale.resumed(a);
                     a.getWindow().getDecorView().post(()->{attach(a);Diagnostics.resumed(a);AccountAccess.resumed(a);SignInAccess.resumed(a);});
                 }
             }
             public void onActivityCreated(Activity a,Bundle b){}
             public void onActivityStarted(Activity a){}
-            public void onActivityPaused(Activity a){if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")){AccountAccess.paused();SignInAccess.paused();}}
+            public void onActivityPaused(Activity a){if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")){MainUiScale.paused(a);AccountAccess.paused();SignInAccess.paused();}}
             public void onActivityStopped(Activity a){}
             public void onActivitySaveInstanceState(Activity a,Bundle b){}
-            public void onActivityDestroyed(Activity a){ClusterMenu.destroyed(a);}
+            public void onActivityDestroyed(Activity a){AppCorners.destroyed(a);MainUiScale.destroyed(a);ClusterMenu.destroyed(a);}
         });
     }
     private static int dp(Context c,int value){return Math.round(value*c.getResources().getDisplayMetrics().density);}

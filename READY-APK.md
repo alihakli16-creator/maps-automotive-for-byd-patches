@@ -1,5 +1,7 @@
 # Ready APK — Maps Automotive for BYD, preview 1 / build 26
 
+**Older ready APK:** this page and its Telegram links describe **preview 1 / build 26**. The current patch release is **[Morphe preview 2, revision 34](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/tag/morphe-preview.2)**. The APK below does not include preview 2's interface size, 3D switch, Search alignment or rounded corners. To get the current version, [build with the latest patches](README.md). Moving from this project-signed APK to a personal signing key requires a one-time Automotive reinstall and loses its local data/settings; subsequent self-build updates must reuse that personal key. No new preview 2 APK download is supplied on this page.
+
 **TEST · Android 11+ · ARM64 · confirmed battery electric vehicles using CCS2.**
 
 This guide describes the project-signed APK supplied with the [ready-APK announcement in BYD Apps](https://t.me/byd_apps_updates/23). Download the [APK document attached to that announcement](https://t.me/byd_apps_updates/24). It is the Automotive edition of Google Maps for Android head units, independent of phone Maps. **Phone Maps can stay installed.**
@@ -63,11 +65,11 @@ Maps can then use the accepted live charge/range to calculate native EV routes a
 
 ## What was checked, and what remains open
 
-The ready APK's production signature, package/version and alignment were checked. Its 3,258 ZIP-entry payloads match the verified unsigned Desktop build. The patch/runtime retain Morphe25's behavior apart from the version marker. **Build26 has not had a new car reboot or route test.**
+The ready APK's production signature, package/version and alignment were checked. Its 3,258 ZIP-entry payloads match the verified unsigned Desktop build. The patch/runtime retain Morphe revision 25's behavior apart from the version marker. **Build26 has not had a new car reboot or route test.**
 
-On **Morphe25**, one BYD Tang received fresh charge/range after a full head-unit reboot without a computer, once BYD startup/background permission was allowed. A stationary 907 km Paris route preview then planned two automatic charging stops and 30% at arrival. Navigation was not started; those results do not validate predictions in real driving, charging duration, charging power or an ETA including charging.
+On **Morphe revision 25**, one BYD Tang received fresh charge/range after a full head-unit reboot without a computer, once BYD startup/background permission was allowed. A stationary 907 km Paris route preview then planned two automatic charging stops and 30% at arrival. Navigation was not started; those results do not validate predictions in real driving, charging duration, charging power or an ETA including charging.
 
-Other BYD firmware, physical cluster/HUD/audio, current-bundle PiP and long sleep behavior are not established by that test. Morphe cluster satellite imagery and the general native navigation-service startup timeout remain unresolved. Charge-port cover and lock-feedback diagnostics may show Unknown or Unverified; they are not confirmed physical indicators. See the [complete release notes](RELEASE-NOTES.md).
+Other BYD firmware, physical cluster/HUD/audio, current-bundle PiP and long sleep behavior are not established by that test. Morphe cluster satellite imagery and the general native navigation-service startup timeout remain unresolved. Charge-port cover and lock-feedback diagnostics may show Unknown or Unverified; they are not confirmed physical indicators. See the [historical preview 1 release notes](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/tag/morphe-preview.1). Current patch features and limits are in the [preview 2 notes](RELEASE-NOTES.md).
 
 There is **no in-app APK auto-update**. A future project-signed APK can update a matching project-signed installation; a Morphe self-build normally uses your own key and needs the separate one-time migration described above. For later personal builds, keep and reuse your own backed-up signing key. Updating Morphe's remote patch source alone does not update installed Maps.
 
