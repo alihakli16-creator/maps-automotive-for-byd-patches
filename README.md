@@ -88,7 +88,7 @@ Use the downloaded filenames in place of the example filenames below; `morphe-de
 
 ```sh
 apksigner verify original-maps-automotive.apk
-java -Xmx2g -jar morphe-desktop.jar patch --unsigned -p maps-automotive-for-byd-morphe-preview.2.mpp -o maps-automotive-unsigned.apk -r patch-result.json -t patch-scratch original-maps-automotive.apk
+java -Xmx2g -jar morphe-desktop.jar patch --unsigned -e "Maps Automotive for BYD (MicroG-RE TEST)" -p maps-automotive-for-byd-morphe-preview.2.mpp -o maps-automotive-unsigned.apk -r patch-result.json -t patch-scratch original-maps-automotive.apk
 ```
 
 For a confirmed BEV using CCS2 station planning, add `-O known_bev=true` to the patch command. Do not add `--force` or `--continue-on-error`; a failed compatibility check means the input or tool combination needs checking.
