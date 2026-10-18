@@ -2,7 +2,7 @@
 
 **TEST · Android 11+ · ARM64 · confirmed BEVs using CCS2 stations.**
 
-**Publication status: prepared for the owner's Telegram publication.** This page does not yet provide a public download link. The APK is not a GitHub asset. The owner must attach the exact file below to the new Telegram news draft and publish it; no channel message link has been assigned here.
+**Published:** [download the APK attachment in BYD Apps](https://t.me/byd_apps_updates/29). It accompanies the [preview 2 / build 34 announcement](https://t.me/byd_apps_updates/28). The owner approved both together through the shared news bot. The APK is hosted in Telegram; it is not a GitHub asset.
 
 This APK uses the public [Morphe preview 2 patches](README.md) with `known_bev=true`. It is the Automotive edition of Maps, independent of phone Maps. **Phone Maps can stay installed.** It is not a PHEV or universal-connector build.
 
@@ -34,7 +34,7 @@ This is the existing project signing key. A matching project-signed Automotive i
 
 ## Install and sign in
 
-Once the owner publishes the new Telegram post, save its APK attachment and compare its exact filename, size and SHA-256 above. Open the file in the head unit's Android file manager to install or update.
+Save the [Telegram APK attachment](https://t.me/byd_apps_updates/29) and compare its exact filename, size and SHA-256 above. Open the file in the head unit's Android file manager to install or update.
 
 Install the matching ARM64 APK from the official [MicroG-RE Releases](https://github.com/MorpheApp/MicroG-RE/releases). Version **7.2.1** is tested; newer releases are not automatically verified. Its package is `app.revanced.android.gms`; older microG under `com.google.android.gms` does not replace it. Keep older microG if other apps need it.
 

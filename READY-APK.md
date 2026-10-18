@@ -1,6 +1,6 @@
 # Ready APK — Maps Automotive for BYD, preview 1 / build 26
 
-**Older ready APK:** this page and its Telegram links describe **preview 1 / build 26**. The current patch release is **[Morphe preview 2, revision 34](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/tag/morphe-preview.2)**. The APK below does not include preview 2's interface size, 3D switch, Search alignment or rounded corners. To get the current version, [build with the latest patches](README.md). Moving from this project-signed APK to a personal signing key requires a one-time Automotive reinstall and loses its local data/settings; subsequent self-build updates must reuse that personal key. No new preview 2 APK download is supplied on this page.
+**Older ready APK:** this page and its Telegram links describe **preview 1 / build 26**. The current release is **[Morphe preview 2 / build 34](READY-APK-preview.2.md)**, available as a [ready APK in Telegram](https://t.me/byd_apps_updates/29) or a [self-build with the latest patches](README.md). The APK below does not include preview 2's interface size, 3D switch, Search alignment or rounded corners. Moving from this project-signed APK to a personal signing key requires a one-time Automotive reinstall and loses its local data/settings; subsequent self-build updates must reuse that personal key.
 
 **TEST · Android 11+ · ARM64 · confirmed battery electric vehicles using CCS2.**
 
