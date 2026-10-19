@@ -52,6 +52,17 @@ final class ClusterHooks {
   for(int i=body.getInstructions().size()-1;i>=0;i--){var ins=body.getInstructions().get(i);if(ins.getOpcode()!=Opcode.RETURN_OBJECT)continue;int point=((OneRegisterInstruction)ins).getRegisterA();ASM.addInstructions(m,i,"invoke-static {v"+owner+", v"+point+"}, "+C+"PointerHooks;->"+hook+"(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v"+point+"\ncheck-cast v"+point+", Luun;");n++;}
   if(n!=1)throw new IllegalStateException("Expected one anchor return: "+m);
  }
+ static void navigationViewport(MutableMethod m){
+  if(!m.getDefiningClass().equals("Lxcl;")||!Api29Hooks.descriptor(m).equals("b()Lagxp;")
+     ||!Api29Hooks.fingerprint(m).equals("44b747dfd75121b1a07eff935b8b33dd1222d8aceeb2b3fd59ca23c1f1628588"))throw new IllegalStateException("Navigation viewport original fingerprint mismatch");
+  registers(m,23);int count=0;
+  for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--){var ins=m.getImplementation().getInstructions().get(i);if(ins.getOpcode()!=Opcode.RETURN_OBJECT)continue;
+   int point=((OneRegisterInstruction)ins).getRegisterA();if(point!=0)throw new IllegalStateException("Navigation viewport return register changed");
+   m.getImplementation().replaceInstruction(i,new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16,1,22));
+   ASM.addInstructions(m,i+1,"invoke-static {v1, v0}, "+C+"PointerHooks;->adjustNavigationViewport(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v0\ncheck-cast v0, Lagxp;\nreturn-object v0");count++;
+  }
+  if(count!=1)throw new IllegalStateException("Navigation viewport returns changed");
+ }
  static void apply(BytecodePatchContext ctx){
   // These are not authorization hooks: native sii/account/token implementations are retained.
   var m=method(ctx,"Lfmv;","attachBaseContext","(Landroid/content/Context;)V");
@@ -79,6 +90,9 @@ final class ClusterHooks {
    if(reference.equals("Lupq;->c:F")||reference.equals("Luun;->c:F")){ASM.addInstructions(m,i+1,"invoke-static {v5, v3}, "+C+"ClusterHost;->applyClusterPointerY(Ljava/lang/Object;F)F\nmove-result v3");anchors++;}
   }
   if(holders!=2||anchors!=2)throw new IllegalStateException("Live anchor callbacks changed");
+  // Native route-following camera bypasses dba.k/uun. Retain its native container,
+  // modifying only the cluster's vertical offset through the pure runtime helper.
+  navigationViewport(method(ctx,"Lxcl;","b","()Lagxp;"));
   m=method(ctx,"Lggh;","b","(Lafpg;)Lgge;");registers(m,15);count=0;
   for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--)if(ref(m.getImplementation().getInstructions().get(i)).equals("Lgge;-><init>(ZLafpa;ZZLlfp;ILafou;Lafox;)V")){
    branchBlock(m,i,"invoke-static {}, "+C+"ClusterHost;->nativeClusterActive()Z\nmove-result v0\nif-eqz v0, :stock\nsget-object v6, Lafpa;->b:Lafpa;\ninvoke-static {}, "+C+"ClusterHost;->nativeNight()Z\nmove-result v7\nmove v8, v7\n:stock\nnop");count++;

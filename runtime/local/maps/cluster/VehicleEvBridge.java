@@ -27,12 +27,27 @@ public final class VehicleEvBridge {
     private static volatile String readback="";
     private static long serial;
     private static boolean profileLoaded;
+    private static boolean identityCaptured;
+    private static VehicleEvConnection startupConnection;
+    private static VehiclePowertrain startupPowertrain=VehiclePowertrain.UNKNOWN;
     private static Thread thread(Runnable r,String name){Thread t=new Thread(r,name);t.setDaemon(true);return t;}
     private VehicleEvBridge(){}
 
     /** Vehicle identity is owner supplied; live charging-plan capability requires accepted fresh data. */
     public static Object wrapVehicleInfo(Object original){return VehicleEvInfo.wrap(original);}
-    static boolean hasVehicleProfile(){return VehicleEvProfile.current()!=null||VehicleEvBuildProfile.knownBev();}
+    static boolean hasVehicleProfile(){return identityMatches(VehicleEvBuildProfile.knownBev());}
+    /** Maps caches eligibility/catalogs. Freeze both powertrain and connector before native DI. */
+    private static synchronized boolean identityMatches(boolean legacyHint){
+        VehicleEvProfile.Profile p=VehicleEvProfile.current();
+        boolean hint=p==null&&VehicleEvProfile.buildHintAllowed()&&legacyHint;
+        VehiclePowertrain type=p!=null&&p.typeConfirmed?p.powertrain:hint?VehiclePowertrain.BEV:VehiclePowertrain.UNKNOWN;
+        VehicleEvConnection selected=p!=null&&p.hasIdentity()?VehicleEvConnection.get(p.connector):hint?VehicleEvConnection.CCS2:null;
+        if(!identityCaptured){startupConnection=selected;startupPowertrain=type;identityCaptured=true;}
+        return selected!=null&&selected==startupConnection&&type==startupPowertrain;
+    }
+    static VehicleEvConnection identityConnection(){return hasVehicleProfile()?startupConnection:null;}
+    static VehiclePowertrain identityPowertrain(){return hasVehicleProfile()?startupPowertrain:VehiclePowertrain.UNKNOWN;}
+    static void initializeIdentity(){hasVehicleProfile();}
     static boolean canPlanRoutes(){
         synchronized(LOCK){for(Binding b:repositories)if(b.written!=null&&live(b.written))return true;return false;}
     }
@@ -40,6 +55,7 @@ public final class VehicleEvBridge {
     /** Called from Application setup. This performs cached metadata access only. */
     public static void attach(Context c){
         if(context!=null)return;
+        VehicleEvProfile.initializeEarly(c);initializeIdentity();
         synchronized(LOCK){
             if(context!=null)return;Context app=c.getApplicationContext();context=app==null?c:app;access=VehicleDataStore.access(context);
             VehicleDataStore.observe(VehicleEvBridge::storeChanged);
@@ -61,7 +77,7 @@ public final class VehicleEvBridge {
     private static Binding carrier(Object object){for(Binding b:repositories)if(b.ready&&b.carrier==object)return b;return null;}
     private static void purge(){Reference<?> ref;while((ref=collected.poll())!=null)owned.remove(ref);}
     private static Token token(Object input){purge();return input==null?null:owned.get(new Identity(input,null));}
-    private static boolean live(Token t){return t!=null&&!EvTest.isActive()&&!t.binding.suspended&&VehicleEvPolicy.live(t.input,access,t.profile,SystemClock.elapsedRealtime());}
+    private static boolean live(Token t){return t!=null&&identityPowertrain()==VehiclePowertrain.BEV&&!EvTest.isActive()&&!t.binding.suspended&&VehicleEvPolicy.live(t.input,access,t.profile,SystemClock.elapsedRealtime());}
 
     /** Replaces the final native pair only for owned inputs; skipped late jobs cannot erase newer data. */
     public static boolean handleOwnedPublish(Object repo,Object input,Object model){
@@ -123,9 +139,9 @@ public final class VehicleEvBridge {
     private static void refresh(){
         Context c=context;if(c==null||!profileLoaded)return;
         VehicleEvProfile.Profile profile=VehicleEvProfile.current();
-        if(access==null||!access.enabled||profile==null||!profile.enabled||EvTest.isActive()){
+        if(access==null||!access.enabled||profile==null||!profile.enabled||identityPowertrain()!=VehiclePowertrain.BEV||EvTest.isActive()){
             synchronized(LOCK){for(Binding b:repositories)maintain(b);}
-            state=EvTest.isActive()?"Turn off the synthetic EV test before using live data.":access!=null&&!access.enabled?"BYD vehicle data is off.":"Configure and enable the EV routing profile.";return;
+            state=EvTest.isActive()?"Turn off the synthetic EV test before using live data.":profile!=null&&profile.hasIdentity()&&!hasVehicleProfile()?"Vehicle profile saved. Force stop and reopen Maps to apply the vehicle type or charging connection.":profile!=null&&profile.typeConfirmed&&profile.powertrain==VehiclePowertrain.PHEV?"PHEV profile saved. Battery charge and electric range remain available in vehicle data. Our battery-only route model is off: combined fuel and battery forecasts and automatic charging stops are not provided by this profile.":profile!=null&&profile.typeConfirmed&&profile.powertrain==VehiclePowertrain.HEV?"HEV profile saved. Battery-only route data and charging stops are off. Native hybrid eco-routing for a non-plug-in HEV is not configured by this profile.":access!=null&&!access.enabled?"BYD vehicle data is off.":"Configure a vehicle profile; live battery route data is available for confirmed BEVs.";return;
         }
         VehicleEvPolicy.Input snapshot;
         try{snapshot=VehicleEvPolicy.read(VehicleDataStore.status(c),SystemClock.elapsedRealtime());}
@@ -136,11 +152,12 @@ public final class VehicleEvBridge {
             Object repo=b.repo.get();if(repo==null||!b.ready)continue;
             synchronized(LOCK){maintain(b);Object nativeInput=b.original.get();if(nativeInput!=null&&token(nativeInput)==null)b.suspended=true;if(b.suspended)continue;if(b.current!=null&&b.current.input.captured==snapshot.captured&&b.current.input.session.equals(snapshot.session)&&b.current.profile.epoch==profile.epoch)continue;}
             try{
-                Object input=VehicleEvProto.build(repo.getClass().getClassLoader(),profile.capacityWh,snapshot.soc,snapshot.rangeKm,6); // pinned CCS2 transport enum
-                VehicleEvProto.verify(input,profile.capacityWh,snapshot.soc,snapshot.rangeKm,6);
+                int[] connectors=VehicleEvConnection.get(profile.connector).energyEnums();
+                Object input=VehicleEvProto.build(repo.getClass().getClassLoader(),profile.capacityWh,snapshot.soc,snapshot.rangeKm,connectors);
+                VehicleEvProto.verify(input,profile.capacityWh,snapshot.soc,snapshot.rangeKm,connectors);
                 Token t;
                 synchronized(LOCK){
-                    if(!VehicleEvPolicy.live(snapshot,access,profile,SystemClock.elapsedRealtime())||b.suspended)continue;
+                    if(identityPowertrain()!=VehiclePowertrain.BEV||!VehicleEvPolicy.live(snapshot,access,profile,SystemClock.elapsedRealtime())||b.suspended)continue;
                     t=new Token(b,snapshot,profile,++serial);owned.put(new Identity(input,collected),t);b.current=t;cancel(b);
                 }
                 Future<?> future=b.launch(repo,input);
@@ -152,8 +169,14 @@ public final class VehicleEvBridge {
     static String description(){return state+(readback.isEmpty()?"":"\n\n"+readback);}
     static String profileSummary(){VehicleEvProfile.Profile p=VehicleEvProfile.current();return p==null?"Not configured":p.summary();}
     static void configure(Context c,String model,int capacityWh,boolean enabled,Runnable finished){
+        configure(c,model,capacityWh,"CCS2",true,enabled,finished);
+    }
+    static void configure(Context c,String model,int capacityWh,String connection,boolean confirmedBev,boolean enabled,Runnable finished){
+        configure(c,model,capacityWh,connection,confirmedBev?VehiclePowertrain.BEV:VehiclePowertrain.UNKNOWN,confirmedBev,enabled,finished);
+    }
+    static void configure(Context c,String model,int capacityWh,String connection,VehiclePowertrain type,boolean typeConfirmed,boolean enabled,Runnable finished){
         long epoch=VehicleEvProfile.invalidate();synchronized(LOCK){for(Binding b:repositories){b.suspended=false;maintain(b);}}
-        worker.execute(()->{try{boolean saved=VehicleEvProfile.save(c.getApplicationContext(),model,capacityWh,"CCS2",enabled,epoch);if(saved)state="EV profile saved. Waiting for fresh vehicle readings.";}catch(Exception e){if(VehicleEvProfile.epoch()==epoch)state="Could not save EV routing profile.";}
+        worker.execute(()->{try{boolean saved=VehicleEvProfile.save(c.getApplicationContext(),model,capacityWh,connection,type,typeConfirmed,enabled,epoch);if(saved)state="Vehicle profile saved. Force stop and reopen Maps after changing the vehicle type or charging connection.";}catch(Exception e){if(VehicleEvProfile.epoch()==epoch)state="Could not save vehicle profile.";}
             refresh();if(finished!=null)new android.os.Handler(android.os.Looper.getMainLooper()).post(finished);
         });
     }

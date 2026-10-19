@@ -6,7 +6,7 @@ import android.content.Context;
 public final class PatchBootstrap {
     public static void attach(Context context){
         long at=android.os.SystemClock.uptimeMillis();
-        try{MainUiScale.init(context);MicrogProvider.attach(context);MicrogWakeup.early(context);}
+        try{VehicleEvProfile.initializeEarly(context);VehicleEvBridge.initializeIdentity();MainUiScale.init(context);MicrogProvider.attach(context);MicrogWakeup.early(context);}
         finally{android.util.Log.i("MapsNavStartup","bootstrapAttach ms="+(android.os.SystemClock.uptimeMillis()-at));}
     }
     public static void install(Application app){
@@ -15,5 +15,6 @@ public final class PatchBootstrap {
         MicrogWakeup.install(app);
         VehicleEvBridge.attach(app);
         ClusterHost.install(app);
+        WheelServiceSetup.init(app);
     }
 }

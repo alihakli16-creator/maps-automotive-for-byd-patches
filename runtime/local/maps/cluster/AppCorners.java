@@ -45,7 +45,7 @@ final class AppCorners {
     private static boolean mainWindow(Activity activity){
         if(!ownActivity(activity)||activity.isInPictureInPictureMode())return false;
         try{
-            Display display=activity.getDisplay();Window window=activity.getWindow();
+            Display display=PlatformCompat.getDisplay(activity);Window window=activity.getWindow();
             if(display==null||display.getDisplayId()!=Display.DEFAULT_DISPLAY||window==null)return false;
             WindowManager.LayoutParams params=window.getAttributes();
             if(params.type!=WindowManager.LayoutParams.TYPE_BASE_APPLICATION&&params.type!=WindowManager.LayoutParams.TYPE_APPLICATION)return false;

@@ -26,6 +26,7 @@ final class CardPlacement {
         if(Math.abs(v.getTranslationX()-x)>.5f)v.setTranslationX(x);
         if(Math.abs(v.getTranslationY()-y)>.5f)v.setTranslationY(y);
         for(ViewParent p=v.getParent();p instanceof ViewGroup;p=p.getParent()){
+            if(ClusterHost.clipBoundary(p))break;
             ((ViewGroup)p).setClipChildren(false);((ViewGroup)p).setClipToPadding(false);
         }
     }
@@ -44,9 +45,11 @@ final class CardPlacement {
         if(logo.getWidth()==0||root.getWidth()==0){transform(logo,1,0,0);return;}
         int[] xy=new int[2],rxy=new int[2];logo.getLocationOnScreen(xy);root.getLocationOnScreen(rxy);
         float baseX=xy[0]-logo.getTranslationX(),baseY=xy[1]-logo.getTranslationY(),pad=root.getWidth()*.01f;
-        float x=s.logoPosition==ClusterSettings.LOGO_TOP_RIGHT?rxy[0]+root.getWidth()-logo.getWidth()-pad:rxy[0]+pad;
-        float y=s.logoPosition==ClusterSettings.LOGO_TOP_RIGHT?rxy[1]+pad:rxy[1]+root.getHeight()-logo.getHeight()-pad;
-        transform(logo,1,x-baseX,y-baseY);
+        float scale=1;
+        if(ClusterHost.profileGeometry(root)&&logo.getHeight()>0)scale=Math.min(1,Math.min((root.getWidth()-2*pad)/logo.getWidth(),(root.getHeight()-2*pad)/logo.getHeight()));
+        float x=s.logoPosition==ClusterSettings.LOGO_TOP_RIGHT?rxy[0]+root.getWidth()-logo.getWidth()*scale-pad:rxy[0]+pad;
+        float y=s.logoPosition==ClusterSettings.LOGO_TOP_RIGHT?rxy[1]+pad:rxy[1]+root.getHeight()-logo.getHeight()*scale-pad;
+        transform(logo,scale,x-baseX,y-baseY);
     }
     private static void place(View card,View root,ClusterSettings.State s){
         if(card.getVisibility()==View.GONE)return;
@@ -63,6 +66,7 @@ final class CardPlacement {
             card.getLocationOnScreen(xy);root.getLocationOnScreen(rxy);
             float baseX=xy[0]-card.getTranslationX(),baseY=xy[1]-card.getTranslationY();
             float scale=s.size/100f,margin=root.getWidth()*s.margin/100f;
+            boolean bounded=ClusterHost.profileGeometry(root);
             float x=rxy[0]+(s.side==0?margin:root.getWidth()-margin-card.getWidth()*scale);
             x=Math.max(rxy[0],Math.min(x,rxy[0]+root.getWidth()-card.getWidth()*scale));
             float footerBaseY=baseY;
@@ -75,6 +79,17 @@ final class CardPlacement {
             float total=Math.max(card.getHeight(),footerLaidOut?footerOffset+footerBounds.bottom:0)*scale;
             float y=baseY+root.getHeight()*s.vertical/100f;
             y=Math.max(rxy[1],Math.min(y,rxy[1]+root.getHeight()-total));
+            if(bounded){
+                RectF cardBounds=visibleBounds(card);
+                float left=Math.min(cardBounds.left,footerLaidOut?footerBounds.left:cardBounds.left);
+                float right=Math.max(cardBounds.right,footerLaidOut?footerBounds.right:cardBounds.right);
+                float top=Math.min(cardBounds.top,footerLaidOut?footerOffset+footerBounds.top:cardBounds.top);
+                float bottom=Math.max(cardBounds.bottom,footerLaidOut?footerOffset+footerBounds.bottom:cardBounds.bottom);
+                scale=Math.min(scale,Math.min((root.getWidth()-2*margin)/Math.max(1,right-left),root.getHeight()/Math.max(1,bottom-top)));
+                float groupX=rxy[0]+(s.side==0?margin:root.getWidth()-margin-(right-left)*scale);
+                x=groupX-left*scale;
+                y=Math.max(rxy[1]-top*scale,Math.min(baseY+root.getHeight()*s.vertical/100f,rxy[1]+root.getHeight()-bottom*scale));
+            }
             transform(card,scale,x-baseX,y-baseY);
             if(footer!=null){footer.getLocationOnScreen(fxy);
                 float fx=fxy[0]-footer.getTranslationX(),fy=fxy[1]-footer.getTranslationY();

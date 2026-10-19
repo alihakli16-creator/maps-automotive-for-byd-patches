@@ -25,10 +25,11 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Signature;
-import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
@@ -280,8 +281,73 @@ public final class VehicleLocalAdb implements Closeable {
         for(int i=0;i<64;i++){out.putInt(value.intValue());value=value.shiftRight(32);}
     }
     private static void validatePublicKey(RSAPublicKey key) throws IOException {
-        if(key.getModulus().bitLength()!=2048 || !key.getPublicExponent().equals(BigInteger.valueOf(65537)))
+        if(key.getModulus().signum()<=0 || key.getModulus().bitLength()!=2048 || !key.getModulus().testBit(0) || !key.getPublicExponent().equals(BigInteger.valueOf(65537)))
             throw new IOException("Invalid local ADB RSA key");
+    }
+
+    /** Some Android providers return RSAPrivateKey without the optional CRT interface. */
+    static RSAPublicKey publicForPrivate(KeyFactory factory,PrivateKey key,byte[] encoded) throws GeneralSecurityException,IOException {
+        RSAPublicKeySpec publicSpec=null;
+        try {
+            RSAPrivateCrtKeySpec crt=factory.getKeySpec(key,RSAPrivateCrtKeySpec.class);
+            publicSpec=new RSAPublicKeySpec(crt.getModulus(),crt.getPublicExponent());
+        }catch(GeneralSecurityException|RuntimeException unsupported){/* Provider may not expose CRT fields. */}
+        // Validate the stored envelope even if a provider accepts a valid prefix plus junk.
+        RSAPublicKeySpec encodedSpec=publicFromPkcs8(encoded);
+        if(publicSpec==null)publicSpec=encodedSpec;
+        else if(!encodedSpec.getModulus().equals(publicSpec.getModulus())||!encodedSpec.getPublicExponent().equals(publicSpec.getPublicExponent()))
+            throw new IOException("Local ADB private/public key mismatch");
+        BigInteger modulus=publicSpec.getModulus(),exponent=publicSpec.getPublicExponent();
+        if(modulus==null||exponent==null||modulus.signum()<=0||modulus.bitLength()!=2048||!modulus.testBit(0)||!BigInteger.valueOf(65537).equals(exponent))
+            throw new IOException("Invalid local ADB RSA key");
+        if(key instanceof RSAPrivateKey&&!modulus.equals(((RSAPrivateKey)key).getModulus()))
+            throw new IOException("Local ADB private/public key mismatch");
+        java.security.PublicKey publicKey=factory.generatePublic(publicSpec);
+        if(!(publicKey instanceof RSAPublicKey))throw new IOException("Unsupported local ADB public key");
+        RSAPublicKey result=(RSAPublicKey)publicKey;validatePublicKey(result);return result;
+    }
+
+    /** RFC5208 PrivateKeyInfo / RFC8017 two-prime RSAPrivateKey, public n/e only.
+     * Strict bounded DER; private integer bytes are checked/skipped without copying them.
+     * Existing keys are never rewritten or replaced if parsing/provider conversion fails.
+     */
+    static RSAPublicKeySpec publicFromPkcs8(byte[] encoded)throws IOException{
+        if(encoded==null||encoded.length<256||encoded.length>4096)throw new IOException("Invalid local ADB PKCS8 key");
+        Der outer=new Der(encoded,0,encoded.length),info=outer.value(0x30);outer.end();info.zero();
+        Der algorithm=info.value(0x30),oid=algorithm.value(0x06);
+        byte[] rsaOid={0x2a,(byte)0x86,0x48,(byte)0x86,(byte)0xf7,0x0d,0x01,0x01,0x01};
+        if(oid.remaining()!=rsaOid.length)throw new IOException("Invalid local ADB RSA algorithm");
+        for(byte expected:rsaOid)if(oid.next()!=(expected&255))throw new IOException("Invalid local ADB RSA algorithm");
+        oid.end();if(algorithm.remaining()!=0)algorithm.value(0x05).end();algorithm.end();
+        Der octets=info.value(0x04);info.end();Der rsa=octets.value(0x30);octets.end();rsa.zero();
+        BigInteger modulus=rsa.positivePublic(),exponent=rsa.positivePublic();
+        for(int i=0;i<6;i++)rsa.positive(); // d, p, q, dP, dQ, qInv, without materializing private integers.
+        rsa.end();return new RSAPublicKeySpec(modulus,exponent);
+    }
+    private static final class Der {
+        private final byte[] bytes;private int at;private final int limit;
+        Der(byte[] bytes,int at,int limit){this.bytes=bytes;this.at=at;this.limit=limit;}
+        int remaining(){return limit-at;}
+        int next()throws IOException{if(at>=limit)throw invalid();return bytes[at++]&255;}
+        Der value(int tag)throws IOException{
+            if(next()!=tag)throw invalid();int length=next();
+            if((length&128)!=0){
+                int count=length&127;if(count<1||count>2)throw invalid();length=0;
+                for(int i=0;i<count;i++){int b=next();if(i==0&&b==0)throw invalid();length=(length<<8)|b;}
+                if(length<128)throw invalid();
+            }
+            if(length>remaining())throw invalid();Der result=new Der(bytes,at,at+length);at+=length;return result;
+        }
+        void end()throws IOException{if(at!=limit)throw invalid();}
+        void zero()throws IOException{Der value=value(0x02);if(value.remaining()!=1||value.next()!=0)throw invalid();value.end();}
+        Der positive()throws IOException{
+            Der value=value(0x02);int length=value.remaining();if(length==0)throw invalid();
+            int first=value.bytes[value.at]&255;
+            if((first&128)!=0||(length==1&&first==0)||(length>1&&first==0&&(value.bytes[value.at+1]&128)==0))throw invalid();
+            return value;
+        }
+        BigInteger positivePublic()throws IOException{Der value=positive();if(value.remaining()>513)throw invalid();return new BigInteger(Arrays.copyOfRange(bytes,value.at,value.limit));}
+        private static IOException invalid(){return new IOException("Invalid local ADB PKCS8 key");}
     }
 
     static synchronized KeyPair loadOrCreateKey(File noBackup,BooleanSupplier allowed) throws IOException {
@@ -308,8 +374,8 @@ public final class VehicleLocalAdb implements Closeable {
                         in.readFully(encoded);if(in.read()!=-1)throw new IOException("Local ADB private key file changed");
                     }
                     try{
-                        RSAPrivateCrtKey key=(RSAPrivateCrtKey)factory.generatePrivate(new PKCS8EncodedKeySpec(encoded));
-                        RSAPublicKey pub=(RSAPublicKey)factory.generatePublic(new RSAPublicKeySpec(key.getModulus(),key.getPublicExponent()));
+                        PrivateKey key=factory.generatePrivate(new PKCS8EncodedKeySpec(encoded));
+                        RSAPublicKey pub=publicForPrivate(factory,key,encoded);
                         validatePublicKey(pub);requireAllowed(allowed);return new KeyPair(pub,key);
                     }finally{Arrays.fill(encoded,(byte)0);}
                 }

@@ -49,7 +49,7 @@ public final class MainUiScale {
     }
     private static boolean mainActivity(Activity activity){
         if(activity==null||!MAIN.equals(activity.getClass().getName())||activity.isFinishing()||activity.isDestroyed())return false;
-        try{return activity.getDisplay()!=null&&activity.getDisplay().getDisplayId()==Display.DEFAULT_DISPLAY;}
+        try{Display display=PlatformCompat.getDisplay(activity);return display!=null&&display.getDisplayId()==Display.DEFAULT_DISPLAY;}
         catch(RuntimeException unavailable){return false;}
     }
     private static void schedule(long delay){main.removeCallbacks(apply);main.postDelayed(apply,delay);}

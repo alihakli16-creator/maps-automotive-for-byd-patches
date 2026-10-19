@@ -1,5 +1,6 @@
-Maps Automotive for BYD — Morphe TEST preview.1
+Maps Automotive for BYD — Morphe TEST preview.3
 Copyright romanchukg-cloud. Licensed under GPL-3.0-only.
 Protocol routing approach informed by fangkampanat/gmaps-patches (GPL-3.0); its upstream NOTICE is retained in UPSTREAM-NOTICE.
+BYD DiLink 3 projection protocol and DiLink 5.1 cluster-theme research informed by shihabal3amri/DiPlay (GPL-3.0); fixed shell commands, firmware profiles and recovery remain firmware-specific and experimental.
 This bundle contains only owned patch and runtime code plus corresponding source and notices. No Google application implementation classes, Maps APK, signing keys, tokens or account data are bundled.
-This is an experimental Desktop preview, not a stable application release.
+This is an experimental TEST preview, not a stable application release. EV route integration remains BEV-only; PHEV/HEV profiles describe the powertrain but this bridge supplies no fuel or combined energy model.

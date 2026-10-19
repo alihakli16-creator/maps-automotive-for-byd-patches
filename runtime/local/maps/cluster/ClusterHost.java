@@ -15,7 +15,7 @@ import java.util.*;
 public final class ClusterHost implements DisplayManager.DisplayListener {
     private static final String TAG="MapsClusterTest";
     private static final String NATIVE="com.google.android.apps.gmm.car.embedded.auxiliarymap.EmbeddedClusterActivity";
-    private static ClusterHost instance;
+    private static volatile ClusterHost instance;
     private final Application app;
     private final Handler main=new Handler(Looper.getMainLooper());
     private final DisplayManager displays;
@@ -23,9 +23,25 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     private Presentation displayPresence;
     private final Instrumentation lifecycle=new Instrumentation();
     private boolean embeddedCreated,embeddedStarted,embeddedResumed,closing;
+    // D3 owns only the Activity created by this host, never another native/main Activity.
+    private boolean diLink3Owned;
+    private Activity diLink3Activity;
     private int displayId=-1;
     private boolean launchPending,mainSeen;
     private long launchAt;
+    private final boolean diLink51=DiLink51Profile.supported(Build.FINGERPRINT);
+    private DiLink51Monitor profileMonitor;
+    private long profileMonitorEpoch;
+    private ClusterThemeState.Snapshot profileState=ClusterThemeState.unknown("starting");
+    private volatile boolean profileZoomVisible;
+    private DiLink51Profile.Area profileArea;
+    private String profileRequest="";
+    private volatile String profileReason="starting";
+    /** Cached OEM gate only; input callbacks never query Android usage or displays. */
+    static boolean zoomProfileReady(){ClusterHost host=instance;return host==null||!host.diLink51||host.profileZoomVisible;}
+    static String projectionStatus(){ClusterHost host=instance;return host==null?"Starting.":host.diLink51?host.profileReason:"Standard cluster output.";}
+    static boolean profileGeometry(View root){ClusterHost host=instance;return host!=null&&host.diLink51&&host.profileArea!=null&&clusterRoot.get()==root;}
+    static boolean clipBoundary(ViewParent parent){return parent instanceof ProjectionBoundary;}
     public static synchronized void install(Application app) {
         if(instance!=null||!app.getPackageName().equals(Application.getProcessName()))return;
         try {
@@ -121,6 +137,9 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         if (instance == null || instance.cluster == null || manager == null) return;
         try { manager.getClass().getMethod("q").invoke(manager); }
         catch (Exception e) { Log.w(TAG, "cluster camera refresh", e); }
+        // Navigation uses its own native camera container rather than the idle anchor.
+        // The adapter verifies the current isolated owner and keeps the route state intact.
+        ClusterZoom.refreshNavigationViewport(manager);
         recordClusterViewport();
     }
     private static final Runnable viewportReport = () -> {
@@ -229,10 +248,12 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     private ClusterHost(Application app) {
         this.app=app;displays=(DisplayManager)app.getSystemService(Context.DISPLAY_SERVICE);
         displays.registerDisplayListener(this,main);
+        if(DiLink3Projection.isCandidate())DiLink3Projection.init(app,()->main.post(this::reconcile));
+        if(diLink51)DiLink51Setup.init(app,()->main.post(()->{invalidateProfile();reconcile();}));
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks(){
             public void onActivityPreCreated(Activity a,Bundle b){
                 if(a.getClass().getName().equals(NATIVE)) {
-                    cluster=a;launchPending=false;displayId=a.getDisplay().getDisplayId();
+                    cluster=a;launchPending=false;Display display=PlatformCompat.getDisplay(a);displayId=display==null?-1:display.getDisplayId();
                     a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                 }
             }
@@ -242,12 +263,18 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
                     View root=a.getWindow().getDecorView();
                     root.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
                     inspectClusterRoot(root);
-                    Log.i(TAG,"native AAOS cluster created display="+a.getDisplay().getDisplayId());
+                    Display display=PlatformCompat.getDisplay(a);
+                    Log.i(TAG,"native AAOS cluster created display="+(display==null?-1:display.getDisplayId()));
                 } else if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")) {
+                    ClusterZoom.mainCreated(a);
                     mainSeen=true;main.postDelayed(()->reconcile(),1500);
                 }
             }
-            public void onActivityDestroyed(Activity a){if(a==cluster&&!closing){cluster=null;clearViewport();main.postDelayed(()->reconcile(),1000);}}
+            public void onActivityDestroyed(Activity a){
+                ClusterZoom.mainDestroyed(a);
+                if(diLink3Owned&&a==diLink3Activity&&!closing){unexpectedDiLink3Destroyed(a);return;}
+                if(a==cluster&&!closing){if(diLink51)invalidateProfile();cluster=null;clearViewport();main.postDelayed(()->reconcile(),1000);}
+            }
             public void onActivityStarted(Activity a){}
             public void onActivityResumed(Activity a){}
             public void onActivityPaused(Activity a){}
@@ -261,14 +288,23 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         main.postDelayed(new Runnable(){public void run(){reconcile();restartForTheme();recordClusterViewport();main.postDelayed(this,2000);}},3000);
         Log.i(TAG,"installed "+BuildInfo.VERSION+"; native AAOS cluster host");
     }
-    private void clearViewport(){layerController=new java.lang.ref.WeakReference<>(null);viewportManager=new java.lang.ref.WeakReference<>(null);clusterRoot=new java.lang.ref.WeakReference<>(null);appliedPointerY=Float.NaN;}
+    private void clearViewport(){ClusterZoom.detach();layerController=new java.lang.ref.WeakReference<>(null);viewportManager=new java.lang.ref.WeakReference<>(null);clusterRoot=new java.lang.ref.WeakReference<>(null);appliedPointerY=Float.NaN;}
     private void reconcile() {
         if(!mainSeen||closing)return;
         boolean enabled=ClusterSettings.state().mapEnabled&&!new java.io.File(app.getExternalFilesDir(null),"cluster-disabled").exists();
+        if(DiLink3Projection.isCandidate()){
+            DiLink3Projection.reconcile(enabled);
+            if(DiLink3Projection.enabled()||DiLink3Projection.recoveryPending()){
+                reconcileDiLink3(enabled);return;
+            }
+        }
+        if(diLink51){reconcileProfile(enabled);return;}
         Display target=null;
         for(Display d:displays.getDisplays())if((d.getName().startsWith("shared_")&&d.getName().contains("XDJAScreenProjection"))||(BuildInfo.VERSION.startsWith("patch-lab.")&&d.getName().startsWith("Overlay #"))){target=d;break;}
         if(!enabled||target==null){closePresence();return;}
-        if(cluster!=null&&displayPresence!=null&&displayPresence.isShowing()&&displayId==target.getDisplayId())return;
+        if(cluster!=null&&displayPresence!=null&&displayPresence.isShowing()&&displayId==target.getDisplayId()){
+            ClusterZoom.visibility(cluster,true);return;
+        }
         if(launchPending||SystemClock.elapsedRealtime()-launchAt<15000)return;
         closePresence();
         launchPending=true;launchAt=SystemClock.elapsedRealtime();displayId=target.getDisplayId();
@@ -289,21 +325,148 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
                 }
             };
             displayPresence.show();
+            ClusterZoom.visibility(cluster,true);
         } catch(Throwable e){Log.e(TAG,"cluster presentation",e);closePresence();}
         finally{launchPending=false;}
+    }
+    /** Separate opt-in backend (SDK 29 only); DiLink 5.1 profile and Tang selection are separate paths. */
+    private void reconcileDiLink3(boolean mapEnabled){
+        try{reconcileDiLink3Now(mapEnabled);}
+        catch(Throwable error){
+            Log.e(TAG,"DiLink 3 host lifecycle",error);
+            try{closePresence();}catch(Throwable cleanup){Log.w(TAG,"DiLink 3 failed-create cleanup",cleanup);}
+            finally{suspendDiLink3Window();}
+        }
+    }
+    private void reconcileDiLink3Now(boolean mapEnabled){
+        if(!mapEnabled||!DiLink3Projection.ready()){
+            if(cluster!=null||displayPresence!=null){WheelKeyService.endModeNow();closePresence();}
+            return;
+        }
+        Display target=null;
+        for(Display display:displays.getDisplays())if(DiLink3Projection.matches(display)){
+            if(target!=null){WheelKeyService.endModeNow();closePresence();DiLink3Projection.windowVisible(false);return;}
+            target=display;
+        }
+        if(target==null){WheelKeyService.endModeNow();closePresence();DiLink3Projection.windowVisible(false);return;}
+        if(cluster!=null&&displayPresence!=null&&displayPresence.isShowing()&&displayId==target.getDisplayId()){
+            DiLink3Projection.windowVisible(true);ClusterZoom.visibility(cluster,true);return;
+        }
+        if(launchPending)return;
+        WheelKeyService.endModeNow();closePresence();
+        launchPending=true;displayId=target.getDisplayId();diLink3Owned=true;
+        final Display selected=target;
+        try{
+            displayPresence=new Presentation(app,selected){
+                protected void onCreate(Bundle saved){
+                    super.onCreate(saved);
+                    getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.BLACK));
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    android.widget.FrameLayout holder=new android.widget.FrameLayout(getContext());setContentView(holder);
+                    try{createEmbedded(getContext(),selected,holder);}
+                    catch(Throwable error){throw new IllegalStateException("DiLink 3 native cluster creation failed",error);}
+                }
+            };
+            displayPresence.show();
+            if(cluster==null||!displayPresence.isShowing())throw new IllegalStateException("DiLink 3 cluster window unavailable");
+            DiLink3Projection.windowVisible(true);ClusterZoom.visibility(cluster,true);
+        }finally{launchPending=false;}
+    }
+    private void stopProfileMonitor(){
+        if(profileMonitor!=null){++profileMonitorEpoch;profileMonitor.close();profileMonitor=null;}
+        profileState=ClusterThemeState.unknown("automatic_visibility_off");
+    }
+    private void invalidateProfile(){
+        profileZoomVisible=false;
+        WheelKeyService.endModeNow();
+        ClusterZoom.reset();
+    }
+    private void hideProfile(String reason){
+        profileReason=reason;invalidateProfile();closePresence();profileRequest="";
+    }
+    private void reconcileProfile(boolean enabled){
+        if(!enabled){stopProfileMonitor();hideProfile("Cluster map is off.");return;}
+        if(!DiLink51Setup.loaded()){hideProfile("Loading DiLink 5.1 settings.");return;}
+        boolean automatic=DiLink51Setup.automatic();
+        if(automatic&&profileMonitor==null){
+            final long epoch=++profileMonitorEpoch;
+            profileState=ClusterThemeState.unknown("starting");
+            profileMonitor=new DiLink51Monitor(app,state->{
+                if(profileMonitor==null||profileMonitorEpoch!=epoch)return;
+                profileState=state;reconcile();
+            });
+            profileMonitor.start();
+        }else if(!automatic&&profileMonitor!=null)stopProfileMonitor();
+        ClusterProjectionPolicy.Choice choice=ClusterProjectionPolicy.select(Build.FINGERPRINT,automatic,DiLink51Setup.manualTheme(),profileState);
+        if(!choice.draw){hideProfile("Automatic layout: "+choice.reason+". Zoom controls pass through.");return;}
+        if(profileZoomVisible&&!choice.zoomVisible)invalidateProfile();
+        Display target=null;
+        for(Display display:displays.getDisplays())if(choice.displayName.equals(display.getName())){
+            if(target!=null){hideProfile("Ambiguous projection display.");return;}
+            target=display;
+        }
+        if(target==null||!target.isValid()){hideProfile("Required "+choice.theme+" projection layer is unavailable.");return;}
+        android.util.DisplayMetrics metrics=new android.util.DisplayMetrics();target.getRealMetrics(metrics);
+        DiLink51Profile.Area area=DiLink51Profile.area(choice.theme,metrics.widthPixels,metrics.heightPixels);
+        if(area==null){hideProfile("Unverified cluster resolution. Output paused.");return;}
+        String request=choice.theme+":"+target.getDisplayId()+":"+area.left+":"+area.top+":"+area.width+":"+area.height;
+        if(!request.equals(profileRequest)){
+            invalidateProfile();closePresence();profileRequest=request;launchAt=0;
+        }
+        profileReason=automatic?"Following "+choice.theme+"; stock map visible.":"Manual "+choice.theme+". Enable automatic visibility and Usage Access for zoom.";
+        if(cluster!=null&&displayPresence!=null&&displayPresence.isShowing()&&displayId==target.getDisplayId()){
+            profileZoomVisible=choice.zoomVisible;ClusterZoom.visibility(cluster,true);return;
+        }
+        if(launchPending||SystemClock.elapsedRealtime()-launchAt<1500)return;
+        invalidateProfile();closePresence();profileArea=area;
+        launchPending=true;launchAt=SystemClock.elapsedRealtime();displayId=target.getDisplayId();
+        final Display selected=target;
+        try{
+            displayPresence=new Presentation(app,selected){
+                protected void onCreate(Bundle saved){
+                    super.onCreate(saved);
+                    getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                    ProjectionBoundary canvas=new ProjectionBoundary(getContext());
+                    ProjectionBoundary content=new ProjectionBoundary(getContext());
+                    android.widget.FrameLayout.LayoutParams position=new android.widget.FrameLayout.LayoutParams(area.width,area.height,Gravity.TOP|Gravity.LEFT);
+                    position.leftMargin=area.left;position.topMargin=area.top;
+                    canvas.addView(content,position);setContentView(canvas);
+                    try{createEmbedded(getContext(),selected,content);}
+                    catch(Throwable error){throw new IllegalStateException("DiLink 5.1 native cluster creation failed",error);}
+                }
+            };
+            displayPresence.show();
+            profileZoomVisible=choice.zoomVisible&&cluster!=null;
+            ClusterZoom.visibility(cluster,true);
+        }catch(Throwable error){Log.e(TAG,"DiLink 5.1 presentation",error);hideProfile("Cluster presentation unavailable.");}
+        finally{launchPending=false;}
+    }
+    /** A hard outer boundary: card positioning cannot unclip into stock speed/status readouts. */
+    private static final class ProjectionBoundary extends android.widget.FrameLayout {
+        ProjectionBoundary(Context context){super(context);super.setClipChildren(true);super.setClipToPadding(true);}
+        @Override public void setClipChildren(boolean ignored){super.setClipChildren(true);}
+        @Override public void setClipToPadding(boolean ignored){super.setClipToPadding(true);}
     }
     /** Public Instrumentation attaches the native screen to our permitted Presentation context.
      * Its decor is a child view; no ActivityTaskManager launch on BYD's private display occurs. */
     @SuppressWarnings({"deprecation","unchecked"})
     private void createEmbedded(Context context,Display target,android.widget.FrameLayout holder)throws Exception {
         android.util.DisplayMetrics metrics=new android.util.DisplayMetrics();target.getRealMetrics(metrics);
-        Bundle state=new Bundle();state.putParcelable("android.car:activityState.unobscured",new Rect(32,32,metrics.widthPixels-32,metrics.heightPixels-32));
+        // Native content is measured inside the profile's display rectangle. The Google
+        // viewport is content-local; display offsets never enter its camera coordinates.
+        int width=diLink51&&profileArea!=null?profileArea.width:metrics.widthPixels;
+        int height=diLink51&&profileArea!=null?profileArea.height:metrics.heightPixels;
+        Bundle state=new Bundle();state.putParcelable("android.car:activityState.unobscured",new Rect(32,32,width-32,height-32));
         Intent intent=new Intent(Intent.ACTION_MAIN).setComponent(new ComponentName(app.getPackageName(),NATIVE))
             .putExtra("android.car.cluster.ClusterActivityState",state)
             .putExtra("com.google.android.gms.car.EXTRA_SHOW_TURN_CARD",true);
         android.content.pm.ActivityInfo info=app.getPackageManager().getActivityInfo(intent.getComponent(),0);
         Class<? extends Activity> type=(Class<? extends Activity>)Class.forName(NATIVE,true,app.getClassLoader());
         cluster=lifecycle.newActivity(type,clusterContext(context),null,app,intent,info,"Instrument cluster",null,null,null);
+        if(diLink3Owned)diLink3Activity=cluster;
         cluster.setTheme(info.getThemeResource());
         cluster.getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
         lifecycle.callActivityOnCreate(cluster,null);embeddedCreated=true;
@@ -317,11 +480,15 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         lifecycle.callActivityOnResume(cluster);embeddedResumed=true;
         registerClusterLayers();
         inspectClusterRoot(decor);
+        ClusterZoom.attach(cluster,decor);
         Log.i(TAG,"native cluster embedded in Presentation display="+target.getDisplayId());
     }
     private void closePresence(){
+        if(diLink3Owned){closeDiLink3Presence(null);return;}
         if(closing)return;
+        if(diLink51){closeProfilePresence();return;}
         closing=true;
+        ClusterZoom.detach();
         Activity previous=cluster;Presentation window=displayPresence;
         displayPresence=null;
         if(previous!=null){
@@ -334,6 +501,75 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         cluster=null;embeddedCreated=embeddedStarted=embeddedResumed=false;clearViewport();
         if(window!=null)try{window.dismiss();}catch(RuntimeException ignored){}
         closing=false;
+    }
+    /** A real destroy callback has already run native onDestroy; never call it twice. */
+    private void unexpectedDiLink3Destroyed(Activity destroyed){
+        if(!diLink3Owned||destroyed!=diLink3Activity||closing)return;
+        try{closeDiLink3Presence(destroyed);}finally{suspendDiLink3Window();}
+    }
+    private void suspendDiLink3Window(){
+        try{DiLink3Projection.windowFailed();}
+        catch(Throwable error){Log.e(TAG,"DiLink 3 window suspension",error);}
+    }
+    /** Catch each D3 teardown boundary and keep owner references until all stages ran.
+     * Successful-onCreate flags stay authoritative: no blind destroy of a partial native create.
+     * This does not acknowledge/clear the controller's durable recovery ownership. */
+    private void closeDiLink3Presence(Activity alreadyDestroyed){
+        if(closing)return;
+        closing=true;
+        final Activity previous=diLink3Activity;
+        final Presentation window=displayPresence;
+        boolean failed=false;
+        try{
+            if(!diLink3Cleanup("wheel mode",WheelKeyService::endModeNow))failed=true;
+            if(!diLink3Cleanup("camera detach",ClusterZoom::detach))failed=true;
+            if(previous!=null){
+                if(previous!=alreadyDestroyed&&embeddedResumed&&!diLink3Cleanup("pause",()->lifecycle.callActivityOnPause(previous)))failed=true;
+                if(!diLink3Cleanup("decor detach",()->{
+                    Window ownedWindow=previous.getWindow();
+                    View decor=ownedWindow==null?null:ownedWindow.peekDecorView();
+                    if(decor!=null&&decor.getParent() instanceof ViewGroup)((ViewGroup)decor.getParent()).removeView(decor);
+                }))failed=true;
+                if(previous!=alreadyDestroyed&&embeddedStarted&&!diLink3Cleanup("stop",()->lifecycle.callActivityOnStop(previous)))failed=true;
+                if(previous!=alreadyDestroyed&&embeddedCreated&&!diLink3Cleanup("destroy",()->lifecycle.callActivityOnDestroy(previous)))failed=true;
+            }
+            if(window!=null&&!diLink3Cleanup("window dismiss",window::dismiss))failed=true;
+        }finally{
+            // No new D3 window can enter while closing; release only these captured owners.
+            if(cluster==previous)cluster=null;
+            if(displayPresence==window)displayPresence=null;
+            if(diLink3Activity==previous)diLink3Activity=null;
+            embeddedCreated=embeddedStarted=embeddedResumed=false;
+            diLink3Owned=false;displayId=-1;launchPending=false;
+            try{if(!diLink3Cleanup("viewport clear",this::clearViewport))failed=true;}
+            finally{closing=false;}
+            if(failed)suspendDiLink3Window();
+        }
+    }
+    private boolean diLink3Cleanup(String stage,Runnable action){
+        try{action.run();return true;}
+        catch(Throwable error){Log.w(TAG,"DiLink 3 cleanup "+stage,error);return false;}
+    }
+    private void closeProfilePresence(){
+        invalidateProfile();closing=true;
+        Activity previous=cluster;Presentation window=displayPresence;displayPresence=null;
+        try{
+            ClusterZoom.detach();
+            if(previous!=null){
+                if(embeddedResumed)try{lifecycle.callActivityOnPause(previous);}catch(Throwable error){Log.w(TAG,"profile cluster pause",error);}
+                try{View decor=previous.getWindow().getDecorView();if(decor.getParent() instanceof ViewGroup)((ViewGroup)decor.getParent()).removeView(decor);}
+                catch(Throwable error){Log.w(TAG,"profile cluster detach",error);}
+                if(embeddedStarted)try{lifecycle.callActivityOnStop(previous);}catch(Throwable error){Log.w(TAG,"profile cluster stop",error);}
+                if(embeddedCreated)try{lifecycle.callActivityOnDestroy(previous);}catch(Throwable error){Log.w(TAG,"profile cluster destroy",error);}
+            }
+        }finally{
+            cluster=null;embeddedCreated=embeddedStarted=embeddedResumed=false;
+            profileZoomVisible=false;profileArea=null;
+            try{clearViewport();}finally{
+                try{if(window!=null)window.dismiss();}catch(RuntimeException error){Log.w(TAG,"profile cluster dismiss",error);}
+                finally{closing=false;}
+            }
+        }
     }
     private void registerClusterLayers(){
         try{

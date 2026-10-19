@@ -127,6 +127,7 @@ public final class AutomotiveMicrogPatch {
   ResourcePatchBuilder resources=new ResourcePatchBuilder(null,null,false);
   resources.execute(context->{
    requireInput(context.getPackageMetadata());
+   try{WheelResources.apply(context);}catch(Exception e){throw new IllegalStateException("Wheel key metadata resources failed",e);}
    try(var doc=context.document("AndroidManifest.xml")){
     isolateIdentity(doc);
     Element app=(Element)doc.getElementsByTagName("application").item(0);
@@ -145,6 +146,7 @@ public final class AutomotiveMicrogPatch {
     vehicle.setAttribute("android:exported","true");vehicle.setAttribute("android:permission","android.permission.DUMP");
     vehicle.setAttribute("android:grantUriPermissions","false");app.appendChild(vehicle);
     VehicleManifest.apply(doc);
+    WheelResources.manifest(doc);
     String[][] meta={{"app.revanced.android.gms.SPOOFED_PACKAGE_NAME","com.google.android.apps.maps"},{"app.revanced.android.gms.SPOOFED_PACKAGE_SIGNATURE","38918a453d07199354f8b19af05ec6562ced5788"},{"app.revanced.MICROG_PACKAGE_NAME","app.revanced.android.gms"},{"app.revanced.android.gms.MICROG_PACKAGE_NAME","app.revanced.android.gms"}};
     for(String[] pair:meta){Element e=doc.createElement("meta-data");e.setAttribute("android:name",pair[0]);e.setAttribute("android:value",pair[1]);app.appendChild(e);}
    }catch(Exception e){throw new IllegalStateException("AAOS laboratory manifest failed",e);}
@@ -160,6 +162,7 @@ public final class AutomotiveMicrogPatch {
   patch.extendWith(()->{var stream=AutomotiveMicrogPatch.class.getClassLoader().getResourceAsStream(EXTENSION);if(stream==null)throw new IllegalStateException("Missing "+EXTENSION);return stream;});
   patch.execute(context->{
    requireInput(context.getPackageMetadata());
+   Api29Hooks.apply(context);
    Buildings3dHooks.apply(context);
    SearchAlignmentHooks.apply(context);
    int routes=0,classes=0,gates=0;
@@ -188,6 +191,7 @@ public final class AutomotiveMicrogPatch {
    InstructionExtensions.INSTANCE.addInstructions(notification,0,"iget v0, p2, "+errorCode(notification)+"\ninvoke-static {v0}, "+PROVIDER+"->suppressesNotification(I)Z\nmove-result v0\nif-eqz v0, :notify\nreturn-void\n:notify\nnop");
    ClusterHooks.location(context);
    ClusterHooks.apply(context);
+   WheelZoomHooks.apply(context);
    UiScaleHooks.apply(context);
    NavigationHooks.apply(context);
    VehicleEvHooks.apply(context);

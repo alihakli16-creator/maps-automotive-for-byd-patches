@@ -160,7 +160,7 @@ public final class VehicleAutoReader {
                 if(!"own".equals(identity))throw new IOException();record.put("phase","running");saveOwn(record);state="Automatic reader connected.";android.util.Log.i("MapsVehicleAuto","reader launched and verified");VehicleAutoJob.schedule(c,60000);
             }
         }catch(VehicleLocalAdb.ApprovalRequiredException approval){state="Allow the Maps ADB key on this head unit, then retry. Select Always allow for automatic startup.";if(enabled)VehicleAutoJob.schedule(c,30000);}
-        catch(Exception unavailable){String reason=unavailable.getMessage();boolean safe=reason!=null&&reason.contains("ADB ")&&reason.matches("[A-Za-z0-9 :()./-]{1,120}");android.util.Log.w("MapsVehicleAuto",stage+": "+unavailable.getClass().getSimpleName()+(safe?" / "+reason:""));if(enabled)state="Waiting for local ADB (127.0.0.1:5555).";if(enabled)VehicleAutoJob.schedule(c,30000);}
+        catch(Exception unavailable){String reason=unavailable.getMessage();boolean safe=reason!=null&&reason.contains("ADB ")&&reason.matches("[A-Za-z0-9 :()./-]{1,120}");android.util.Log.w("MapsVehicleAuto",VehicleReaderFailure.stage(stage)+": "+VehicleReaderFailure.type(unavailable)+(safe?" / "+reason:""));if(enabled)state=VehicleReaderFailure.message(stage,unavailable);if(enabled)VehicleAutoJob.schedule(c,30000);}
         finally{connection=null;if(!allowed(epoch)){endOwnLease();if(!enabled||!VehicleDataStore.enabled(c))VehicleAutoJob.cancel(c);if(!enabled)state="Automatic reader is off.";}}
     }
 }

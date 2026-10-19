@@ -152,6 +152,9 @@ final class ClusterMenu {
         action("Map colours",theme(s.clusterTheme),()->choices("Map colours","cluster_theme",new String[]{"Auto","Match screen","Light","Dark"},new int[]{3,2,1,0},"Auto follows sunrise and sunset at the car's position. Match screen follows the head unit. During navigation, Maps chooses its own colours. "+ClusterHost.themeDescription()));
         toggle("Satellite map","Satellite map on instrument cluster","cluster_satellite",s.satellite);
         action("Map layout",null,this::layout);
+        if(DiLink51Setup.supported()){DiLink51Setup.init(activity.getApplication(),null);action("BYD instrument theme","DiLink 5.1 · full and side map layers",this::oemLayout);}
+        action("Steering-wheel zoom",WheelServiceSetup.enabled()?"On · instrument cluster only":"Off",this::wheel);
+        if(DiLink3Projection.isCandidate())action("DiLink 3 cluster test",DiLink3Projection.enabled()?"Experimental projection enabled":"Off",this::diLink3);
         action("Route card",s.visible?s.size+"% · "+(s.side==0?"Left":"Right"):"Off",this::card);
         toggle("Picture-in-picture","Picture-in-picture when leaving Maps","picture_in_picture",s.pictureInPicture);
         if(BydGuidance.untestedHudAvailable())action("HUD output",null,this::hud);
@@ -167,6 +170,35 @@ final class ClusterMenu {
         action("BYD vehicle data","ADB battery and electric range",this::vehicle);
         if(EvTest.available())action("Test EV data","Synthetic values",()->EvTest.show(activity));
         note("Changes are saved automatically.");
+    }
+    private void diLink3(){
+        start("dilink3","DiLink 3 cluster test");
+        DiLink3Projection.init(activity.getApplication(),null);
+        LinearLayout enabledRow=row("Enable DiLink 3 map projection","Experimental · Android 10 / DiLink 3 only");
+        MapsSwitch control=new MapsSwitch(context);control.setChecked(DiLink3Projection.enabled());
+        control.setContentDescription("Enable DiLink 3 map projection");
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);enabledRow.addView(control,lp);
+        control.setOnCheckedChangeListener((button,on)->{
+            if(!control.isEnabled())return;control.setEnabled(false);
+            Runnable done=()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();};
+            if(on)new AlertDialog.Builder(activity).setTitle("Test DiLink 3 instrument-cluster map?")
+                .setMessage("Use only on a parked DiLink 3 head unit running Android 10. Maps will use local ADB to switch the instrument cluster into projection mode. Its map area can be blank for several seconds while the display is prepared.\n\nKeep ADB enabled and approve the Maps key if prompted. This is an unverified car test. Turn this option off or use Restore stock cluster if the result is not usable. A forced stop can leave projection active until Maps is opened again for recovery.")
+                .setNegativeButton("Cancel",(d,w)->done.run()).setOnCancelListener(d->done.run())
+                .setPositiveButton("Start test",(d,w)->DiLink3Projection.configure(activity,true,true,done)).show();
+            else DiLink3Projection.configure(activity,false,false,done);
+        });
+        enabledRow.setBackground(ripple(0));enabledRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
+        LinearLayout state=row("Projection status",DiLink3Projection.status());rule();
+        final long generation=pageGeneration;
+        Runnable status=new Runnable(){public void run(){
+            if(!dialog.isShowing()||!"dilink3".equals(page)||pageGeneration!=generation)return;
+            summary(state,DiLink3Projection.status());readerMain.postDelayed(this,1000);
+        }};readerMain.postDelayed(status,1000);
+        action("Authorize or retry","Approve this head unit's local ADB connection",()->DiLink3Projection.retry(activity,true,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
+        action("Restore stock cluster","Pause projection and return to the stock instrument layout",()->DiLink3Projection.restore(activity,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
+        note("Also keep Show cluster map enabled. This test creates the known DiLink 3 projection display and sends the native Google cluster screen there. It does not enable the BYD battery reader and does not claim HUD support.");
+        note("127.0.0.1:5555 is this head unit. Keep it unchanged. Send the exact status, firmware version and whether a map is physically visible. No uninstall or account reset is needed.");
+        note("Restore pauses this session. Turn the test option off after testing to keep it off on the next Maps launch.");
     }
     private void interfaceSize(){
         start("interface_size","Interface size");int selected=MainUiScale.selected(prefs);
@@ -186,6 +218,79 @@ final class ClusterMenu {
         start("layout","Map layout");ClusterSettings.State s=ClusterSettings.state();
         action("Google Maps logo",s.logoPosition==0?"Bottom left":"Top right",()->choices("Google Maps logo","logo_position",new String[]{"Bottom left","Top right"},new int[]{0,1},null));
         slider("Pointer vertical offset","pointer_vertical",-25,25,s.pointerVertical);note("Negative moves the pointer up; positive moves it down.");
+    }
+    private void oemLayout(){
+        if(!DiLink51Setup.supported()){main();return;}
+        DiLink51Setup.init(activity.getApplication(),null);DiLink51Setup.refreshStatus();
+        start("oem_layout","BYD instrument theme");final boolean loaded=DiLink51Setup.loaded();
+        LinearLayout autoRow=row("Follow instrument theme","Use stock BYD activity visibility to follow the full map and side card");
+        MapsSwitch control=new MapsSwitch(context);control.setChecked(DiLink51Setup.automatic());control.setEnabled(loaded);control.setContentDescription("Follow instrument theme");
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);autoRow.addView(control,lp);
+        control.setOnCheckedChangeListener((button,on)->{if(control.isEnabled()){DiLink51Setup.setAutomatic(on);oemLayout();}});
+        autoRow.setBackground(ripple(0));autoRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
+        LinearLayout status=row("Usage Access",DiLink51Setup.status());rule();
+        action("Allow Usage Access · ADB","One-time setup for Maps only; review the consent dialog",()->DiLink51Setup.prepareUsageAccess(activity,true,()->{if(dialog.isShowing()&&"oem_layout".equals(page))oemLayout();}));
+        note("Manual layout");
+        DiLink51Profile.Theme selected=DiLink51Setup.manualTheme();
+        DiLink51Profile.Theme[] values={DiLink51Profile.Theme.MAP,DiLink51Profile.Theme.SCENARIO,DiLink51Profile.Theme.SIMPLE};
+        String[] names={"Map · full-width map","Scenario · right-side map","Simple · right-side map"};
+        for(int i=0;i<values.length;i++){
+            final DiLink51Profile.Theme value=values[i];LinearLayout choice=row(names[i],null);
+            ImageView radio=new ImageView(context);radio.setImageDrawable(new Mark(value==selected?4:3,value==selected?accent:ink));LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(dp(28),dp(36));rp.leftMargin=dp(12);choice.addView(radio,rp);
+            choice.setEnabled(loaded);choice.setBackground(ripple(0));choice.setFocusable(true);choice.setContentDescription(names[i]+(value==selected?", selected":""));
+            choice.setOnClickListener(v->{if(choice.isEnabled()){DiLink51Setup.setTheme(value);oemLayout();}});rule();
+        }
+        note("Manual mode uses your selected layer. It cannot tell whether the driver can see that map, so native zoom controls require automatic following, Usage Access and a known visible stock layout.");
+        note("Automatic following is off by default. It reads only the four supported stock cluster activities. Unknown visibility hides the map and releases wheel controls. Allowing Usage Access does not enable following; use the switch separately. Turning it off stops reading and keeps the Android grant.");
+        note("This profile is restricted to two exact DiLink 5.1/UI7 firmware builds. The side layer is never replaced with the full layer when it is unavailable. UI7 and the new layout still need an on-car test.");
+        final long expected=pageGeneration;
+        readerMain.postDelayed(new Runnable(){public void run(){
+            if(!dialog.isShowing()||!"oem_layout".equals(page)||pageGeneration!=expected)return;
+            if(loaded!=DiLink51Setup.loaded()){oemLayout();return;}
+            summary(status,DiLink51Setup.status());readerMain.postDelayed(this,500);
+        }},500);
+    }
+    private void wheel(){
+        start("wheel","Steering-wheel zoom");
+        ClusterZoom.prepare();
+        LinearLayout enabledRow=row("Enable steering-wheel zoom","Use the assigned buttons for the instrument cluster map");
+        MapsSwitch control=new MapsSwitch(context);control.setChecked(WheelServiceSetup.enabled());
+        control.setContentDescription("Enable steering-wheel zoom");
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);enabledRow.addView(control,lp);
+        control.setOnCheckedChangeListener((button,on)->{
+            if(!control.isEnabled())return;
+            control.setEnabled(false);
+            WheelServiceSetup.configure(activity,on,on,()->{if(dialog.isShowing()&&"wheel".equals(page))wheel();});
+        });
+        enabledRow.setBackground(ripple(0));enabledRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
+        LinearLayout service=row("Service",WheelServiceSetup.status());rule();
+        LinearLayout camera=row("Map controls",ClusterZoom.description());rule();
+        LinearLayout key=row("Last control key",WheelKeyService.lastKey());rule();
+        if(WheelServiceSetup.enabled())action("Authorize or retry","Allow the Maps ADB key on this head unit",()->
+            WheelServiceSetup.configure(activity,true,true,()->{if(dialog.isShowing()&&"wheel".equals(page))wheel();}));
+        action("Zoom in","Instrument cluster map only",()->clusterZoom(1));
+        action("Zoom out","Instrument cluster map only",()->clusterZoom(-1));
+        action("Reset cluster zoom","Return to automatic map zoom",()->{ClusterZoom.reset();wheel();});
+        note("Press the custom steering wheel button to turn cluster zoom controls on, then use volume + or − to zoom the instrument cluster map. Press the custom button again to restore volume controls. A call, unavailable cluster map or turning this feature off ends the control mode; press the custom button again afterwards.");
+        note("The chosen map zoom stays until Reset cluster zoom or the cluster map is recreated. The central map keeps its own scale. Outside the control mode, the volume buttons work normally.");
+        note("Default buttons are for BYD Tang. The console volume control may send the same events and zoom too. Other firmware can use different buttons.");
+        note("Setup uses ADB on this head unit and a key-only accessibility service. Approve the standard ADB prompt once. It does not read screen content. ADB must remain enabled for service restoration after force-stop; open Maps again after force-stop.");
+        final long expected=pageGeneration;
+        readerMain.postDelayed(new Runnable(){public void run(){
+            if(!dialog.isShowing()||!"wheel".equals(page)||pageGeneration!=expected)return;
+            summary(service,WheelServiceSetup.status());
+            summary(camera,(WheelKeyService.modeActive()?"Controls active · ":"")+ClusterZoom.description());
+            summary(key,WheelKeyService.lastKey());readerMain.postDelayed(this,500);
+        }},500);
+    }
+    private void clusterZoom(int direction){
+        if(!ClusterZoom.manualStep(direction))Toast.makeText(activity,"Wait for the instrument cluster map to be ready.",Toast.LENGTH_SHORT).show();
+    }
+    private static void summary(LinearLayout row,String value){
+        View labels=row.getChildAt(0);
+        if(labels instanceof LinearLayout&&((LinearLayout)labels).getChildCount()>1){
+            View detail=((LinearLayout)labels).getChildAt(1);if(detail instanceof TextView)((TextView)detail).setText(value);
+        }
     }
     private void card(){
         start("card","Route card");ClusterSettings.State s=ClusterSettings.state();
@@ -266,34 +371,119 @@ final class ClusterMenu {
             });
         });
     }
+    private static String powertrainLabel(VehiclePowertrain type){
+        switch(type){
+            case BEV:return "BEV — battery electric";
+            case PHEV:return "PHEV — plug-in petrol hybrid";
+            case HEV:return "HEV — non-plug-in petrol hybrid";
+            default:return "Unknown / leave vehicle type unchanged";
+        }
+    }
+    private static String powertrainDetail(VehiclePowertrain type){
+        switch(type){
+            case BEV:return "Electric only. Live battery route data is optional.";
+            case PHEV:return "Petrol and electric, with an external charging port. Does not enable our battery-only forecasts.";
+            case HEV:return "No external charging port. Charging stops and our battery route model stay off; native HEV eco-routing is not configured here.";
+            default:return "No owner vehicle identity is supplied to Maps.";
+        }
+    }
+    private static String connectionDetail(VehicleEvConnection connection){
+        if(connection==VehicleEvConnection.GBT_CCS2)return "GB/T DC and CCS2 stations; only with a compatible CCS2 adapter";
+        if(connection==VehicleEvConnection.GBT)return "GB/T DC stations";
+        if(connection==VehicleEvConnection.CCS2)return "CCS2 stations";
+        return "Select only plugs usable by your car; an adapter is never assumed. AC station matching still needs a road test.";
+    }
     private void evProfile(){
-        start("evprofile","EV routing profile");
-        VehicleEvProfile.Profile profile=VehicleEvProfile.current();
-        note("Battery capacity is entered by the owner. The car supplies charge and estimated electric range. Charging power and charging time are unknown.");
-        row("Vehicle",profile==null?"Not configured":profile.model);rule();
-        row("Station connector","CCS2 (car uses GB/T through an adapter)");rule();
+        start("evprofile","Vehicle profile");
+        final VehicleEvProfile.Profile profile=VehicleEvProfile.current();
+        note("Enter the actual vehicle type and charging connection. The reader does not identify usable battery capacity or all compatible plugs. Save confirms your selection; no automatic type detection is performed in Maps.");
         LinearLayout entry=new LinearLayout(context);entry.setOrientation(LinearLayout.VERTICAL);entry.setPadding(dp(18),dp(12),dp(18),dp(12));
-        entry.addView(text("Battery capacity (kWh)",28,ink));
+        entry.addView(text("Vehicle name (optional)",28,ink));
+        EditText model=new EditText(context);model.setTextColor(ink);model.setTextSize(28);model.setSingleLine(true);model.setHint("Your vehicle name");model.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(80)});
+        if(profile!=null)model.setText(profile.model);model.setContentDescription("Optional owner entered vehicle name");entry.addView(model);
+        TextView capacityLabel=text("Usable battery capacity (kWh)",28,ink);entry.addView(capacityLabel);
         EditText capacity=new EditText(context);capacity.setTextColor(ink);capacity.setTextSize(28);capacity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        if(profile!=null)capacity.setText(String.format(java.util.Locale.US,"%.1f",profile.capacityWh/1000.0));capacity.setContentDescription("Owner entered battery capacity in kWh");entry.addView(capacity);body.addView(entry);rule();
-        action("Save and enable EV routes",null,()->{
-            try{double kwh=Double.parseDouble(capacity.getText().toString().trim().replace(',','.'));int wh=(int)Math.round(kwh*1000);if(!Double.isFinite(kwh)||wh<1000||wh>300000)throw new IllegalArgumentException();
-                VehicleEvBridge.configure(activity,profile==null?"BYD":profile.model,wh,true,()->{if(dialog.isShowing()&&"evprofile".equals(page))evProfile();});
-            }catch(Exception invalid){Toast.makeText(activity,"Enter a battery capacity between 1 and 300 kWh.",Toast.LENGTH_LONG).show();}
+        if(profile!=null&&profile.capacityWh>0)capacity.setText(java.math.BigDecimal.valueOf(profile.capacityWh,3).stripTrailingZeros().toPlainString());capacity.setContentDescription("Owner entered usable battery capacity in kWh");entry.addView(capacity);body.addView(entry);rule();
+        final VehiclePowertrain[] selectedType={profile!=null&&profile.typeConfirmed?profile.powertrain:VehiclePowertrain.UNKNOWN};
+        final String[] selected={profile==null?VehicleEvConnection.UNKNOWN:profile.connector};
+        final VehiclePowertrain[] types={VehiclePowertrain.UNKNOWN,VehiclePowertrain.BEV,VehiclePowertrain.PHEV,VehiclePowertrain.HEV};
+        final ImageView[] typeRadios=new ImageView[types.length];final LinearLayout[] typeRows=new LinearLayout[types.length];
+        for(int i=0;i<types.length;i++){
+            LinearLayout r=row(powertrainLabel(types[i]),powertrainDetail(types[i]));typeRows[i]=r;
+            ImageView radio=new ImageView(context);typeRadios[i]=radio;LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(28),dp(36));lp.leftMargin=dp(12);r.addView(radio,lp);
+            r.setBackground(ripple(0));r.setFocusable(true);rule();
+        }
+        LinearLayout routeRow=row("Use live battery data for BEV routes","BEV only. Requires fresh trusted charge and electric range.");
+        MapsSwitch routing=new MapsSwitch(context);routing.setChecked(profile!=null&&profile.enabled);routing.setContentDescription("Use live battery data for BEV routes");
+        LinearLayout.LayoutParams routeLp=new LinearLayout.LayoutParams(dp(64),dp(48));routeLp.leftMargin=dp(12);routeRow.addView(routing,routeLp);routeRow.setBackground(ripple(0));routeRow.setOnClickListener(v->{if(routing.isEnabled())routing.performClick();});rule();
+        java.util.LinkedHashSet<VehicleEvConnection> allConnections=new java.util.LinkedHashSet<>();
+        java.util.Collections.addAll(allConnections,VehicleEvConnection.choices(VehiclePowertrain.BEV));
+        java.util.Collections.addAll(allConnections,VehicleEvConnection.choices(VehiclePowertrain.PHEV));
+        final VehicleEvConnection[] connections=allConnections.toArray(new VehicleEvConnection[0]);
+        final ImageView[] radios=new ImageView[connections.length];final LinearLayout[] rows=new LinearLayout[connections.length];final View[] lines=new View[connections.length];
+        for(int i=0;i<connections.length;i++){
+            final VehicleEvConnection connection=connections[i];
+            LinearLayout r=row(connection.label,connectionDetail(connection));rows[i]=r;
+            ImageView radio=new ImageView(context);radios[i]=radio;LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(28),dp(36));lp.leftMargin=dp(12);r.addView(radio,lp);
+            r.setBackground(ripple(0));r.setFocusable(true);rule();lines[i]=body.getChildAt(body.getChildCount()-1);
+        }
+        Runnable update=()->{
+            VehiclePowertrain type=selectedType[0];
+            boolean bev=type==VehiclePowertrain.BEV;
+            routing.setEnabled(bev);routeRow.setEnabled(bev);if(!bev)routing.setChecked(false);
+            capacityLabel.setText(bev?"Usable battery capacity (kWh)":"Usable battery capacity (kWh, optional)");
+            for(int i=0;i<types.length;i++){boolean chosen=types[i]==type;typeRadios[i].setImageDrawable(new Mark(chosen?4:3,chosen?accent:ink));typeRows[i].setContentDescription(powertrainLabel(types[i])+(chosen?", selected":""));}
+            for(int i=0;i<connections.length;i++){
+                boolean visible=type==VehiclePowertrain.BEV||type==VehiclePowertrain.PHEV;
+                visible=visible&&connections[i].supportsIdentity(type);
+                rows[i].setVisibility(visible?View.VISIBLE:View.GONE);lines[i].setVisibility(visible?View.VISIBLE:View.GONE);
+                boolean chosen=connections[i].id.equals(selected[0]);radios[i].setImageDrawable(new Mark(chosen?4:3,chosen?accent:ink));rows[i].setContentDescription(connections[i].label+(chosen?", selected":""));
+            }
+        };
+        for(int i=0;i<types.length;i++){
+            final VehiclePowertrain type=types[i];typeRows[i].setOnClickListener(v->{
+                selectedType[0]=type;
+                VehicleEvConnection current=VehicleEvConnection.get(selected[0]);
+                if(type==VehiclePowertrain.HEV)selected[0]="NONE";
+                else if(type==VehiclePowertrain.UNKNOWN||current==null||!current.supportsIdentity(type))selected[0]=VehicleEvConnection.UNKNOWN;
+                update.run();
+            });
+        }
+        for(int i=0;i<connections.length;i++){
+            final VehicleEvConnection connection=connections[i];rows[i].setOnClickListener(v->{selected[0]=connection.id;update.run();});
+        }
+        update.run();
+        note("PHEV: Maps receives a petrol + electric vehicle identity and the selected compatible plugs. Battery capacity is stored for your profile; our combined fuel/battery forecast and automatic charging-stop model are not implemented. AC station matching and hybrid routing still need testing. The BYD charge and electric-range display remains available.");
+        action("Save vehicle profile","Confirm the type and connection selected above",()->{
+            try{
+                final String name=VehicleEvProfile.validModel(model.getText().toString());final VehiclePowertrain type=selectedType[0];final boolean confirmed=type!=VehiclePowertrain.UNKNOWN;
+                final int wh=VehicleEvProfile.capacityWh(capacity.getText().toString(),type==VehiclePowertrain.BEV);
+                final String mode=type==VehiclePowertrain.UNKNOWN?VehicleEvConnection.UNKNOWN:type==VehiclePowertrain.HEV?"NONE":selected[0];final boolean enabled=type==VehiclePowertrain.BEV&&routing.isChecked();
+                // Validate before invalidating a previously working profile.
+                new VehicleEvProfile.Profile(name,wh,mode,type,confirmed,enabled,0);
+                final boolean identityChanged=profile==null||profile.typeConfirmed!=confirmed||profile.powertrain!=type||!profile.connector.equals(mode);
+                VehicleEvBridge.configure(activity,name,wh,mode,type,confirmed,enabled,()->{
+                    VehicleEvProfile.Profile saved=VehicleEvProfile.current();
+                    if(identityChanged&&saved!=null&&saved.model.equals(name)&&saved.capacityWh==wh&&saved.powertrain==type&&saved.connector.equals(mode))
+                        Toast.makeText(activity,"Profile saved. Force stop Maps, then reopen it to apply vehicle type or connector changes.",Toast.LENGTH_LONG).show();
+                    if(dialog.isShowing()&&"evprofile".equals(page))evProfile();
+                });
+            }catch(IllegalArgumentException invalid){Toast.makeText(activity,invalid.getMessage(),Toast.LENGTH_LONG).show();}
         });
-        if(profile!=null)action("Disable EV route data",null,()->VehicleEvBridge.configure(activity,profile.model,profile.capacityWh,false,()->{if(dialog.isShowing()&&"evprofile".equals(page))evProfile();}));
+        if(profile!=null&&profile.enabled)action("Disable BEV route data",null,()->VehicleEvBridge.configure(activity,profile.model,profile.capacityWh,profile.connector,profile.powertrain,profile.typeConfirmed,false,()->{if(dialog.isShowing()&&"evprofile".equals(page))evProfile();}));
+        note("A change of vehicle type or charging connection requires force stop in Android app settings, then reopen Maps. Home and reopen is not a full restart. No restart is performed automatically. Changing the name, capacity or live-data switch alone does not change the vehicle identity.");
         note(VehicleEvBridge.description());
     }
     private void vehicle(){
         start("vehicle","BYD vehicle data");
         note("Read battery charge and electric range with the optional local ADB reader. Enable Automatic reader for startup and recovery without a computer.");
         vehicleDataToggle();
-        action("EV routing profile",VehicleEvBridge.profileSummary(),this::evProfile);
+        action("Vehicle profile",VehicleEvBridge.profileSummary(),this::evProfile);
         action("Automatic reader",VehicleAutoReader.description(),this::autoReader);
         action("Reader compatibility",VehicleReaderSettings.summary(),this::readerCompatibility);
         TextView status=text("Checking ADB reader…",24,ink);status.setPadding(dp(18),dp(12),dp(18),dp(18));body.addView(status);
         action("Refresh",null,this::vehicle);
-        note("Use BYD vehicle data and Automatic reader are separate opt-ins. Sampling is once per minute; values expire after 90 seconds. With the EV routing profile enabled, fresh trusted readings are sent to Maps. Advanced fallback readings require confirmation against the instrument cluster first. Unknown CAN protocol stays unsupported in Automatic mode. Battery capacity is entered by the owner; remaining energy and distance consumption used by Maps are estimates. The raw remaining-energy signal has no verified unit. Charging power is unknown. Stale data withdraws the battery prediction.");
+        note("Use BYD vehicle data and Automatic reader are separate opt-ins. Sampling is once per minute; values expire after 90 seconds. For a confirmed BEV with live route data enabled, fresh trusted readings are sent to Maps. PHEV and HEV do not use our battery-only forecast. Advanced fallback readings require confirmation against the instrument cluster first. Unknown CAN protocol stays unsupported in Automatic mode. Battery capacity is entered by the owner; remaining energy and distance consumption used by Maps are estimates. The raw remaining-energy signal has no verified unit. Charging power is unknown. Stale data withdraws the battery prediction.");
         VehicleDataPage.bind(activity,status);
     }
     private void hud(){

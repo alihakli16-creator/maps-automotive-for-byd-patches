@@ -25,6 +25,8 @@ public final class BydGuidance {
     private static boolean sourceError;
     private static volatile boolean sourceKnown,routeActive;
     static boolean updatePromptSafe(){return sourceKnown&&!routeActive;}
+    /** Camera zoom needs a known source; MAIN guidance does not select CLUSTER camera family. */
+    static boolean sourceKnownForZoom(){return sourceKnown;}
     public static boolean routeActiveForRecovery(){return routeActive();}
     static boolean routeActive(){return routeActive;}
     private static long selectedFreshAt;

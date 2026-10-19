@@ -15,8 +15,8 @@ final class KnownBevOption {
     static final String GETTER=TYPE+"->knownBev()Z";
     private static void check(boolean value,String message){if(!value)throw new IllegalStateException(message);}
     static Option<Boolean> register(BytecodePatchBuilder patch){
-        return OptionKt.booleanOption(patch,"known_bev",Boolean.FALSE,null,"Battery electric vehicle (CCS2)",
-            "Enable only for a confirmed battery electric vehicle using CCS2 charging stations. Establishes vehicle identity before Maps starts; does not set capacity, charge, range or enable the reader. Keep off for unknown vehicles and hybrids.",
+        return OptionKt.booleanOption(patch,"known_bev",Boolean.FALSE,null,"Legacy CCS2 BEV startup hint",
+            "Normally keep off and set your vehicle in Instrument cluster > BYD vehicle data > Vehicle profile. This legacy hint assumes CCS2 only until a profile is saved; saved profiles always take precedence. Does not set capacity, charge or range, or enable the reader. Keep off for GB/T, unknown vehicles and hybrids.",
             false,(option,value)->value!=null);
     }
     static boolean value(Object option){

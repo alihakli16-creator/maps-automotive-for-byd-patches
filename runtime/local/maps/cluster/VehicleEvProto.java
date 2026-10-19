@@ -2,6 +2,8 @@ package local.maps.cluster;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,18 @@ final class VehicleEvProto {
 
     static Object build(ClassLoader loader, int capacityWh, double soc, double rangeKm,
                         int nativeConnectorEnum) throws Exception {
-        Values values = values(capacityWh, soc, rangeKm, nativeConnectorEnum);
+        return buildValidated(loader, capacityWh, soc, rangeKm, legacyConnectors(nativeConnectorEnum));
+    }
+
+    /** Supported station types in preference order; duplicates never create extra entries. */
+    static Object build(ClassLoader loader, int capacityWh, double soc, double rangeKm,
+                        int[] nativeConnectorEnums) throws Exception {
+        return buildValidated(loader, capacityWh, soc, rangeKm, connectors(nativeConnectorEnums));
+    }
+
+    private static Object buildValidated(ClassLoader loader, int capacityWh, double soc, double rangeKm,
+                                         int[] nativeConnectorEnums) throws Exception {
+        Values values = values(capacityWh, soc, rangeKm);
         Message current = message(loader, "afpd");
         set(current.value, "b", values.currentWh);
         Message capacity = message(loader, "afpd");
@@ -38,10 +51,7 @@ final class VehicleEvProto {
         set(vehicle.value, "b", 0x1 | 0x2);
         set(vehicle.value, "c", finish(energy));
         set(vehicle.value, "d", finish(consumption));
-        if (nativeConnectorEnum != -1) {
-            Message connector = message(loader, "afpe");
-            set(connector.value, "c", nativeConnectorEnum);
-            // afpe.d is optional maximum power. Keep it absent when unknown.
+        if (nativeConnectorEnums.length != 0) {
             Message connectors = message(loader, "afnv");
             Field listField = field(connectors.value.getClass(), "b");
             Object oldList = listField.get(connectors.value);
@@ -50,22 +60,40 @@ final class VehicleEvProto {
             copy.setAccessible(true);
             Object mutableList = copy.invoke(null, oldList);
             @SuppressWarnings("unchecked") List<Object> entries = (List<Object>) mutableList;
-            entries.add(finish(connector));
+            for (int nativeConnectorEnum : nativeConnectorEnums) {
+                Message connector = message(loader, "afpe");
+                set(connector.value, "c", nativeConnectorEnum);
+                // afpe.d is optional maximum power. Keep it absent when unknown.
+                entries.add(finish(connector));
+            }
             listField.set(connectors.value, mutableList);
             set(vehicle.value, "g", finish(connectors));
             set(vehicle.value, "b", 0x1 | 0x2 | 0x10);
         }
         Object result = finish(vehicle);
-        verify(result, capacityWh, soc, rangeKm, nativeConnectorEnum);
+        verifyValidated(result, capacityWh, soc, rangeKm, nativeConnectorEnums);
         return result;
     }
 
     /** Read the exact external fields back; throws rather than publishing a wrong schema. */
     static Map<String, Object> verify(Object vehicle, int capacityWh, double soc, double rangeKm,
                                       int nativeConnectorEnum) throws Exception {
-        Values expected = values(capacityWh, soc, rangeKm, nativeConnectorEnum);
+        Map<String, Object> summary = verifyValidated(vehicle, capacityWh, soc, rangeKm,
+                                                      legacyConnectors(nativeConnectorEnum));
+        summary.put("native_connector_enum", nativeConnectorEnum);
+        return summary;
+    }
+
+    static Map<String, Object> verify(Object vehicle, int capacityWh, double soc, double rangeKm,
+                                      int[] nativeConnectorEnums) throws Exception {
+        return verifyValidated(vehicle, capacityWh, soc, rangeKm, connectors(nativeConnectorEnums));
+    }
+
+    private static Map<String, Object> verifyValidated(Object vehicle, int capacityWh, double soc,
+                                                       double rangeKm, int[] nativeConnectorEnums) throws Exception {
+        Values expected = values(capacityWh, soc, rangeKm);
         require(vehicle != null && "afpv".equals(vehicle.getClass().getName()), "External EV type");
-        require(number(vehicle, "b").intValue() == (nativeConnectorEnum == -1 ? 3 : 19), "Vehicle presence");
+        require(number(vehicle, "b").intValue() == (nativeConnectorEnums.length == 0 ? 3 : 19), "Vehicle presence");
         Object energy = get(vehicle, "c"), consumption = get(vehicle, "d");
         require(number(energy, "b").intValue() == 6, "Energy presence");
         require(number(get(energy, "d"), "b").intValue() == expected.currentWh, "Current Wh");
@@ -81,31 +109,57 @@ final class VehicleEvProto {
         require(get(vehicle, "e") == null && get(vehicle, "f") == null && get(vehicle, "j") == null,
                 "Unknown charging curves must be absent");
         Object connectors = get(vehicle, "g");
-        if (nativeConnectorEnum == -1) require(connectors == null, "Unknown connector must be absent");
+        if (nativeConnectorEnums.length == 0) require(connectors == null, "Unknown connector must be absent");
         else {
             List<?> entries = (List<?>) get(connectors, "b");
-            require(entries.size() == 1, "Connector count");
-            Object connector = entries.get(0);
-            require(number(connector, "c").intValue() == nativeConnectorEnum, "Connector enum");
-            require(number(connector, "b").intValue() == 0 && get(connector, "d") == null,
-                    "Unknown maximum charging power must be absent");
+            require(entries.size() == nativeConnectorEnums.length, "Connector count");
+            for (int i = 0; i < nativeConnectorEnums.length; i++) {
+                Object connector = entries.get(i);
+                require(number(connector, "c").intValue() == nativeConnectorEnums[i], "Connector enum/order");
+                require(number(connector, "b").intValue() == 0 && get(connector, "d") == null,
+                        "Unknown maximum charging power must be absent");
+            }
         }
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("profile_capacity_wh", capacityWh);
         summary.put("derived_current_wh", expected.currentWh);
         summary.put("derived_joules_per_metre", actual);
         summary.put("derived_range_km", expected.currentWh * 3.6 / actual);
-        summary.put("native_connector_enum", nativeConnectorEnum);
+        List<Integer> connectorSummary = new ArrayList<>();
+        for (int nativeConnectorEnum : nativeConnectorEnums) connectorSummary.add(nativeConnectorEnum);
+        summary.put("native_connector_enums", Collections.unmodifiableList(connectorSummary));
         summary.put("charging_power_present", false);
         summary.put("charging_curve_present", false);
         summary.put("unverified_scalars_are_proto_defaults", true);
         return summary;
     }
 
-    private static Values values(int capacityWh, double soc, double rangeKm, int connector) {
+    /** Only the legacy scalar overload has an explicit unknown/omitted connector marker. */
+    private static int[] legacyConnectors(int nativeConnectorEnum) {
+        return nativeConnectorEnum == -1 ? new int[0] : connectors(new int[]{nativeConnectorEnum});
+    }
+
+    private static int[] connectors(int[] supplied) {
+        if (supplied == null || supplied.length == 0)
+            throw new IllegalArgumentException("Select a supported station connector");
+        int[] copy = supplied.clone(), selected = new int[2];
+        int count = 0;
+        for (int value : copy) {
+            // Energy-protobuf values, independent of the separate CarInfo/catalog IDs.
+            if (value != 6 && value != 10)
+                throw new IllegalArgumentException("Unsupported station connector enum");
+            boolean duplicate = false;
+            for (int i = 0; i < count; i++) if (selected[i] == value) duplicate = true;
+            if (!duplicate) selected[count++] = value;
+        }
+        int[] result = new int[count];
+        System.arraycopy(selected, 0, result, 0, count);
+        return result;
+    }
+
+    private static Values values(int capacityWh, double soc, double rangeKm) {
         if (capacityWh <= 0 || !Double.isFinite(soc) || soc <= 0 || soc > 100
-                || !Double.isFinite(rangeKm) || rangeKm <= 0 || rangeKm > 3000
-                || (connector != -1 && connector <= 0))
+                || !Double.isFinite(rangeKm) || rangeKm <= 0 || rangeKm > 3000)
             throw new IllegalArgumentException("Usable positive EV profile and readings required");
         long currentWh = Math.round(capacityWh * (soc / 100.0));
         if (currentWh <= 0 || currentWh > capacityWh)

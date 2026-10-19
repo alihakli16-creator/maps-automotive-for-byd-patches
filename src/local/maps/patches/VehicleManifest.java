@@ -7,10 +7,14 @@ import org.w3c.dom.*;
 final class VehicleManifest {
     static void apply(Document doc) {
         Element manifest=doc.getDocumentElement();
+        NodeList sdk=doc.getElementsByTagName("uses-sdk");
+        if(sdk.getLength()!=1||!"30".equals(((Element)sdk.item(0)).getAttribute("android:minSdkVersion")))
+            throw new IllegalStateException("Pinned AAOS input minSdk30 required for API29 experiment");
+        ((Element)sdk.item(0)).setAttribute("android:minSdkVersion","29");
         // Same code as private25.2 permits a data-preserving update and rollback.
         // Original-input metadata is checked before this output-only mutation.
         manifest.setAttribute("android:versionCode","1068820722");
-        for(String permission:new String[]{"android.permission.INTERNET","android.permission.RECEIVE_BOOT_COMPLETED"}) {
+        for(String permission:new String[]{"android.permission.INTERNET","android.permission.RECEIVE_BOOT_COMPLETED","android.permission.PACKAGE_USAGE_STATS"}) {
             boolean present=false;
             NodeList existing=doc.getElementsByTagName("uses-permission");
             for(int i=0;i<existing.getLength();i++)
