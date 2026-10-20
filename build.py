@@ -12,8 +12,8 @@ import sys
 import zipfile
 
 CLI_SHA256 = "1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b"
-ARTIFACT = "maps-automotive-for-byd-morphe-preview.3.mpp"
-VERSION = "0.1.0-preview.3"
+ARTIFACT = "maps-automotive-for-byd-morphe-preview.4.mpp"
+VERSION = "0.1.0-preview.4"
 PATCH_NAME = "Maps Automotive for BYD (MicroG-RE TEST)"
 ROOT = Path(__file__).resolve().parent
 
@@ -111,8 +111,9 @@ def main():
         "bytes": bundle.stat().st_size,
         "version": VERSION,
         "patch_name": PATCH_NAME,
-        "internal_revision": 52,
-        "internal_runtime_version": "patch-lab.52-unified",
+        "internal_revision": 54,
+        "internal_runtime_version": "patch-lab.54-maps2610",
+        "maps_input": "26.10.120001.E/1068833407",
         "desktop_version": "1.18.1",
         "desktop_api_sha256": CLI_SHA256,
         "extension_sha256": sha256(extension / "classes.dex"),

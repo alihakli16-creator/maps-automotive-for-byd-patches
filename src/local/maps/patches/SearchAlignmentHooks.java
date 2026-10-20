@@ -9,41 +9,49 @@ import app.morphe.patcher.extensions.InstructionExtensions;
 import app.morphe.patcher.patch.BytecodePatchContext;
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod;
 import com.android.tools.smali.dexlib2.Opcode;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.dexlib2.iface.instruction.*;
 
 /** Removes only the stock collapsed-search top margin through Maps' reactive layout DSL.
  * Expanded-card spacing, START/END margins and all prior value-function cases stay native.
- * Pinned to the original AAOS26.09 implementation; no Google implementation is bundled.
+ * Pinned to the original AAOS26.10 implementation; no Google implementation is bundled.
+ * 26.10 names: factory ion->imx, merged value functions ilf->ijv (selector field $cid), search
+ * state isu->irf with expanded() = irf.f (delegates to irc.f, implemented by ird/iqt), constant
+ * property txh->twh, reactive property txp->twp, dp factory tyr->txr, TOP key tsp.bb->trp.bb.
+ * Google folded 26.09 ilg.a into the factory; the TOP key is now a static read, not v41.
  */
 final class SearchAlignmentHooks {
-    private static final String FACTORY="Lion;", PROVIDER="Lilf;";
-    private static final String FACTORY_KEY="d[[Ltwx;]Ltwr;";
-    private static final String VALUE_KEY="a[Ltuy;]Ljava/lang/Object;";
-    private static final String CONSTRUCTOR="Lilf;-><init>(I)V";
+    private static final String FACTORY="Limx;", PROVIDER="Lijv;";
+    private static final String FACTORY_KEY="d[[Ltvx;]Ltvr;";
+    private static final String VALUE_KEY="a[Ltty;]Ljava/lang/Object;";
+    private static final String CONSTRUCTOR="Lijv;-><init>(I)V";
+    /** irf.f() reads the expanded flag through this interface; its only implementations are pinned below. */
+    private static final String SEARCH_STATE="Lirc;";
+    private static final Set<String> SEARCH_STATE_IMPLEMENTATIONS=Set.of("Lird;","Liqt;");
     private static final int SEARCH_CASE=21;
     private static final Map<String,String> ORIGINAL=Map.ofEntries(
-        Map.entry("Lion;->"+FACTORY_KEY,"e6f59bade6871842d3ac7c43f18fac2982776eaafa3abf6fa1d7e37d12f10aa2"),
-        Map.entry("Lilf;->"+VALUE_KEY,"a07e1b3b8f0364a41474eee191bbf27098a2c2d1cff29f490206a74fc5552379"),
-        Map.entry("Lilf;-><init>[I]V","b08d09b1d7f6667853638a2d8f10a9f5902a75c0176850317230d3209ef30e3f"),
-        Map.entry("Lilg;->a[]Ltwr;","53c6e85719bc2fbc1c8f527a9ab0d37dc17b228e87e0f4f2557aa2acf98dc4d1"),
-        Map.entry("Lilh;->a[]Ltwr;","db512d7095c02fdbbc856493eae4b6c9bb8260f1c2cbb9808f8c1b9ab654dc31"),
-        Map.entry("Lion;-><clinit>[]V","793a37bf3916855179d61ef30cfd7dbb7ef7ac1fc7c24e7ff6a535350d5bfa03"),
-        Map.entry("Lmku;-><clinit>[]V","f56d8f0aed4cb8b258a53d34c1a8721e37814e0521f04b48e5d973feddb20d2a"),
-        Map.entry("Lisu;->f[]Z","5353f178833ef4648b9c1a964c3b62f174880350e21a73e55e76a5d7fd9683f1"),
-        Map.entry("List;->f[]Z","973e1421fc642fa041a8152b198d8a19dacdb856865aed3a683cb7b3d2d74372"),
-        Map.entry("Lisk;->f[]Z","fb9952a219449fd86fa66f944c5576f1359288618168f3aad393146eaf7b0351")
+        Map.entry("Limx;->"+FACTORY_KEY,"ab53baeaa85776ca535b4ba99188f33073b9b260364cc1bddae5d166238be4d7"),
+        Map.entry("Lijv;->"+VALUE_KEY,"259894c745826d1c9dec1a70b5fadc8fe81056e3f565783e026891643d946968"),
+        Map.entry("Lijv;-><init>[I]V","a19e27b06f570531ee2034e2662ed7430b539ca92075094feb3a75cd2acace64"),
+        Map.entry("Lijw;->a[]Ltvr;","580ff930bf744a8e68ab7a31a743af5a528aa252e63b928c0e5e77017493b86f"),
+        Map.entry("Limx;-><clinit>[]V","ae896adbe719f6b8b29c283646b3a4a1b9619b444eda00c72b5a4cc015d22751"),
+        Map.entry("Lmjz;-><clinit>[]V","4cdcf0299b06be80e31f2b0e34df4b953f45ba585faa26511563c4a5327e0e08"),
+        Map.entry("Lirf;->f[]Z","d3145426c9075cdbb3c67ea35b0dcd27b392b8fcb9367240aeb637be3ec2593e"),
+        Map.entry("Lird;->f[]Z","965543d7adfcc96055ee447efbc3ee1849e9cf1784804db2d214efc00caa9ea9"),
+        Map.entry("Liqt;->f[]Z","ce8565111e6cd735a6f380940ee8c7ceac4af459b9196450c0d479084d8491c8")
     );
     // These are every original direct call, not merely the factory sites we change.
-    // Their three caller-method fingerprints above pin all integer arguments to0..20.
+    // Their two caller-method fingerprints above pin all integer arguments to0..20.
     private static final Set<String> CALLS=Set.of(
-        "Lilg;->a[]Ltwr;@0250","Lilg;->a[]Ltwr;@027d","Lilg;->a[]Ltwr;@03e9","Lilg;->a[]Ltwr;@0418",
-        "Lilh;->a[]Ltwr;@0030","Lilh;->a[]Ltwr;@009f","Lilh;->a[]Ltwr;@00b3","Lilh;->a[]Ltwr;@00c2",
-        "Lion;->"+FACTORY_KEY+"@0056","Lion;->"+FACTORY_KEY+"@006a","Lion;->"+FACTORY_KEY+"@007d",
-        "Lion;->"+FACTORY_KEY+"@00f8","Lion;->"+FACTORY_KEY+"@010e","Lion;->"+FACTORY_KEY+"@0262",
-        "Lion;->"+FACTORY_KEY+"@02d5","Lion;->"+FACTORY_KEY+"@05c5","Lion;->"+FACTORY_KEY+"@065d",
-        "Lion;->"+FACTORY_KEY+"@06a8","Lion;->"+FACTORY_KEY+"@06ba","Lion;->"+FACTORY_KEY+"@0932",
-        "Lion;->"+FACTORY_KEY+"@0957","Lion;->"+FACTORY_KEY+"@097c"
+        "Lijw;->a[]Ltvr;@00b8","Lijw;->a[]Ltvr;@00c7",
+        "Limx;->"+FACTORY_KEY+"@0056","Limx;->"+FACTORY_KEY+"@006e","Limx;->"+FACTORY_KEY+"@0083",
+        "Limx;->"+FACTORY_KEY+"@00db","Limx;->"+FACTORY_KEY+"@00eb","Limx;->"+FACTORY_KEY+"@023e",
+        "Limx;->"+FACTORY_KEY+"@02ad","Limx;->"+FACTORY_KEY+"@038b","Limx;->"+FACTORY_KEY+"@03ef",
+        "Limx;->"+FACTORY_KEY+"@04c4","Limx;->"+FACTORY_KEY+"@058a","Limx;->"+FACTORY_KEY+"@0621",
+        "Limx;->"+FACTORY_KEY+"@066a","Limx;->"+FACTORY_KEY+"@067b","Limx;->"+FACTORY_KEY+"@0758",
+        "Limx;->"+FACTORY_KEY+"@08f4","Limx;->"+FACTORY_KEY+"@0919","Limx;->"+FACTORY_KEY+"@093e",
+        "Limx;->"+FACTORY_KEY+"@0976","Limx;->"+FACTORY_KEY+"@098a"
     );
     private static String key(Method m){return m.getName()+m.getParameterTypes()+m.getReturnType();}
     private static String fullKey(Method m){return m.getDefiningClass()+"->"+key(m);}
@@ -82,9 +90,13 @@ final class SearchAlignmentHooks {
         for(int i=0;i<code.size();i++){if(current==address)return i;current+=code.get(i).getCodeUnits();}
         throw new IllegalStateException("Native search alignment schema: missing address "+address);
     }
-    static void apply(BytecodePatchContext context){
-        Set<String> seen=new HashSet<>(),calls=new HashSet<>();
-        context.classDefForEach(c->{
+    /** Read-only audit of the whole original DEX before anything is mutated. */
+    static void audit(Iterable<? extends ClassDef> classes){
+        Set<String> seen=new HashSet<>(),calls=new HashSet<>(),implementations=new TreeSet<>();
+        ClassDef nativeProvider=null;
+        for(var c:classes){
+            if(c.getType().equals(PROVIDER))nativeProvider=c;
+            if(c.getInterfaces().contains(SEARCH_STATE))implementations.add(c.getType());
             for(var m:c.getMethods()){
                 if(m.getImplementation()==null)continue;
                 String id=fullKey(m);
@@ -100,27 +112,27 @@ final class SearchAlignmentHooks {
                     address+=i.getCodeUnits();
                 }
             }
-            return Unit.INSTANCE;
-        });
+        }
         require(seen.equals(ORIGINAL.keySet()),"missing pinned native methods");
         require(calls.equals(CALLS),"native constructor set changed");
-        var nativeProvider=context.classDefByOrNull(PROVIDER);
-        require(nativeProvider!=null&&nativeProvider.getAccessFlags()==4113&&nativeProvider.getInterfaces().equals(List.of("Ltvf;")),"value-function class changed");
+        require(implementations.equals(SEARCH_STATE_IMPLEMENTATIONS),"expanded-state implementations changed: "+implementations);
+        require(nativeProvider!=null&&nativeProvider.getAccessFlags()==4113&&nativeProvider.getInterfaces().equals(List.of("Ltuf;")),"value-function class changed");
         int fields=0;
         for(var field:nativeProvider.getFields()){
-            fields++;require(field.getName().equals("a")&&field.getType().equals("I")&&field.getAccessFlags()==4114,"selector must remain private final synthetic");
+            fields++;require(field.getName().equals("$cid")&&field.getType().equals("I")&&field.getAccessFlags()==4114,"selector must remain private final synthetic");
         }
         require(fields==1,"extra selector fields");
-
-        MutableMethod factory=mutable(context,FACTORY,FACTORY_KEY),value=mutable(context,PROVIDER,VALUE_KEY);
-        var f=factory.getImplementation();var code=f.getInstructions();
-        require(f.getRegisterCount()==60&&code.size()==1203&&f.getTryBlocks().isEmpty(),"factory register/CFG shape");
-        int begin=at(code,0x0626),after=at(code,0x0633);
-        require(after-begin==6&&code.get(begin).getOpcode()==Opcode.NEW_INSTANCE&&reference(code.get(begin)).equals("Ltxh;"),"constant TOP attribute window");
-        require(reference(code.get(begin+5)).equals("Ltxh;-><init>(Ltva;Ljava/lang/Object;Ltvb;Z)V"),"constant attribute constructor");
+    }
+    /** Case 21: collapsed search TOP 0dp, expanded TOP the native 12dp imx.a. */
+    static void patchValue(MutableMethod value){
+        require(fullKey(value).equals(PROVIDER+"->"+VALUE_KEY),"value-function target");
         require(value.getImplementation().getRegisterCount()==5&&value.getImplementation().getTryBlocks().isEmpty(),"value-function register/try shape");
         var first=value.getImplementation().getInstructions().get(0);
-        require(first.getOpcode()==Opcode.IGET&&reference(first).equals("Lilf;->a:I")&&((TwoRegisterInstruction)first).getRegisterA()==3&&((TwoRegisterInstruction)first).getRegisterB()==3,"selector read");
+        require(first.getOpcode()==Opcode.IGET&&reference(first).equals("Lijv;->$cid:I")&&((TwoRegisterInstruction)first).getRegisterA()==3&&((TwoRegisterInstruction)first).getRegisterB()==3,"selector read");
+        var code=value.getImplementation().getInstructions();
+        require(code.get(1).getOpcode()==Opcode.CONST_4&&((OneRegisterInstruction)code.get(1)).getRegisterA()==0
+            &&code.get(2).getOpcode()==Opcode.CONST_4&&((OneRegisterInstruction)code.get(2)).getRegisterA()==1
+            &&code.get(3).getOpcode()==Opcode.PACKED_SWITCH&&((OneRegisterInstruction)code.get(3)).getRegisterA()==3,"stock constants/switch prologue");
 
         // Insert before the original constants/switch. On every original0..20 path,
         // v3 still holds the selector and the original next instructions reset v0/v1.
@@ -128,30 +140,59 @@ final class SearchAlignmentHooks {
         InstructionExtensions.INSTANCE.addInstructionsWithLabels(value,1,
             "const/16 v0, "+SEARCH_CASE+"\n"
             +"if-ne v3, v0, :native_search_stock_case\n"
-            +"check-cast p1, Lisu;\n"
-            +"invoke-virtual {p1}, Lisu;->f()Z\n"
+            +"check-cast p1, Lirf;\n"
+            +"invoke-virtual {p1}, Lirf;->f()Z\n"
             +"move-result v0\n"
             +"if-eqz v0, :native_search_collapsed\n"
-            +"sget-object v0, Lion;->a:Luau;\n"
+            +"sget-object v0, Limx;->a:Ltzs;\n"
             +"return-object v0\n"
             +":native_search_collapsed\n"
             +"const/4 v0, 0x0\n"
-            +"invoke-static {v0}, Ltyr;->f(I)Ltyr;\n"
+            +"invoke-static {v0}, Ltxr;->f(I)Ltxr;\n"
             +"move-result-object v0\n"
             +"return-object v0\n"
             +":native_search_stock_case\n"
             +"nop");
+    }
+    /** TOP changes from a constant property to a reactive value property; key, value and v7 stay native. */
+    static void patchFactory(MutableMethod factory){
+        require(fullKey(factory).equals(FACTORY+"->"+FACTORY_KEY),"factory target");
+        var f=factory.getImplementation();var code=f.getInstructions();
+        require(f.getRegisterCount()==60&&code.size()==1170&&f.getTryBlocks().isEmpty(),"factory register/CFG shape");
+        for(var i:code)require(!(i instanceof OffsetInstruction),"factory gained a branch");
+        int begin=at(code,0x05eb),after=at(code,0x05f8);
+        require(after-begin==6&&code.get(begin).getOpcode()==Opcode.SGET_OBJECT&&reference(code.get(begin)).equals("Ltrp;->bb:Ltrp;")
+            &&((OneRegisterInstruction)code.get(begin)).getRegisterA()==11,"constant TOP key");
+        require(code.get(begin-1).getOpcode()==Opcode.SGET_OBJECT&&reference(code.get(begin-1)).equals("Limx;->a:Ltzs;")
+            &&((OneRegisterInstruction)code.get(begin-1)).getRegisterA()==7,"TOP value v7 (also read by the next margins)");
+        require(code.get(begin+1).getOpcode()==Opcode.NEW_INSTANCE&&reference(code.get(begin+1)).equals("Ltwh;")
+            &&((OneRegisterInstruction)code.get(begin+1)).getRegisterA()==12,"constant TOP property");
+        var constant=code.get(begin+5);
+        require(reference(constant).equals("Ltwh;-><init>(Ltua;Ljava/lang/Object;Ltub;Z)V")&&((FiveRegisterInstruction)constant).getRegisterCount()==5
+            &&((FiveRegisterInstruction)constant).getRegisterC()==12&&((FiveRegisterInstruction)constant).getRegisterD()==11
+            &&((FiveRegisterInstruction)constant).getRegisterE()==7&&((FiveRegisterInstruction)constant).getRegisterF()==4,"constant attribute constructor");
+        require(code.get(after).getOpcode()==Opcode.CONST_16&&((OneRegisterInstruction)code.get(after)).getRegisterA()==18
+            &&code.get(after+1).getOpcode()==Opcode.APUT_OBJECT&&((ThreeRegisterInstruction)code.get(after+1)).getRegisterA()==12,"TOP property store");
+        // v11/v12/v14 are redefined right after the store (next key, next property, next flag).
+        require(code.get(after+2).getOpcode()==Opcode.SGET_OBJECT&&((OneRegisterInstruction)code.get(after+2)).getRegisterA()==11
+            &&code.get(after+3).getOpcode()==Opcode.NEW_INSTANCE&&((OneRegisterInstruction)code.get(after+3)).getRegisterA()==12
+            &&code.get(after+5).getOpcode()==Opcode.MOVE_RESULT&&((OneRegisterInstruction)code.get(after+5)).getRegisterA()==14,"scratch registers redefined");
 
-        // Keep the preceding v10=Lion.a and all following START/END/radius code.
-        // Only TOP changes from a constant property to a reactive value property.
-        InstructionExtensions.INSTANCE.removeInstructions(factory,begin,after-begin);
-        InstructionExtensions.INSTANCE.addInstructions(factory,begin,
-            "new-instance v11, Ltxp;\n"
-            +"new-instance v12, Lilf;\n"
-            +"const/16 v14, "+SEARCH_CASE+"\n"
-            +"invoke-direct {v12, v14}, Lilf;-><init>(I)V\n"
-            +"move-object/from16 v14, v41\n"
-            +"invoke-direct {v11, v14, v12, v4}, Ltxp;-><init>(Ltva;Ltvf;Ltvb;)V");
+        // Keep the TOP key read, v7=imx.a and all following START/END/radius code.
+        InstructionExtensions.INSTANCE.removeInstructions(factory,begin+1,after-begin-1);
+        InstructionExtensions.INSTANCE.addInstructions(factory,begin+1,
+            "new-instance v14, Lijv;\n"
+            +"const/16 v12, "+SEARCH_CASE+"\n"
+            +"invoke-direct {v14, v12}, Lijv;-><init>(I)V\n"
+            +"new-instance v12, Ltwp;\n"
+            +"invoke-direct {v12, v11, v14, v4}, Ltwp;-><init>(Ltua;Ltuf;Ltub;)V");
+    }
+    static void apply(BytecodePatchContext context){
+        List<ClassDef> classes=new ArrayList<>();
+        context.classDefForEach(c->{classes.add(c);return Unit.INSTANCE;});
+        audit(classes);
+        patchValue(mutable(context,PROVIDER,VALUE_KEY));
+        patchFactory(mutable(context,FACTORY,FACTORY_KEY));
         System.out.println("Native search alignment: collapsed TOP0dp, expanded TOP12dp through native reactive DSL; START/END and old value-function cases0..20 preserved");
     }
     private SearchAlignmentHooks(){}

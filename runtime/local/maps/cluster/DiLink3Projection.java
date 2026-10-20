@@ -47,6 +47,15 @@ public final class DiLink3Projection {
     private static volatile long nextAttempt;
     private static volatile int attempts=3;
     private static long projectionGeneration=-1;
+    private static final String TAG="MapsDiLink3";
+    /** 54D automatic resume after a car power cycle (BYD quickboot force-stops Maps mid-projection).
+     * Durable auto_resume_ok is true only after a projection window ran HEALTHY_MS without a failure;
+     * every new attempt, window failure and explicit pause durably clears it first. A start may then
+     * resume once on its own after stock restoration; any unconfirmed attempt falls back to Retry. */
+    static final long HEALTHY_MS=30000;
+    static long healthyMs=HEALTHY_MS; // host tests shorten it
+    private static volatile boolean autoResumeOk,failedThisProcess,autoResumeReported;
+    private static final AtomicBoolean autoResumeUsed=new AtomicBoolean();
     private DiLink3Projection(){}
 
     /** UI eligibility only. Runtime service/adapter/display checks are required before every write. */
@@ -63,9 +72,10 @@ public final class DiLink3Projection {
             if(context!=null)return;
             context=application;
             worker.execute(()->{
-                boolean saved=false,resume=false,unknown=false;
-                try{saved=preferences().getBoolean("enabled",false);resume=preferences().getBoolean("resume_required",false);}
-                catch(RuntimeException unavailable){resume=true;unknown=true;}
+                boolean saved=false,resume=false,unknown=false,autoOk=false;
+                try{saved=preferences().getBoolean("enabled",false);resume=preferences().getBoolean("resume_required",false);autoOk=preferences().getBoolean("auto_resume_ok",false);}
+                catch(RuntimeException unavailable){resume=true;unknown=true;autoOk=false;}
+                autoResumeOk=autoOk;
                 pending=readJournal();quarantined=pending||resume;quarantineDurable=resume&&!unknown;optedIn=saved;loaded=true;
                 state=quarantined?resumeStatus():saved?"DiLink 3 projection is enabled; waiting for the map request.":"DiLink 3 projection is off.";
                 notifyChanged();requestWork(true);
@@ -108,7 +118,8 @@ public final class DiLink3Projection {
     public static void restore(Activity activity,Runnable done){
         if(activity==null||activity.isFinishing()||activity.isDestroyed()||!isCandidate()||!loaded){finish(done);return;}
         paused=true;invalidate();attempts=3;nextAttempt=0;final long epoch=generation.get();
-        worker.execute(()->{try{runLatest(epoch,false,true);}finally{finish(done);}});
+        // An explicit pause must not come back on its own after the next car start.
+        worker.execute(()->{try{saveAutoOk(false);runLatest(epoch,false,true);}finally{finish(done);}});
     }
     private static void finish(Runnable done){if(done!=null)ui.post(done);}
 
@@ -121,16 +132,35 @@ public final class DiLink3Projection {
     /** Android window creation confirmation only; this never claims driver-visible pixels. */
     public static void windowVisible(boolean shown){
         if(!isCandidate()||!loaded)return;
-        if(shown){if(ready()){visible=true;state="Projection commands and Android map window are ready. Confirm the physical cluster.";}return;}
+        if(shown){if(ready()){boolean first=!visible;visible=true;state="Projection commands and Android map window are ready. Confirm the physical cluster.";if(first)confirmHealthyLater();}return;}
         if(!ready&&!visible)return;
         windowFailed();
     }
     /** Strong failure signal for this backend's owned, possibly only partially created window. */
     public static void windowFailed(){
         if(!isCandidate()||context==null)return;
-        synchronized(resumeLock){quarantined=true;quarantineDurable=false;paused=wanted;invalidateState();}
+        synchronized(resumeLock){quarantined=true;quarantineDurable=false;paused=wanted;failedThisProcess=true;invalidateState();}
         cancelledConnection();state=resumeStatus();attempts=3;nextAttempt=0;requestWork(true);
     }
+    /** The window stayed up HEALTHY_MS in the same projection generation: allow one automatic resume next start. */
+    private static void confirmHealthyLater(){
+        final long epoch=generation.get(),owned=projectionGeneration;
+        worker.schedule(()->{
+            if(!ready()||!visible||failedThisProcess||generation.get()!=epoch||projectionGeneration!=owned)return;
+            if(saveAutoOk(true))android.util.Log.i(TAG,"projection healthy for "+healthyMs+" ms; automatic resume allowed after the next car start");
+        },healthyMs,TimeUnit.MILLISECONDS);
+    }
+    /** Worker-only durable auto-resume evidence; the in-memory copy follows only confirmed writes. */
+    private static boolean saveAutoOk(boolean value){
+        boolean saved;
+        try{saved=preferences().edit().putBoolean("auto_resume_ok",value).commit();}catch(RuntimeException unavailable){saved=false;}
+        if(saved||!value)autoResumeOk=saved?value:autoResumeOk&&value;
+        return saved;
+    }
+    private static boolean autoResumeEligible(long epoch){
+        return autoResumeOk&&!failedThisProcess&&quarantined&&!pending&&!autoResumeUsed.get()&&projectionAllowedAfterResume(epoch);
+    }
+    private static boolean projectionAllowedAfterResume(long epoch){return allowed(epoch)&&optedIn&&wanted&&!paused;}
     private static String resumeStatus(){return pending?"The previous projection session needs stock restoration. New projection is paused. After restoration, press Authorize or retry to resume. You can use Maps without cluster projection.":"Cluster projection requires manual resume after a previous session. Projection is paused; press Authorize or retry to resume. You can use Maps without cluster projection.";}
     /** Worker-only durable latch. Keep the ownership journal pending if this checkpoint fails. */
     private static boolean saveQuarantine(boolean value){
@@ -170,7 +200,7 @@ public final class DiLink3Projection {
         if(pending||projectionWanted(epoch)){attempts=Math.max(0,attempts-1);nextAttempt=SystemClock.uptimeMillis()+30000;}
         boolean cleanupFailed=false;
         try{
-            if(quarantined&&!quarantineDurable)quarantineDurable=saveQuarantine(true);
+            if(quarantined&&!quarantineDurable){quarantineDurable=saveQuarantine(true);if(failedThisProcess)saveAutoOk(false);}
             if(pending&&!restorePending(allowKey,epoch))throw new Failure("restore");
             // Only this explicit ON/Retry may clear the restart latch, after owned cleanup.
             if(manualResume&&quarantined&&allowed(epoch)&&optedIn&&wanted&&!paused){
@@ -178,11 +208,29 @@ public final class DiLink3Projection {
                 // between this point and the first16 must still be recoverable on next startup.
                 saveJournal(true);
                 if(!allowed(epoch))return;
+                saveAutoOk(false);
                 if(!saveQuarantine(false)){quarantineDurable=saveQuarantine(true);throw new Failure("resume");}
                 boolean current;
                 synchronized(resumeLock){current=allowed(epoch);if(current){quarantined=false;quarantineDurable=false;}}
                 if(!current){quarantineDurable=saveQuarantine(true);return;}
+            }else if(!manualResume&&quarantined&&projectionAllowedAfterResume(epoch)){
+                if(autoResumeEligible(epoch)&&autoResumeUsed.compareAndSet(false,true)){
+                    // Same durable order as an explicit resume. The attempt is recorded unconfirmed
+                    // before the pause is cleared, so a crash before HEALTHY_MS falls back to Retry.
+                    saveJournal(true);
+                    if(!allowed(epoch))return;
+                    if(!saveAutoOk(false)){android.util.Log.i(TAG,"autoResume skipped: attempt could not be recorded");throw new Failure("resume");}
+                    if(!saveQuarantine(false)){quarantineDurable=saveQuarantine(true);throw new Failure("resume");}
+                    boolean current;
+                    synchronized(resumeLock){current=allowed(epoch)&&!failedThisProcess;if(current){quarantined=false;quarantineDurable=false;}}
+                    if(!current){quarantineDurable=saveQuarantine(true);return;}
+                    android.util.Log.i(TAG,"autoResume once after the previous session: resuming projection");
+                }else if(!autoResumeReported){
+                    autoResumeReported=true;
+                    android.util.Log.i(TAG,"autoResume skipped: "+(autoResumeUsed.get()?"already used in this process":failedThisProcess?"projection failed in this process":!autoResumeOk?"previous attempt was not confirmed healthy":"stock restoration pending"));
+                }
             }
+            if(!quarantined&&projectionWanted(epoch)&&!ready)saveAutoOk(false); // any new projection attempt is unconfirmed until healthy
             if(!projectionWanted(epoch)){
                 if(allowed(epoch))state=quarantined?resumeStatus():paused?"Stock mode is restored. Press Retry to project again.":"DiLink 3 projection is off; the stock view is restored.";
                 notifyChanged();return;

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Builds the pinned 26.09 external EV message consumed by dpp.p/hlh.
+ * Builds the pinned 26.10 external EV message consumed by the native EV repository (26.10 hjo).
  * Capacity is a manual owner profile, current energy is derived from that profile
  * and SOC, and the constant J/m term is derived from the car's estimated range.
  * No native implementation, charging power, charging curve or demo defaults live here.
@@ -31,37 +31,37 @@ final class VehicleEvProto {
     private static Object buildValidated(ClassLoader loader, int capacityWh, double soc, double rangeKm,
                                          int[] nativeConnectorEnums) throws Exception {
         Values values = values(capacityWh, soc, rangeKm);
-        Message current = message(loader, "afpd");
+        Message current = message(loader, "afnh");
         set(current.value, "b", values.currentWh);
-        Message capacity = message(loader, "afpd");
+        Message capacity = message(loader, "afnh");
         set(capacity.value, "b", capacityWh);
 
-        Message energy = message(loader, "afpx");
+        Message energy = message(loader, "afob");
         set(energy.value, "b", 0x2 | 0x4);
         set(energy.value, "d", finish(current));
         set(energy.value, "e", finish(capacity));
 
-        Message coefficient = message(loader, "afor");
+        Message coefficient = message(loader, "afmv");
         set(coefficient.value, "b", values.joulesPerMetre);
-        Message consumption = message(loader, "afpm");
+        Message consumption = message(loader, "afnq");
         set(consumption.value, "b", 0x1);
         set(consumption.value, "c", finish(coefficient));
 
-        Message vehicle = message(loader, "afpv");
+        Message vehicle = message(loader, "afnz");
         set(vehicle.value, "b", 0x1 | 0x2);
         set(vehicle.value, "c", finish(energy));
         set(vehicle.value, "d", finish(consumption));
         if (nativeConnectorEnums.length != 0) {
-            Message connectors = message(loader, "afnv");
+            Message connectors = message(loader, "aflz");
             Field listField = field(connectors.value.getClass(), "b");
             Object oldList = listField.get(connectors.value);
-            Class<?> base = loader.loadClass("akcx");
+            Class<?> base = loader.loadClass("akbq");
             Method copy = base.getDeclaredMethod("cV", listField.getType());
             copy.setAccessible(true);
             Object mutableList = copy.invoke(null, oldList);
             @SuppressWarnings("unchecked") List<Object> entries = (List<Object>) mutableList;
             for (int nativeConnectorEnum : nativeConnectorEnums) {
-                Message connector = message(loader, "afpe");
+                Message connector = message(loader, "afni");
                 set(connector.value, "c", nativeConnectorEnum);
                 // afpe.d is optional maximum power. Keep it absent when unknown.
                 entries.add(finish(connector));
@@ -92,7 +92,7 @@ final class VehicleEvProto {
     private static Map<String, Object> verifyValidated(Object vehicle, int capacityWh, double soc,
                                                        double rangeKm, int[] nativeConnectorEnums) throws Exception {
         Values expected = values(capacityWh, soc, rangeKm);
-        require(vehicle != null && "afpv".equals(vehicle.getClass().getName()), "External EV type");
+        require(vehicle != null && "afnz".equals(vehicle.getClass().getName()), "External EV type");
         require(number(vehicle, "b").intValue() == (nativeConnectorEnums.length == 0 ? 3 : 19), "Vehicle presence");
         Object energy = get(vehicle, "c"), consumption = get(vehicle, "d");
         require(number(energy, "b").intValue() == 6, "Energy presence");

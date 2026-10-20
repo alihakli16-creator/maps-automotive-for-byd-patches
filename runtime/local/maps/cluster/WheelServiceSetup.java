@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Independently opted-in key service setup. All preference/ADB/settings work runs off UI. */
@@ -26,6 +27,14 @@ public final class WheelServiceSetup {
     private static long lastAttempt;
     private static long burstStarted;
     private static int attemptsLeft=6;
+    private static final String TAG="MapsWheelSetup";
+    /** Cold-start repair delay. A BYD quickboot force-stops Maps; afterwards Android keeps the
+     * service listed but does not bind it again (seen on Tang 2026-10-20), while the explicit
+     * toggle bound it within the same second. 10 s lets Android bind normally and covers the
+     * start attempt and the +4 s resume attempt, well before the 30 s retry. */
+    static final long AUTO_REBIND_DELAY_MS=10000;
+    static long autoRebindDelayMs=AUTO_REBIND_DELAY_MS; // host tests shorten it
+    private static final AtomicBoolean autoRebindUsed=new AtomicBoolean();
     private WheelServiceSetup(){}
 
     public static void init(Application application){
@@ -36,6 +45,7 @@ public final class WheelServiceSetup {
                 try{WheelZoomSettings saved=WheelZoomSettings.read(context);if(generation.get()==epoch){settings=saved;loaded=true;state=saved.enabled?(connected?"Connected. Press the custom key to toggle cluster zoom controls.":"Waiting for the wheel key service."):"Steering-wheel zoom is off.";}}
                 catch(IOException unavailable){if(generation.get()==epoch){settings=WheelZoomSettings.defaults();loaded=true;state="Could not load wheel settings; steering-wheel zoom is off.";}}
                 burstStarted=SystemClock.uptimeMillis();attempt(false,false);
+                worker.schedule(()->autoRebind(epoch),autoRebindDelayMs,TimeUnit.MILLISECONDS);
             });
             application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks(){
                 public void onActivityResumed(Activity activity){worker.schedule(()->{
@@ -90,6 +100,31 @@ public final class WheelServiceSetup {
         attemptsLeft--;
         long epoch=generation.get();
         try{reconcile(epoch,true,allowKey,false);}catch(Exception unavailable){if(generation.get()==epoch)failState(unavailable,true);}
+    }
+    /** Once per process: an opted-in, listed but still unbound service is re-registered with the
+     * same own-entry rebind the toggle performs, through the already approved key only. Any explicit
+     * configure since start (new epoch), a connection, opt-out or another process skips it. */
+    static void autoRebind(long epoch){
+        String skip=null;
+        if(context==null)skip="no application";
+        else if(!context.getPackageName().equals(Application.getProcessName()))skip="not the main Maps process";
+        else if(!loaded)skip="settings not loaded";
+        else if(!settings.enabled)skip="steering-wheel zoom is off";
+        else if(connected)skip="service already connected";
+        else if(generation.get()!=epoch)skip="explicit setup ran since start";
+        else if(!autoRebindUsed.compareAndSet(false,true))skip="already used in this process";
+        if(skip!=null){android.util.Log.i(TAG,"autoRebind skipped: "+skip);return;}
+        state="The wheel key service was listed but not connected after start; re-registering it once…";
+        String result;
+        try{
+            reconcile(epoch,true,false,true);
+            if(connected)result="connected";
+            else{result="re-registered; waiting for Android to connect";if(allowed(epoch,true))state="Re-registered the wheel key service once after start; waiting for Android to connect. Press Enable again if it stays disconnected.";}
+        }catch(Exception failure){
+            result="failed: "+failure.getMessage();
+            if(generation.get()==epoch)failState(failure,true);
+        }
+        android.util.Log.i(TAG,"autoRebind once after start: "+result);
     }
     private static boolean allowed(long epoch,boolean on){return context!=null&&loaded&&generation.get()==epoch&&settings.enabled==on;}
     private static void check(long epoch,boolean on)throws IOException{if(!allowed(epoch,on))throw new IOException("Wheel opt-in changed");}

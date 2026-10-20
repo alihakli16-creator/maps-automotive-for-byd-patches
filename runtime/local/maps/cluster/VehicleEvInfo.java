@@ -23,9 +23,9 @@ final class VehicleEvInfo {
             return original;
         try {
             ClassLoader loader = original.getClass().getClassLoader();
-            Class<?> type = loader.loadClass("fxe");
+            Class<?> type = loader.loadClass("ftz");
             if (!type.isInterface() || !type.isInstance(original)) return original;
-            Class<?> list = loader.loadClass("abrt"), fuel = loader.loadClass("fwz");
+            Class<?> list = loader.loadClass("abpw"), fuel = loader.loadClass("ftu");
             require(type.getMethod("d").getReturnType() == list, "Native fuel-list ABI");
             Class<?> optional = type.getMethod("e").getReturnType();
             require("j$.util.Optional".equals(optional.getName()), "Native connector-optional ABI");
@@ -39,10 +39,11 @@ final class VehicleEvInfo {
             require(unleaded instanceof Enum&&"UNLEADED".equals(((Enum<?>)unleaded).name()),"Native unleaded fuel enum");
 
             // Catalog/CarInfo connector numbering differs from the energy protobuf enum6.
-            Field mapping = loader.loadClass("fxm").getDeclaredField("b"); mapping.setAccessible(true);
+            Field mapping = loader.loadClass("fuh").getDeclaredField("b"); mapping.setAccessible(true);
             Object combo2 = ((Map<?, ?>) mapping.get(null)).get("COMBO_2");
             require(Integer.valueOf(5).equals(combo2), "Pinned native CCS2 catalog mapping");
             require(Integer.valueOf(2).equals(((Map<?,?>)mapping.get(null)).get("MENNEKES")),"Pinned native Type2 catalog mapping");
+            require(Integer.valueOf(4).equals(((Map<?,?>)mapping.get(null)).get("COMBO_1")),"Pinned native CCS1 catalog mapping");
             Method singleton = list.getDeclaredMethod("q", Object.class); singleton.setAccessible(true);
             Method copy = list.getDeclaredMethod("n", Collection.class); copy.setAccessible(true);
             Method of = optional.getMethod("of", Object.class); of.setAccessible(true);

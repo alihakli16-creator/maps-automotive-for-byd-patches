@@ -13,10 +13,12 @@ import com.android.tools.smali.dexlib2.builder.instruction.*;
 import com.android.tools.smali.dexlib2.immutable.*;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
 
-/** Pinned 26.09 insertion rules. No upstream method bodies are distributed. */
+/** Pinned 26.10 insertion rules. No upstream method bodies are distributed. */
 final class ClusterHooks {
  private static final String C="Llocal/maps/cluster/",NATIVE="Lcom/google/android/apps/gmm/car/embedded/auxiliarymap/EmbeddedClusterActivity;";
  private static final InstructionExtensions ASM=InstructionExtensions.INSTANCE;
+ /** Api29Hooks.fingerprint of the original 26.10 Lxay;->b()Lagvt; (navigation viewport). */
+ static final String NAV_VIEWPORT_PIN="f6d523c827736cf02ee0fabe434b340f47a7579e8b76a69d8ca4a277bea78ea7";
  static void branchBlock(MutableMethod method,int index,String code){ASM.addInstructionsWithLabels(method,index,code);}
  private static MutableMethod method(BytecodePatchContext c,String type,String name,String descriptor){
   MutableMethod found=null;
@@ -47,63 +49,86 @@ final class ClusterHooks {
   boolean wasDirect=direct.remove(m);virtual.remove(m);all.remove(m);all.add(changed);if(wasDirect)direct.add(changed);else virtual.add(changed);
   return changed;
  }
+ /** Exit hook that needs `this` in a constructor whose p0 R8 may reuse before the exit
+  * (26.10 igr.<init>: p0=v0 becomes const 3 before return-void; 54A failed ART verification).
+  * One extra top register keeps `this`, copied right after the super constructor, so the hook
+  * still runs after full construction (as in 26.09) and reads no register the original writes.
+  */
+ private static void exitWithThis(BytecodePatchContext ctx,String type,MutableMethod m,String hook){
+  if(!m.getName().equals("<init>")||(m.getAccessFlags()&AccessFlags.STATIC.getValue())!=0)throw new IllegalStateException("Constructor expected: "+m);
+  // The new top register equals the old register count, so no original instruction can address it.
+  int top=m.getImplementation().getRegisterCount();String parent=ctx.mutableClassDefBy(type).getSuperclass();
+  m=expand(ctx,type,m);var list=m.getImplementation().getInstructions();int init=-1,exits=0;
+  for(int i=0;i<list.size();i++){var ins=list.get(i);
+   if(ins.getOpcode()==Opcode.INVOKE_DIRECT&&ref(ins).startsWith(parent+"-><init>(")&&((FiveRegisterInstruction)ins).getRegisterC()==0){if(init>=0)throw new IllegalStateException("Ambiguous super constructor: "+m);init=i;}
+   if(ins.getOpcode()==Opcode.RETURN_VOID&&init<0)throw new IllegalStateException("Exit before super constructor: "+m);
+  }
+  if(init<0)throw new IllegalStateException("Super constructor call missing: "+m);
+  m.getImplementation().addInstruction(init+1,new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16,top,0));
+  for(int i=list.size()-1;i>init;i--)if(list.get(i).getOpcode()==Opcode.RETURN_VOID){ASM.addInstructions(m,i,"invoke-static/range {v"+top+" .. v"+top+"}, "+hook);exits++;}
+  if(exits!=1)throw new IllegalStateException("Expected one normal exit: "+m);
+ }
  private static void adjustReturns(MutableMethod m,int owner,String hook){
   int n=0;var body=m.getImplementation();
-  for(int i=body.getInstructions().size()-1;i>=0;i--){var ins=body.getInstructions().get(i);if(ins.getOpcode()!=Opcode.RETURN_OBJECT)continue;int point=((OneRegisterInstruction)ins).getRegisterA();ASM.addInstructions(m,i,"invoke-static {v"+owner+", v"+point+"}, "+C+"PointerHooks;->"+hook+"(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v"+point+"\ncheck-cast v"+point+", Luun;");n++;}
+  for(int i=body.getInstructions().size()-1;i>=0;i--){var ins=body.getInstructions().get(i);if(ins.getOpcode()!=Opcode.RETURN_OBJECT)continue;int point=((OneRegisterInstruction)ins).getRegisterA();ASM.addInstructions(m,i,"invoke-static {v"+owner+", v"+point+"}, "+C+"PointerHooks;->"+hook+"(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v"+point+"\ncheck-cast v"+point+", Lutn;");n++;}
   if(n!=1)throw new IllegalStateException("Expected one anchor return: "+m);
  }
  static void navigationViewport(MutableMethod m){
-  if(!m.getDefiningClass().equals("Lxcl;")||!Api29Hooks.descriptor(m).equals("b()Lagxp;")
-     ||!Api29Hooks.fingerprint(m).equals("44b747dfd75121b1a07eff935b8b33dd1222d8aceeb2b3fd59ca23c1f1628588"))throw new IllegalStateException("Navigation viewport original fingerprint mismatch");
-  registers(m,23);int count=0;
+  if(!m.getDefiningClass().equals("Lxay;")||!Api29Hooks.descriptor(m).equals("b()Lagvt;")
+     ||!Api29Hooks.fingerprint(m).equals(NAV_VIEWPORT_PIN))throw new IllegalStateException("Navigation viewport original fingerprint mismatch");
+  registers(m,22);int count=0;
   for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--){var ins=m.getImplementation().getInstructions().get(i);if(ins.getOpcode()!=Opcode.RETURN_OBJECT)continue;
    int point=((OneRegisterInstruction)ins).getRegisterA();if(point!=0)throw new IllegalStateException("Navigation viewport return register changed");
-   m.getImplementation().replaceInstruction(i,new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16,1,22));
-   ASM.addInstructions(m,i+1,"invoke-static {v1, v0}, "+C+"PointerHooks;->adjustNavigationViewport(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v0\ncheck-cast v0, Lagxp;\nreturn-object v0");count++;
+   // p0 is v21 in the 22-register 26.10 body (it was v22 in 26.09).
+   m.getImplementation().replaceInstruction(i,new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16,1,21));
+   ASM.addInstructions(m,i+1,"invoke-static {v1, v0}, "+C+"PointerHooks;->adjustNavigationViewport(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v0\ncheck-cast v0, Lagvt;\nreturn-object v0");count++;
   }
   if(count!=1)throw new IllegalStateException("Navigation viewport returns changed");
  }
  static void apply(BytecodePatchContext ctx){
   // These are not authorization hooks: native sii/account/token implementations are retained.
-  var m=method(ctx,"Lfmv;","attachBaseContext","(Landroid/content/Context;)V");
+  var m=method(ctx,"Lfjq;","attachBaseContext","(Landroid/content/Context;)V");
   ASM.addInstruction(m,0,"invoke-static/range {p1 .. p1}, "+C+"PatchBootstrap;->attach(Landroid/content/Context;)V");
-  m=method(ctx,"Liia;","<init>","(Landroid/content/Context;Lgee;Lalno;Lalno;Ljava/util/concurrent/ScheduledExecutorService;Lalno;Llfq;Laolt;)V");
-  oneReturn(m,"invoke-static/range {p0 .. p0}, "+C+"ClusterHost;->registerViewportCandidate(Ljava/lang/Object;)V");
-  m=method(ctx,"Lwih;","<init>","(Ljava/util/concurrent/Executor;)V");oneReturn(m,"invoke-static {p0}, "+C+"BydGuidance;->registerSource(Ljava/lang/Object;)V");
-  m=method(ctx,"Lijy;","<init>","(Ladqy;Lamic;Lqhj;Lfxh;Ltfh;)V");oneReturn(m,"invoke-static/range {p0 .. p0}, "+C+"ReportButtonRecovery;->register(Ljava/lang/Object;)V");
-  m=method(ctx,"Lmx;","onUserLeaveHint","()V");ASM.addInstruction(m,0,"invoke-static {p0}, "+C+"ClusterSettings;->leavingMaps(Landroid/app/Activity;)V");
-  m=method(ctx,NATIVE,"ld","()Landroid/content/Context;");int count=0;
+  m=method(ctx,"Ligr;","<init>","(Landroid/content/Context;Lgbd;Lalme;Lalme;Ljava/util/concurrent/ScheduledExecutorService;Lalme;Llfi;Laokl;)V");registers(m,9);
+  exitWithThis(ctx,"Ligr;",m,C+"ClusterHost;->registerViewportCandidate(Ljava/lang/Object;)V");
+  m=method(ctx,"Lwhf;","<init>","(Ljava/util/concurrent/Executor;)V");oneReturn(m,"invoke-static {p0}, "+C+"BydGuidance;->registerSource(Ljava/lang/Object;)V");
+  m=method(ctx,"Liio;","<init>","(Ladpa;Lamgu;Lqhn;Lfuc;Lteu;)V");oneReturn(m,"invoke-static/range {p0 .. p0}, "+C+"ReportButtonRecovery;->register(Ljava/lang/Object;)V");
+  m=method(ctx,"Lmd;","onUserLeaveHint","()V");ASM.addInstruction(m,0,"invoke-static {p0}, "+C+"ClusterSettings;->leavingMaps(Landroid/app/Activity;)V");
+  m=method(ctx,NATIVE,"kW","()Landroid/content/Context;");int count=0;
   for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--){var ins=m.getImplementation().getInstructions().get(i);if(ins.getOpcode()!=Opcode.RETURN_OBJECT)continue;int r=((OneRegisterInstruction)ins).getRegisterA();ASM.addInstructions(m,i,"invoke-static {v"+r+"}, "+C+"ClusterHost;->clusterContext(Landroid/content/Context;)Landroid/content/Context;\nmove-result-object v"+r);count++;}
-  if(count!=2)throw new IllegalStateException("Native cluster context returns changed");
+  // 26.10 R8 merged the two exits of 26.09 into one return-object that both paths reach.
+  if(count!=1)throw new IllegalStateException("Native cluster context returns changed");
   for(String name:List.of("j","k")){
-   m=method(ctx,"Liia;",name,"(Lihw;Liht;)V");registers(m,5);
+   m=method(ctx,"Ligr;",name,"(Lign;Ligk;)V");registers(m,5);
    branchBlock(m,0,"invoke-static {p0, p1}, "+C+"ClusterHost;->ignoreRouteCardViewport(Ljava/lang/Object;Ljava/lang/Object;)Z\nmove-result v0\nif-eqz v0, :stock\nreturn-void\n:stock\nnop");
   }
-  m=method(ctx,"Liia;","f","()Luun;");registers(m,1);m=expand(ctx,"Liia;",m);adjustReturns(m,1,"adjust");
-  m=method(ctx,"Ldba;","k","(FLihy;)Luun;");registers(m,8);m=expand(ctx,"Ldba;",m);adjustReturns(m,8,"adjustCamera");
-  m=method(ctx,"Liia;","q","()V");registers(m,21);count=0;
-  for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--){var ins=m.getImplementation().getInstructions().get(i);if(ins.getOpcode()==Opcode.MOVE_OBJECT_FROM16&&((TwoRegisterInstruction)ins).getRegisterA()==16&&((TwoRegisterInstruction)ins).getRegisterB()==3){ASM.addInstructions(m,i,"invoke-static {v0, v3}, "+C+"PointerHooks;->adjust(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v3\ncheck-cast v3, Luun;");count++;}}
+  m=method(ctx,"Ligr;","f","()Lutn;");registers(m,1);m=expand(ctx,"Ligr;",m);adjustReturns(m,1,"adjust");
+  // 26.09 dba.k: R8 moved this static camera-anchor helper into fzg.
+  m=method(ctx,"Lfzg;","c","(FLigp;)Lutn;");registers(m,8);m=expand(ctx,"Lfzg;",m);adjustReturns(m,8,"adjustCamera");
+  m=method(ctx,"Ligr;","r","()V");registers(m,21);count=0;
+  for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--){var ins=m.getImplementation().getInstructions().get(i);if(ins.getOpcode()==Opcode.MOVE_OBJECT_FROM16&&((TwoRegisterInstruction)ins).getRegisterA()==16&&((TwoRegisterInstruction)ins).getRegisterB()==3){ASM.addInstructions(m,i,"invoke-static {v0, v3}, "+C+"PointerHooks;->adjust(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;\nmove-result-object v3\ncheck-cast v3, Lutn;");count++;}}
   if(count!=1)throw new IllegalStateException("Viewport anchor dispatch changed");
-  m=method(ctx,"Ljfl;","run","()V");registers(m,10);int holders=0,anchors=0;
+  m=method(ctx,"Ljdz;","run","()V");registers(m,10);int holders=0,anchors=0;
   for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--){var ins=m.getImplementation().getInstructions().get(i);String reference=ref(ins);
-   if(reference.equals("Laehr;->d:Ljava/lang/Object;")){ASM.addInstruction(m,i,"iget-object v5, p0, Laehr;->c:Ljava/lang/Object;");holders++;}
-   if(reference.equals("Lupq;->c:F")||reference.equals("Luun;->c:F")){ASM.addInstructions(m,i+1,"invoke-static {v5, v3}, "+C+"ClusterHost;->applyClusterPointerY(Ljava/lang/Object;F)F\nmove-result v3");anchors++;}
+   if(reference.equals("Laefr;->d:Ljava/lang/Object;")){ASM.addInstruction(m,i,"iget-object v5, p0, Laefr;->c:Ljava/lang/Object;");holders++;}
+   if(reference.equals("Luop;->c:F")||reference.equals("Lutn;->c:F")){ASM.addInstructions(m,i+1,"invoke-static {v5, v3}, "+C+"ClusterHost;->applyClusterPointerY(Ljava/lang/Object;F)F\nmove-result v3");anchors++;}
   }
   if(holders!=2||anchors!=2)throw new IllegalStateException("Live anchor callbacks changed");
-  // Native route-following camera bypasses dba.k/uun. Retain its native container,
+  // Native route-following camera bypasses fzg.c/utn. Retain its native container,
   // modifying only the cluster's vertical offset through the pure runtime helper.
-  navigationViewport(method(ctx,"Lxcl;","b","()Lagxp;"));
-  m=method(ctx,"Lggh;","b","(Lafpg;)Lgge;");registers(m,15);count=0;
-  for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--)if(ref(m.getImplementation().getInstructions().get(i)).equals("Lgge;-><init>(ZLafpa;ZZLlfp;ILafou;Lafox;)V")){
-   branchBlock(m,i,"invoke-static {}, "+C+"ClusterHost;->nativeClusterActive()Z\nmove-result v0\nif-eqz v0, :stock\nsget-object v6, Lafpa;->b:Lafpa;\ninvoke-static {}, "+C+"ClusterHost;->nativeNight()Z\nmove-result v7\nmove v8, v7\n:stock\nnop");count++;
+  navigationViewport(method(ctx,"Lxay;","b","()Lagvt;"));
+  m=method(ctx,"Lgdh;","b","(Lafnk;)Lgde;");registers(m,15);count=0;
+  // afne.b is MAP_AND_NAVIGATION_STATE, the same constant as 26.09 afpa.b.
+  for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--)if(ref(m.getImplementation().getInstructions().get(i)).equals("Lgde;-><init>(ZLafne;ZZLlfh;ILafmy;Lafnb;)V")){
+   branchBlock(m,i,"invoke-static {}, "+C+"ClusterHost;->nativeClusterActive()Z\nmove-result v0\nif-eqz v0, :stock\nsget-object v6, Lafne;->b:Lafne;\ninvoke-static {}, "+C+"ClusterHost;->nativeNight()Z\nmove-result v7\nmove v8, v7\n:stock\nnop");count++;
   }
   if(count!=1)throw new IllegalStateException("Cluster OEM options changed");
-  m=method(ctx,"Lnym;","f","(Z)V");registers(m,15);count=0;
-  for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--)if(ref(m.getImplementation().getInstructions().get(i)).equals("Lacel;->n(Ljava/lang/Iterable;)Labtb;")){
+  m=method(ctx,"Lnys;","i","(Z)V");registers(m,15);count=0;
+  for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--)if(ref(m.getImplementation().getInstructions().get(i)).equals("Laccm;->p(Ljava/lang/Iterable;)Labrd;")){
    // Native empty-override and loop exits branch directly to this instruction.
    // Keep those labels on our hook; inserting before it leaves those paths unhooked.
    m.getImplementation().replaceInstruction(i,new BuilderInstruction35c(Opcode.INVOKE_STATIC,2,13,6,0,0,0,new ImmutableMethodReference(C+"ClusterHost;","configureClusterLayers",List.of("Ljava/lang/Object;","Ljava/util/Set;"),"V")));
-   ASM.addInstruction(m,i+1,"invoke-static {v6}, Lacel;->n(Ljava/lang/Iterable;)Labtb;");count++;
+   ASM.addInstruction(m,i+1,"invoke-static {v6}, Laccm;->p(Ljava/lang/Iterable;)Labrd;");count++;
   }
   if(count!=1)throw new IllegalStateException("Cluster renderer layers changed");
   System.out.println("Cluster hooks: bootstrap attach, viewport/card/anchor, native context/theme/layers, guidance, PiP, incident recovery");

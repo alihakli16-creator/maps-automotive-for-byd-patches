@@ -196,16 +196,19 @@ public final class VehicleEvBridge {
         void resolve(Object object)throws Exception{
             ClassLoader loader=object.getClass().getClassLoader();carrier=field(object,"i");scope=field(object,"b");
             @SuppressWarnings("unchecked") AtomicReference<Object> original=(AtomicReference<Object>)field(object,"k");this.original=original;suspended=original.get()!=null;
-            publish=carrier.getClass().getMethod("d",loader.loadClass("qvo"));publish.setAccessible(true);
+            publish=carrier.getClass().getMethod("d",loader.loadClass("qvt"));publish.setAccessible(true);
             availability=carrier.getClass().getMethod("c",boolean.class);availability.setAccessible(true);
-            Object flow=field(carrier,"c");Method get=flow.getClass().getMethod("d");get.setAccessible(true);nativeAvailability=(Boolean)get.invoke(flow);
-            task=loader.loadClass("hms").getDeclaredConstructor(loader.loadClass("hlh"),loader.loadClass("afpv"),loader.loadClass("aoeu"),int.class);task.setAccessible(true);
-            launch=loader.loadClass("apsk").getDeclaredMethod("G",loader.loadClass("aolt"),loader.loadClass("aogp"));launch.setAccessible(true);ready=true;
+            // 26.10 merged carrier rjs keeps the availability flow in e (26.09 rco.c).
+            Object flow=field(carrier,"e");Method get=flow.getClass().getMethod("d");get.setAccessible(true);nativeAvailability=(Boolean)get.invoke(flow);
+            task=loader.loadClass("hhs").getDeclaredConstructor(loader.loadClass("hjo"),loader.loadClass("afnz"),loader.loadClass("aodp"),int.class);task.setAccessible(true);
+            launch=loader.loadClass("aprn").getDeclaredMethod("G",loader.loadClass("aokl"),loader.loadClass("aofm"));launch.setAccessible(true);ready=true;
         }
         void take(Binding b){carrier=b.carrier;scope=b.scope;original=b.original;publish=b.publish;availability=b.availability;launch=b.launch;task=b.task;nativeAvailability=b.nativeAvailability;suspended=b.suspended;ready=b.ready;}
         void publish(Object input,Object model)throws Exception{publish.invoke(carrier,model);original.set(input);}
         void setAvailability(boolean value)throws Exception{internalAvailability.set(true);try{availability.invoke(carrier,value);}finally{internalAvailability.remove();}}
-        Future<?> launch(Object repo,Object input)throws Exception{return (Future<?>)launch.invoke(null,scope,task.newInstance(repo,input,null,1));}
+        Future<?> launch(Object repo,Object input)throws Exception{return (Future<?>)launch.invoke(null,scope,task.newInstance(repo,input,null,EV_TASK_LAMBDA_ID));}
         private static Object field(Object object,String name)throws Exception{Field f=object.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(object);}
+        /** Selector of the merged R8 lambda hhs that Maps 26.10 itself passes for (hjo, afnz) publish tasks; it was 1 in 26.09 hms. */
+        static final int EV_TASK_LAMBDA_ID=2;
     }
 }

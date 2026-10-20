@@ -391,6 +391,7 @@ final class ClusterMenu {
         if(connection==VehicleEvConnection.GBT_CCS2)return "GB/T DC and CCS2 stations; only with a compatible CCS2 adapter";
         if(connection==VehicleEvConnection.GBT)return "GB/T DC stations";
         if(connection==VehicleEvConnection.CCS2)return "CCS2 stations";
+        if(connection==VehicleEvConnection.CCS1)return "CCS1 stations";
         return "Select only plugs usable by your car; an adapter is never assumed. AC station matching still needs a road test.";
     }
     private void evProfile(){

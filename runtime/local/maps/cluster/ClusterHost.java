@@ -135,7 +135,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     static void refreshClusterCamera() {
         Object manager = viewportManager.get();
         if (instance == null || instance.cluster == null || manager == null) return;
-        try { manager.getClass().getMethod("q").invoke(manager); }
+        try { manager.getClass().getMethod("r").invoke(manager); }
         catch (Exception e) { Log.w(TAG, "cluster camera refresh", e); }
         // Navigation uses its own native camera container rather than the idle anchor.
         // The adapter verifies the current isolated owner and keeps the route state intact.
@@ -181,13 +181,13 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         viewportManager = new java.lang.ref.WeakReference<>(manager);
         try {
             boolean changed = false;
-            for (String field : new String[]{"m", "q"}) {
+            for (String field : new String[]{"l", "q"}) {
                 Field f=manager.getClass().getDeclaredField(field); f.setAccessible(true);
                 Map<?,?> constraints = (Map<?,?>)f.get(manager);
                 Iterator<?> keys = constraints.keySet().iterator();
                 while (keys.hasNext()) if (isRouteOverlayKey(keys.next())) { keys.remove(); changed = true; }
             }
-            if (changed) manager.getClass().getMethod("q").invoke(manager);
+            if (changed) manager.getClass().getMethod("r").invoke(manager);
             Log.i(TAG, "cluster viewport registered; route card and StatusPanel camera constraints disabled");
         } catch (Exception e) { Log.w(TAG, "cluster viewport registration", e); }
         instance.main.post(ClusterHost::refreshClusterCamera);
@@ -573,11 +573,12 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     }
     private void registerClusterLayers(){
         try{
-            Object delegate=cluster.getClass().getField("r").get(cluster);
-            Object manager=delegate.getClass().getField("n").get(delegate);
+            Object delegate=cluster.getClass().getField("s").get(cluster);
+            Object manager=delegate.getClass().getField("m").get(delegate);
             Object layers=manager.getClass().getMethod("b").invoke(manager);
-            if(layers.getClass().getName().equals("nyk"))layers=layers.getClass().getField("a").get(layers);
-            if(!layers.getClass().getName().equals("nym"))throw new IllegalStateException("Unexpected cluster layer controller");
+            // 26.10 wrapper nyq keeps the controller in a private final field (26.09 nyk.a was public).
+            if(layers.getClass().getName().equals("nyq")){Field wrapped=layers.getClass().getDeclaredField("e");wrapped.setAccessible(true);layers=wrapped.get(layers);}
+            if(!layers.getClass().getName().equals("nys"))throw new IllegalStateException("Unexpected cluster layer controller");
             layerController=new java.lang.ref.WeakReference<>(layers);
             refreshClusterLayers();
         }catch(Exception e){Log.w(TAG,"cluster layer controller",e);}
@@ -586,7 +587,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         if(instance==null)return;
         instance.main.post(()->{
             Object layers=layerController.get();if(layers==null||instance.cluster==null)return;
-            try{layers.getClass().getMethod("f",boolean.class).invoke(layers,true);}
+            try{layers.getClass().getMethod("i",boolean.class).invoke(layers,true);}
             catch(Exception e){Log.w(TAG,"cluster layer refresh",e);}
             recordClusterViewport();
         });
@@ -595,7 +596,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     public static void configureClusterLayers(Object controller,Set layers){
         if(instance==null||instance.cluster==null||layerController.get()!=controller)return;
         try{
-            for(Object value:Class.forName("nyo",false,instance.app.getClassLoader()).getEnumConstants()){
+            for(Object value:Class.forName("nyu",false,instance.app.getClassLoader()).getEnumConstants()){
                 String name=((Enum)value).name();
                 if(name.equals("SATELLITE")){if(ClusterSettings.state().satellite)layers.add(value);else layers.remove(value);}
                 else if((name.equals("TERRAIN")||name.equals("THREE_DIMENSIONAL"))&&ClusterSettings.state().satellite)layers.remove(value);
@@ -630,7 +631,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     public static void registerViewportCandidate(Object manager){
         if(instance==null)return;
         try {
-            Field f=manager.getClass().getDeclaredField("e");f.setAccessible(true);Context context=(Context)f.get(manager);
+            Field f=manager.getClass().getDeclaredField("d");f.setAccessible(true);Context context=(Context)f.get(manager);
             for(int i=0;i<12&&context!=null;i++) {
                 if(context instanceof Activity&&context.getClass().getName().equals(NATIVE)) {registerClusterViewport(manager);return;}
                 if(!(context instanceof ContextWrapper))return;
@@ -655,8 +656,8 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         if(!marker.delete())return;
         // Explicit local diagnostic marker only: the native dump can contain route details.
         try(java.io.PrintWriter writer=new java.io.PrintWriter(new java.io.File(app.getExternalFilesDir(null),"cluster-native.private.txt"))){
-            Object delegate=cluster.getClass().getField("r").get(cluster);
-            delegate.getClass().getMethod("kM",String.class,java.io.PrintWriter.class).invoke(delegate,"",writer);
+            Object delegate=cluster.getClass().getField("s").get(cluster);
+            delegate.getClass().getMethod("kF",String.class,java.io.PrintWriter.class).invoke(delegate,"",writer);
         }catch(Exception e){Log.w(TAG,"native cluster dump",e);}
         Bitmap bitmap=Bitmap.createBitmap(root.getWidth(),root.getHeight(),Bitmap.Config.ARGB_8888);
         try {PixelCopy.request(displayPresence.getWindow(),bitmap,result->{

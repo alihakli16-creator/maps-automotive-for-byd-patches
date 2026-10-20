@@ -2,7 +2,7 @@ package local.maps.cluster;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-/** Exact AAOS 26.09 anchor schema. Keep X; override Y only in the cluster. */
+/** Exact AAOS 26.10 anchor schema. Keep X; override Y only in the cluster. */
 public final class PointerHooks {
  /** Native navigation uses a dp container offset, not the idle uun anchor.
   * No JNI call, route state mutation, or main-map fallback is made here.
@@ -10,16 +10,16 @@ public final class PointerHooks {
  public static Object adjustNavigationViewport(Object owner,Object viewport) {
   if(owner==null||viewport==null)return viewport;
   try {
-   type(owner,"xcl");Object manager=field(owner,"n").get(owner);
+   type(owner,"xay");Object manager=field(owner,"m").get(owner);
    if(!ClusterHost.isClusterViewport(manager))return viewport;
-   if(!field(owner,"C").getBoolean(owner))return viewport;
-   Object navigation=field(owner,"A").get(owner);
+   if(!field(owner,"B").getBoolean(owner))return viewport;
+   Object navigation=field(owner,ClusterZoom.NAVIGATION_STATE).get(owner);
    if(!Boolean.TRUE.equals(call(navigation,"isPresent")))return viewport;
-   type(call(navigation,"get"),"agyb");type(viewport,"agxp");
+   type(call(navigation,"get"),"agwh");type(viewport,"agvt");
    int flags=field(viewport,"b").getInt(viewport);
    if((flags&5)!=5)return viewport; // Original b() supplies full dimensions and offset.
    Object dimensions=field(viewport,"c").get(viewport),offset=field(viewport,"f").get(viewport);
-   type(dimensions,"agyf");type(offset,"agye");
+   type(dimensions,"agwl");type(offset,"agwk");
    if((field(dimensions,"b").getInt(dimensions)&4)==0)return viewport;
    double height=field(dimensions,"e").getDouble(dimensions);
    float normalized=ClusterHost.clusterPointerY(manager,0f);
@@ -32,8 +32,8 @@ public final class PointerHooks {
    Object roundTrip=copyNavigationY(changed,previous,oldFlags);
    if(!Arrays.equals((byte[])call(viewport,"cy"),(byte[])call(roundTrip,"cy")))return viewport;
    // The activity can be detached while a native update is being prepared.
-   if(!ClusterHost.isClusterViewport(manager)||field(owner,"n").get(owner)!=manager
-      ||!field(owner,"C").getBoolean(owner))return viewport;
+   if(!ClusterHost.isClusterViewport(manager)||field(owner,"m").get(owner)!=manager
+      ||!field(owner,"B").getBoolean(owner))return viewport;
    ClusterHost.applyClusterPointerY(manager,normalized);
    return changed;
   }catch(ReflectiveOperationException|RuntimeException|LinkageError error){
@@ -42,9 +42,9 @@ public final class PointerHooks {
  }
  private static Object copyNavigationY(Object viewport,double y,int offsetFlags)throws ReflectiveOperationException {
   Object offset=field(viewport,"f").get(viewport),builder=call(offset,"cF");call(builder,"bI");
-  Object copy=field(builder,"b").get(builder);type(copy,"agye");if(copy==offset)throw new IllegalStateException("Mutable anchor input");
+  Object copy=field(builder,"b").get(builder);type(copy,"agwk");if(copy==offset)throw new IllegalStateException("Mutable anchor input");
   field(copy,"d").setDouble(copy,y);field(copy,"b").setInt(copy,offsetFlags);Object changed=call(builder,"bE");
-  Object outer=call(viewport,"cF");call(outer,"bI");Object container=field(outer,"b").get(outer);type(container,"agxp");
+  Object outer=call(viewport,"cF");call(outer,"bI");Object container=field(outer,"b").get(outer);type(container,"agvt");
   if(container==viewport)throw new IllegalStateException("Mutable container input");field(container,"f").set(container,changed);return call(outer,"bE");
  }
  private static boolean finite(double value){return !Double.isNaN(value)&&!Double.isInfinite(value);}

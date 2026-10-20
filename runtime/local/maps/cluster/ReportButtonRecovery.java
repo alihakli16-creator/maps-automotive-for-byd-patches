@@ -39,7 +39,7 @@ public final class ReportButtonRecovery {
         Object controller=ref.get();if(controller==null||!root.isAttachedToWindow()||!root.hasWindowFocus()||!expected.equals(states.get(controller)))return;
         try{
             Object model=get(controller,"a");if(model==null)return;
-            Object publisher=get(model,"a");publisher.getClass().getMethod("a",Class.forName("tuy")).invoke(publisher,model);
+            Object publisher=get(model,"a");publisher.getClass().getMethod("a",Class.forName("tty")).invoke(publisher,model);
             root.requestLayout();android.util.Log.i("MapsReportRecovery","Native incident model refreshed; no eligibility override");
         }catch(Exception error){android.util.Log.w("MapsReportRecovery","Incident refresh failed: "+error.getClass().getSimpleName());}
     }

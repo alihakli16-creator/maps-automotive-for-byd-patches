@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** Native static-camera zoom, restricted to the independently identified instrument cluster. */
 public final class ClusterZoom {
     private static final String MAIN="com.google.android.maps.MapsActivity";
+    /** 26.10 xay cached camera states; the names swapped roles against 26.09 xcl (A was navigation, B static). */
+    static final String NAVIGATION_STATE="z",STATIC_STATE="A";
     private static final String CLUSTER="com.google.android.apps.gmm.car.embedded.auxiliarymap.EmbeddedClusterActivity";
     private static final Object LOCK=new Object();
     private static volatile ClusterZoomPolicy policy=new ClusterZoomPolicy();
@@ -78,7 +80,7 @@ public final class ClusterZoom {
         synchronized(LOCK){
             available=false;if(mainOwner.get()!=activity){release(true);mainBinding=null;}mainOwner=new WeakReference<>(activity);
             if(!allowed()){mainBinding=null;return;}
-            try{enter("main_delegate");Object delegate=field(activity,"Y");requireType(delegate,"fvi");enter("main_binding");mainBinding=Binding.read(field(delegate,"aC"));enter("native_schema");access=NativeAccess.forLoader(activity.getClassLoader());mainBindReason="none";mainBindError="none";reevaluate();}
+            try{enter("main_delegate");Object delegate=field(activity,"Z");requireType(delegate,"fsb");enter("main_binding");mainBinding=Binding.read(field(delegate,"aC"));enter("native_schema");access=NativeAccess.forLoader(activity.getClassLoader());mainBindReason="none";mainBindError="none";reevaluate();}
             catch(Exception|LinkageError error){capture(error);mainBindReason=firstReason;mainBindError=errorClass;mainBinding=null;}
         }
     }
@@ -89,7 +91,7 @@ public final class ClusterZoom {
             if(!allowed())return;
             try{
                 if(activity==null||!CLUSTER.equals(activity.getClass().getName()))return;
-                enter("cluster_delegate");Object delegate=field(activity,"r");requireType(delegate,"gfx");enter("cluster_binding");clusterBinding=Binding.read(field(delegate,"n"));enter("native_schema");access=NativeAccess.forLoader(activity.getClassLoader());clusterBindReason="none";clusterBindError="none";
+                enter("cluster_delegate");Object delegate=field(activity,"s");requireType(delegate,"gcw");enter("cluster_binding");clusterBinding=Binding.read(field(delegate,"m"));enter("native_schema");access=NativeAccess.forLoader(activity.getClassLoader());clusterBindReason="none";clusterBindError="none";
                 if(!ClusterZoomPolicy.valid(access.zoom(access.current(clusterBinding))))throw new IllegalStateException("Camera not ready");rendererReady=access.ready(clusterBinding,root);
             }catch(Exception|LinkageError error){capture(error);clusterBindReason=firstReason;clusterBindError=errorClass;fail(error);}
         }
@@ -164,25 +166,25 @@ public final class ClusterZoom {
     private static void restoreNavigationPacket(Session session,Object owner){
         try{
             if(Looper.myLooper()!=Looper.getMainLooper()||!liveIsolated()||!session.owners.same(access.owners(mainBinding,clusterBinding)))throw new IllegalStateException("Navigation packet scope lost");
-            navigationState(session.owners.cluster);Object current=field(owner,"d");requireType(current,"agxd");
+            navigationState(session.owners.cluster);Object current=field(owner,"c");requireType(current,"agvh");
             synchronized(session){
                 if(held!=session||!session.valid||!session.policy.manual())return;
                 Float actual=zoomOverride(session.owners.cluster);
                 // Never roll a newer foreign override back to our remembered baseline.
                 if(actual!=null&&Float.compare(actual.floatValue(),session.policy.chosen())==0){
                     Object changed=copyNavigationOverride(current,session.navigationBaseline);
-                    if(!liveIsolated()||field(owner,"d")!=current||!session.owners.same(access.owners(mainBinding,clusterBinding))||!navigation(session.owners.cluster))throw new IllegalStateException("Navigation packet changed");
-                    declaredField(owner.getClass(),"d").set(owner,changed);
+                    if(!liveIsolated()||field(owner,"c")!=current||!session.owners.same(access.owners(mainBinding,clusterBinding))||!navigation(session.owners.cluster))throw new IllegalStateException("Navigation packet changed");
+                    declaredField(owner.getClass(),"c").set(owner,changed);
                 }
             }
         }catch(Exception|LinkageError ignored){} // No JNI; foreign, disposed or unvalidated packets stay untouched.
     }
     private static Object cloneNavigationOverride(Object original,int flags,double zoom)throws ReflectiveOperationException{
-        Object builder=invoke(original,"cF");invoke(builder,"bI");Object mutable=field(builder,"b");requireType(mutable,"agxd");if(mutable==original)throw new IllegalStateException("Mutable navigation override");
+        Object builder=invoke(original,"cF");invoke(builder,"bI");Object mutable=field(builder,"b");requireType(mutable,"agvh");if(mutable==original)throw new IllegalStateException("Mutable navigation override");
         declaredField(mutable.getClass(),"b").setInt(mutable,flags);declaredField(mutable.getClass(),"c").setDouble(mutable,zoom);return invoke(builder,"bE");
     }
     private static Object copyNavigationOverride(Object original,Float selected)throws ReflectiveOperationException{
-        requireType(original,"agxd");int flags=(Integer)field(original,"b");double previous=(Double)field(original,"c");
+        requireType(original,"agvh");int flags=(Integer)field(original,"b");double previous=(Double)field(original,"c");
         if(selected!=null&&(!ClusterZoomPolicy.valid(selected.floatValue())||selected<ClusterZoomPolicy.MIN||selected>ClusterZoomPolicy.MAX))throw new IllegalStateException("Invalid navigation baseline");
         Object changed=cloneNavigationOverride(original,selected==null?flags&~1:flags|1,selected==null?0d:selected.doubleValue());
         Object roundTrip=cloneNavigationOverride(changed,flags,previous);
@@ -265,12 +267,12 @@ public final class ClusterZoom {
             try{
                 if(access==null||!shown||!BydGuidance.sourceKnownForZoom()||!surfaceReady()||!liveIsolated()||!access.ready(clusterBinding,clusterView.get()))return false;
                 Owners owners=access.owners(mainBinding,clusterBinding);Object owner=owners.cluster.xcl.get();navigationState(owners.cluster);
-                if(field(owner,"n")!=viewportManager)return false;
+                if(field(owner,"m")!=viewportManager)return false;
                 Object jni=owners.cluster.jni.get();if(jni==null)return false;
                 synchronized(jni){
                     if(!BydGuidance.sourceKnownForZoom()||!surfaceReady()||!liveIsolated()||!owners.same(access.owners(mainBinding,clusterBinding)))return false;
-                    navigationState(owners.cluster);if(field(owner,"n")!=viewportManager)return false;
-                    Method update=owner.getClass().getDeclaredMethod("o");update.setAccessible(true);
+                    navigationState(owners.cluster);if(field(owner,"m")!=viewportManager)return false;
+                    Method update=owner.getClass().getDeclaredMethod("q");update.setAccessible(true);
                     Object response=update.invoke(owner);if(response==null)return false;writerResult="native_nav_viewport_invoked";return true;
                 }
             }catch(Exception|LinkageError error){capture(error);return false;}
@@ -294,7 +296,7 @@ public final class ClusterZoom {
         synchronized(jni){
             if(!BydGuidance.sourceKnownForZoom()||!surfaceReady()||!liveIsolated()||!session.owners.same(access.owners(mainBinding,clusterBinding)))throw new IllegalStateException("Native owner changed");
             staticState(session.owners.cluster);ownCall.set(session);
-            try{Object response=session.owners.cluster.xcl.get().getClass().getMethod("d",Class.forName("agxc",false,access.loader)).invoke(session.owners.cluster.xcl.get(),state);
+            try{Object response=session.owners.cluster.xcl.get().getClass().getMethod("d",Class.forName("agvg",false,access.loader)).invoke(session.owners.cluster.xcl.get(),state);
                 // Optional can contain an empty protobuf; actual camera is validated on-device separately.
                 if(response==null)throw new IllegalStateException("Missing native camera response");writerResult="native_invoked";
             }finally{ownCall.remove();}
@@ -305,7 +307,7 @@ public final class ClusterZoom {
         if(selected!=null&&(!ClusterZoomPolicy.valid(selected.floatValue())||selected.floatValue()<ClusterZoomPolicy.MIN||selected.floatValue()>ClusterZoomPolicy.MAX))throw new IllegalStateException("Invalid navigation override");
         synchronized(jni){
             if(!BydGuidance.sourceKnownForZoom()||!surfaceReady()||!liveIsolated()||!session.owners.same(access.owners(mainBinding,clusterBinding)))throw new IllegalStateException("Native owner changed");
-            navigationState(session.owners.cluster);copyNavigationOverride(field(session.owners.cluster.xcl.get(),"d"),selected);
+            navigationState(session.owners.cluster);copyNavigationOverride(field(session.owners.cluster.xcl.get(),"c"),selected);
             if(!BydGuidance.sourceKnownForZoom()||!surfaceReady()||!liveIsolated()||!session.owners.same(access.owners(mainBinding,clusterBinding)))throw new IllegalStateException("Native owner changed during copy");
             navigationState(session.owners.cluster);ownCall.set(session);
             try{
@@ -316,30 +318,30 @@ public final class ClusterZoom {
         }
     }
     private static boolean navigation(NativeOwner owner)throws ReflectiveOperationException{
-        Object xcl=owner.xcl.get();if(xcl==null)throw gate("cluster_xcl_missing");Object value=field(xcl,"C");if(!(value instanceof Boolean))throw gate("camera_family_type");return Boolean.TRUE.equals(value);
+        Object xcl=owner.xcl.get();if(xcl==null)throw gate("cluster_xcl_missing");Object value=field(xcl,"B");if(!(value instanceof Boolean))throw gate("camera_family_type");return Boolean.TRUE.equals(value);
     }
     private static Object navigationState(NativeOwner owner)throws ReflectiveOperationException{
         enter("cluster_navigation_camera");if(!navigation(owner))throw gate("not_navigation_family");
-        Object optional=field(owner.xcl.get(),"A");if(!Boolean.TRUE.equals(invoke(optional,"isPresent")))throw gate("navigation_state_missing");
-        Object state=invoke(optional,"get");requireType(state,"agyb");int mode=(Integer)field(state,"b");
-        if(mode==3)requireType(field(state,"c"),"agxq");else if(mode==6)requireType(field(state,"c"),"agxg");else throw gate("navigation_case_unsupported");return state;
+        Object optional=field(owner.xcl.get(),NAVIGATION_STATE);if(!Boolean.TRUE.equals(invoke(optional,"isPresent")))throw gate("navigation_state_missing");
+        Object state=invoke(optional,"get");requireType(state,"agwh");int mode=(Integer)field(state,"b");
+        if(mode==3)requireType(field(state,"c"),"agvu");else if(mode==6)requireType(field(state,"c"),"agvk");else throw gate("navigation_case_unsupported");return state;
     }
     private static Float zoomOverride(NativeOwner owner)throws ReflectiveOperationException{
-        Object state=field(owner.xcl.get(),"d");requireType(state,"agxd");int flags=(Integer)field(state,"b");
+        Object state=field(owner.xcl.get(),"c");requireType(state,"agvh");int flags=(Integer)field(state,"b");
         Object value=invoke(owner.xcl.get(),"k");if((flags&1)==0){if(value!=null)throw gate("navigation_override_schema");return null;}
         double raw=(Double)field(state,"c");if(!(value instanceof Float)||Double.isNaN(raw)||Double.isInfinite(raw)||raw<ClusterZoomPolicy.MIN||raw>ClusterZoomPolicy.MAX||Double.compare(raw,((Float)value).doubleValue())!=0)throw gate("navigation_override_invalid");return (Float)value;
     }
     private static Object staticState(NativeOwner owner)throws ReflectiveOperationException{
-        Object xcl=owner.xcl.get();enter("cluster_camera_family");if(xcl==null)throw gate("cluster_xcl_missing");if(Boolean.TRUE.equals(field(xcl,"C")))throw gate("family_a");
-        Object optional=field(xcl,"B");if(!Boolean.TRUE.equals(invoke(optional,"isPresent")))throw gate("camera_state_missing");Object state=invoke(optional,"get");staticZoom(state);return state;
+        Object xcl=owner.xcl.get();enter("cluster_camera_family");if(xcl==null)throw gate("cluster_xcl_missing");if(Boolean.TRUE.equals(field(xcl,"B")))throw gate("family_a");
+        Object optional=field(xcl,STATIC_STATE);if(!Boolean.TRUE.equals(invoke(optional,"isPresent")))throw gate("camera_state_missing");Object state=invoke(optional,"get");staticZoom(state);return state;
     }
     private static double staticZoom(Object state)throws ReflectiveOperationException{
-        requireType(state,"agxc");if((Integer)field(state,"b")!=8)throw gate("case_not8");Object payload=field(state,"c");requireType(payload,"agyd");
+        requireType(state,"agvg");if((Integer)field(state,"b")!=8)throw gate("case_not8");Object payload=field(state,"c");requireType(payload,"agwj");
         if((((Integer)field(payload,"b"))&4)==0)throw gate("zoom_field_missing");double zoom=(Double)field(payload,"e");if(zoom<ClusterZoomPolicy.MIN||zoom>ClusterZoomPolicy.MAX||!ClusterZoomPolicy.valid((float)zoom)||Double.isNaN(zoom)||Double.isInfinite(zoom))throw new IllegalStateException("Invalid static zoom");return zoom;
     }
     private static Object cloneZoom(Object state,double selected)throws ReflectiveOperationException{
-        Object payload=field(state,"c"),builder=invoke(payload,"cF");invoke(builder,"bI");Object copy=field(builder,"b");requireType(copy,"agyd");if(copy==payload)throw new IllegalStateException("Mutable native input");declaredField(copy.getClass(),"e").setDouble(copy,selected);Object changed=invoke(builder,"bE");
-        Object outer=invoke(state,"cF");invoke(outer,"bI");Object mutable=field(outer,"b");requireType(mutable,"agxc");if(mutable==state)throw new IllegalStateException("Mutable native state");declaredField(mutable.getClass(),"c").set(mutable,changed);return invoke(outer,"bE");
+        Object payload=field(state,"c"),builder=invoke(payload,"cF");invoke(builder,"bI");Object copy=field(builder,"b");requireType(copy,"agwj");if(copy==payload)throw new IllegalStateException("Mutable native input");declaredField(copy.getClass(),"e").setDouble(copy,selected);Object changed=invoke(builder,"bE");
+        Object outer=invoke(state,"cF");invoke(outer,"bI");Object mutable=field(outer,"b");requireType(mutable,"agvg");if(mutable==state)throw new IllegalStateException("Mutable native state");declaredField(mutable.getClass(),"c").set(mutable,changed);return invoke(outer,"bE");
     }
     private static Object copyStaticZoom(Object original,double selected)throws ReflectiveOperationException{
         double previous=staticZoom(original);if(selected<ClusterZoomPolicy.MIN||selected>ClusterZoomPolicy.MAX||!ClusterZoomPolicy.valid((float)selected)||Double.isNaN(selected)||Double.isInfinite(selected))throw new IllegalStateException("Invalid selected zoom");
@@ -356,7 +358,7 @@ public final class ClusterZoom {
         Display display=view.getDisplay();if(display==null)return reject("root_display_missing");if(display.getDisplayId()==Display.DEFAULT_DISPLAY)return reject("root_display_main");if(display.getState()==Display.STATE_OFF)return reject("root_display_off");return true;
     }
     private static boolean isolated(){return mainOwner.get()!=null&&mainBinding!=null&&clusterBinding!=null&&ClusterZoomPolicy.isolated(mainBinding.manager.get(),mainBinding.dispatcher.get(),mainBinding.legacy.get(),mainBinding.modern.get(),clusterBinding.manager.get(),clusterBinding.dispatcher.get(),clusterBinding.legacy.get(),clusterBinding.modern.get());}
-    private static boolean liveIsolated()throws ReflectiveOperationException{if(!isolated())return false;Activity main=mainOwner.get(),cluster=clusterOwner.get();if(main==null||cluster==null||main.isFinishing()||main.isDestroyed()||cluster.isFinishing()||cluster.isDestroyed())return false;return field(field(main,"Y"),"aC")==mainBinding.manager.get()&&field(field(cluster,"r"),"n")==clusterBinding.manager.get()&&mainBinding.live()&&clusterBinding.live();}
+    private static boolean liveIsolated()throws ReflectiveOperationException{if(!isolated())return false;Activity main=mainOwner.get(),cluster=clusterOwner.get();if(main==null||cluster==null||main.isFinishing()||main.isDestroyed()||cluster.isFinishing()||cluster.isDestroyed())return false;return field(field(main,"Z"),"aC")==mainBinding.manager.get()&&field(field(cluster,"s"),"m")==clusterBinding.manager.get()&&mainBinding.live()&&clusterBinding.live();}
     private static void reevaluate(){
         available=false;
         if(failed){note(savedReason,savedError);return;}if(!shown){if(firstReason.isEmpty())note("root_not_ready","none");return;}if(!rendererReady){note("renderer_not_ready","none");return;}
@@ -383,7 +385,7 @@ public final class ClusterZoom {
                 if(binding!=null&&access!=null)try{boolean modern=Boolean.TRUE.equals(access.modern.invoke(binding.dispatcher.get()));backend=modern?"modern":"legacy";if(n==1){if(modern)renderer=(View)access.modernView.invoke(binding.modern.get());else renderer=(View)access.nativeView.invoke(access.legacyContainerView.invoke(provider(field(binding.legacy.get(),"c"))));}}catch(Exception|LinkageError ignored){}
                 out.append(n==0?" backend_main=":" backend_cluster=").append(backend);
             }
-            Object xcl=diagnosticXcl.get();if(xcl!=null&&clusterBinding!=null)try{if(field(xcl,"E")==clusterBinding.dispatcher.get()){family=Boolean.TRUE.equals(field(xcl,"C"))?"a":"b";Object optional=field(xcl,family.equals("a")?"A":"B");if(Boolean.TRUE.equals(invoke(optional,"isPresent")))cameraCase=(Integer)field(invoke(optional,"get"),"b");}}catch(Exception|LinkageError ignored){}
+            Object xcl=diagnosticXcl.get();if(xcl!=null&&clusterBinding!=null)try{if(field(xcl,"E")==clusterBinding.dispatcher.get()){family=Boolean.TRUE.equals(field(xcl,"B"))?"a":"b";Object optional=field(xcl,family.equals("a")?NAVIGATION_STATE:STATIC_STATE);if(Boolean.TRUE.equals(invoke(optional,"isPresent")))cameraCase=(Integer)field(invoke(optional,"get"),"b");}}catch(Exception|LinkageError ignored){}
             out.append(" family=").append(family).append(" case=").append(cameraCase);viewFields(out,"root",clusterView.get());viewFields(out,"renderer",renderer);
             out.append(" activity_main=").append(life(mainOwner.get())).append(" activity_cluster=").append(life(clusterOwner.get())).append(" stage=").append(ClusterZoomTrace.token(stage)).append(" reason=").append(ClusterZoomTrace.token(savedReason)).append(" error=").append(ClusterZoomTrace.token(savedError)).append(" ready=").append(ready());diagnostic=new ClusterZoomTrace.Snapshot(out.toString());
         }catch(Exception|LinkageError ignored){}
@@ -408,10 +410,10 @@ public final class ClusterZoom {
     private static final class Binding{
         final WeakReference<Object> manager,dispatcher,legacy,modern;
         Binding(Object m,Object d,Object old,Object newer){manager=new WeakReference<>(m);dispatcher=new WeakReference<>(d);legacy=new WeakReference<>(old);modern=new WeakReference<>(newer);}
-        boolean live()throws ReflectiveOperationException{Object d=dispatcher.get();return d!=null&&manager.get()!=null&&field(manager.get(),"au")==d&&provider(field(d,"c"))==legacy.get()&&legacy.get()!=null&&provider(field(d,"e"))==modern.get()&&modern.get()!=null;}
-        static Binding read(Object manager)throws ReflectiveOperationException{requireType(manager,"igc");Object d=field(manager,"au");requireType(d,"ujr");Object old=provider(field(d,"c"));requireType(old,"uhe");Object newer=provider(field(d,"e"));if(newer==null)throw new IllegalStateException("Missing map backend");return new Binding(manager,d,old,newer);}
+        boolean live()throws ReflectiveOperationException{Object d=dispatcher.get();return d!=null&&manager.get()!=null&&field(manager.get(),"at")==d&&provider(field(d,"c"))==legacy.get()&&legacy.get()!=null&&provider(field(d,"e"))==modern.get()&&modern.get()!=null;}
+        static Binding read(Object manager)throws ReflectiveOperationException{requireType(manager,"ier");Object d=field(manager,"at");requireType(d,"uip");Object old=provider(field(d,"c"));requireType(old,"ugc");Object newer=provider(field(d,"e"));if(newer==null)throw new IllegalStateException("Missing map backend");return new Binding(manager,d,old,newer);}
     }
-    /** Exact original26.09 native schema; constructors copy every field except requested zoom. */
+    /** Exact original 26.10 native schema; constructors copy every field except requested zoom. */
     private static final class NativeAccess {
         final Class<?> cameraType,updateType;
         final Constructor<?> copyCamera,newUpdate;
@@ -420,34 +422,34 @@ public final class ClusterZoom {
         private final ClassLoader loader;
         private NativeAccess(ClassLoader loader)throws ReflectiveOperationException{
             this.loader=loader;
-            cameraType=Class.forName("uum",false,loader);Class<?> builder=Class.forName("uuj",false,loader);
-            updateType=Class.forName("ute",false,loader);Class<?> update=Class.forName("utd",false,loader),callback=Class.forName("uud",false,loader);
+            cameraType=Class.forName("utm",false,loader);Class<?> builder=Class.forName("utj",false,loader);
+            updateType=Class.forName("use",false,loader);Class<?> update=Class.forName("usd",false,loader),callback=Class.forName("utd",false,loader);
             copyCamera=builder.getConstructor(cameraType);newUpdate=updateType.getConstructor(cameraType);
             zoom=cameraType.getField("q");builderZoom=builder.getField("e");build=builder.getMethod("a");
             updateCamera=declaredField(updateType,"c");duration=declaredField(update,"a");interpolator=declaredField(update,"b");
-            Class<?> dispatcher=Class.forName("ujr",false,loader);dispatch=dispatcher.getMethod("c",update,callback);modern=dispatcher.getMethod("h");dispatcherActive=declaredField(dispatcher,"h");
-            Class<?> legacy=Class.forName("uhe",false,loader);currentLegacy=legacy.getMethod("d");legacyStarted=declaredField(legacy,"i");legacyFuture=declaredField(legacy,"e");legacyMap=legacy.getMethod("b");
-            Class<?> renderer=Class.forName("vam",false,loader);rendererInitialized=declaredField(renderer,"S");rendererInput=declaredField(renderer,"i");
-            legacyContainerView=Class.forName("uhd",false,loader).getMethod("e");nativeView=Class.forName("wct",false,loader).getMethod("a");
-            modernView=Class.forName("upa",false,loader).getMethod("b");
-            modernMap=Class.forName("upa",false,loader).getMethod("e");
-            modernPose=Class.forName("upl",false,loader).getMethod("c");
-            toCamera=cameraType.getMethod("b",Class.forName("upn",false,loader));
-            Class<?> point=Class.forName("uin",false,loader);
-            cameraPoint=cameraType.getField("m");legacyTransform=Class.forName("uhd",false,loader).getMethod("c");
-            legacyLimit=declaredField(Class.forName("utv",false,loader),"b");limitLegacy=Class.forName("uto",false,loader).getMethod("b",float.class,point);
-            modernBridge=declaredField(dispatcher,"d");modernController=declaredField(Class.forName("utj",false,loader),"c");
-            modernLimit=declaredField(Class.forName("ukh",false,loader),"p");limitModern=Class.forName("vxg",false,loader).getMethod("b",float.class,point);
+            Class<?> dispatcher=Class.forName("uip",false,loader);dispatch=dispatcher.getMethod("c",update,callback);modern=dispatcher.getMethod("h");dispatcherActive=declaredField(dispatcher,"h");
+            Class<?> legacy=Class.forName("ugc",false,loader);currentLegacy=legacy.getMethod("d");legacyStarted=declaredField(legacy,"i");legacyFuture=declaredField(legacy,"e");legacyMap=legacy.getMethod("b");
+            Class<?> renderer=Class.forName("uzn",false,loader);rendererInitialized=declaredField(renderer,"S");rendererInput=declaredField(renderer,"i");
+            legacyContainerView=Class.forName("ugb",false,loader).getMethod("e");nativeView=Class.forName("wbq",false,loader).getMethod("a");
+            modernView=Class.forName("unz",false,loader).getMethod("b");
+            modernMap=Class.forName("unz",false,loader).getMethod("e");
+            modernPose=Class.forName("uok",false,loader).getMethod("c");
+            toCamera=cameraType.getMethod("b",Class.forName("uom",false,loader));
+            Class<?> point=Class.forName("uhl",false,loader);
+            cameraPoint=cameraType.getField("m");legacyTransform=Class.forName("ugb",false,loader).getMethod("c");
+            legacyLimit=declaredField(Class.forName("usv",false,loader),"b");limitLegacy=Class.forName("uso",false,loader).getMethod("b",float.class,point);
+            modernBridge=declaredField(dispatcher,"d");modernController=declaredField(Class.forName("usj",false,loader),"c");
+            modernLimit=declaredField(Class.forName("ujf",false,loader),"r");limitModern=Class.forName("vwh",false,loader).getMethod("b",float.class,point);
         }
         private NativeOwner nativeOwner(Binding binding,String role)throws ReflectiveOperationException{
             enter(role+"_backend");Object dispatcher=binding.dispatcher.get();if(!Boolean.TRUE.equals(modern.invoke(dispatcher)))throw gate(role+"_legacy_backend");enter(role+"_frame_owner");
-            Object bridge=provider(field(dispatcher,"d"));requireType(bridge,"utj");Object managerBridge=provider(field(binding.manager.get(),"F"));
-            Object transform=legacyTransform.invoke(provider(field(binding.legacy.get(),"c"))),consumer=field(transform,"d");requireType(consumer,"vxo");Object frameBridge=invoke(consumer,"e");
+            Object bridge=provider(field(dispatcher,"d"));requireType(bridge,"usj");Object managerBridge=provider(field(binding.manager.get(),"D"));
+            Object transform=legacyTransform.invoke(provider(field(binding.legacy.get(),"c"))),consumer=field(transform,"d");requireType(consumer,"vwq");Object frameBridge=invoke(consumer,"e");
             if(bridge!=managerBridge||bridge!=frameBridge)throw gate(role+"_frame_owner_mismatch");
-            enter(role+"_zoom_provider");Object controller=field(bridge,"c");requireType(controller,"ukh");Object state=provider(field(controller,"d"));requireType(state,"ujs");Object nativeProvider=java.lang.reflect.Array.get(field(state,"a"),1);if(nativeProvider==null||!nativeProvider.getClass().getName().equals("xci"))throw gate(role+"_zoom_provider_not_xci");enter(role+"_xcl_owner");
-            Object owner=field(nativeProvider,"b");requireType(owner,"xcl");Object jni=field(nativeProvider,"c");requireType(jni,"com.google.android.libraries.geo.navcore.ui.camera.jni.CameraControllerJni");
-            if(field(owner,"x")!=nativeProvider||field(owner,"E")!=dispatcher||field(owner,"a")!=jni)throw gate(role+"_xcl_owner_mismatch");
-            enter(role+"_native_handle");Method getHandle=Class.forName("abkf",false,loader).getMethod("mT");getHandle.setAccessible(true);Object handle=getHandle.invoke(field(jni,"a"));if(!(handle instanceof Long))throw gate(role+"_native_handle_type");if(((Long)handle)==0L)throw gate(role+"_native_handle_zero");if(role.equals("cluster"))diagnosticXcl=new WeakReference<>(owner);
+            enter(role+"_zoom_provider");Object controller=field(bridge,"c");requireType(controller,"ujf");Object state=provider(field(controller,"d"));requireType(state,"uiq");Object nativeProvider=java.lang.reflect.Array.get(field(state,"a"),1);if(nativeProvider==null||!nativeProvider.getClass().getName().equals("xav"))throw gate(role+"_zoom_provider_not_xci");enter(role+"_xcl_owner");
+            Object owner=field(nativeProvider,"b");requireType(owner,"xay");Object jni=field(nativeProvider,"c");requireType(jni,"com.google.android.libraries.geo.navcore.ui.camera.jni.CameraControllerJni");
+            if(field(owner,"w")!=nativeProvider||field(owner,"E")!=dispatcher||field(owner,"k")!=jni)throw gate(role+"_xcl_owner_mismatch");
+            enter(role+"_native_handle");Method getHandle=Class.forName("abih",false,loader).getMethod("mV");getHandle.setAccessible(true);Object handle=getHandle.invoke(field(jni,"a"));if(!(handle instanceof Long))throw gate(role+"_native_handle_type");if(((Long)handle)==0L)throw gate(role+"_native_handle_zero");if(role.equals("cluster"))diagnosticXcl=new WeakReference<>(owner);
             return new NativeOwner(nativeProvider,owner,jni,(Long)handle);
         }
         Owners owners(Binding main,Binding cluster)throws ReflectiveOperationException{

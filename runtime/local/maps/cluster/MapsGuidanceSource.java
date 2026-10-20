@@ -2,7 +2,7 @@ package local.maps.cluster;
 
 import java.lang.reflect.*;
 
-/** Exact schema of AAOS Maps 26.09.280001.E. No UI/bitmap recognition. */
+/** Exact schema of AAOS Maps 26.10.120001.E (member names unchanged from 26.09). No UI/bitmap recognition. */
 final class MapsGuidanceSource {
     static String diagnostic(Object state) throws ReflectiveOperationException {
         String mode=name(field(state,"c"));
@@ -22,7 +22,7 @@ final class MapsGuidanceSource {
         if(state==null||!"GUIDING".equals(name(field(state,"c"))))return null;
         Object nav=field(field(state,"b"),"a");
         if(nav==null)return null;
-        Object progress=call(nav,"d"); // www.d -> wxa.d: selected guided route progress (wkm).
+        Object progress=call(nav,"d"); // wvk.d: selected guided route progress (wjk).
         if(progress==null || Boolean.TRUE.equals(field(progress,"r")))return null;
         Object step=field(progress,"c");
         if(step==null)return null;

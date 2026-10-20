@@ -14,10 +14,13 @@ import com.android.tools.smali.dexlib2.builder.*;
 import com.android.tools.smali.dexlib2.builder.instruction.*;
 import com.android.tools.smali.dexlib2.immutable.reference.*;
 
-/** API 29 backports pinned to original 26.09 DEX. No Google bodies are bundled. */
+/** API 29 backports pinned to original 26.10 DEX. No Google bodies are bundled.
+ * 26.10 dropped View.getWindowInsetsController (26.09 dba.b), so that hook is gone; R8 moved
+ * getAttributionTag from Outline2 into Outline0.
+ */
 final class Api29Hooks {
     static final String COMPAT="Llocal/maps/cluster/PlatformCompat;";
-    private static final String OUT0="Lsb$$ExternalSyntheticApiModelOutline0;",OUT2="Lsb$$ExternalSyntheticApiModelOutline2;";
+    private static final String OUT0="Lrj$$ExternalSyntheticApiModelOutline0;";
     private static void check(boolean value,String message){if(!value)throw new IllegalStateException(message);}
     static String descriptor(Method m){StringBuilder s=new StringBuilder(m.getName()).append('(');for(var p:m.getParameterTypes())s.append(p);return s.append(')').append(m.getReturnType()).toString();}
     private static String reference(Instruction i){return i instanceof ReferenceInstruction?((ReferenceInstruction)i).getReference().toString():"";}
@@ -45,30 +48,29 @@ final class Api29Hooks {
     private static final Map<String,String> PIN=new LinkedHashMap<>();
     static {
         // Filled from the original input APK; every opcode/operand/try region is checked.
-        PIN.put("Laasx;->run()V", "6a1da7cfeba19d4fa3bba75da8ee9575e5f53c4e4f6be2d107ad61361415d4a1");
-        PIN.put("Ljhd;-><init>(Landroid/content/Context;Lqxk;Lqiy;Lxmv;Lxnu;Ltph;Lrqz;Lrql;Ladfk;Ljava/util/concurrent/Executor;Lxfj;Ljdc;Lsnf;Lwwa;Ljhc;Ljie;)V", "38c2a2884a0b7dbb5338e9b59fe15f69a2423aa8a66842695b60cab56582850b");
-        PIN.put("Leeh;->a(Landroid/content/Context;)Leee;", "0dbc5b824f1210d4d34785398bf41c0315a943d92c863fe6ceeac763bd660fd8");
-        PIN.put("Lapdc;->h()V", "5f1938c183a69e3f85aaa77f157935b03f35f5cb9708a6a6d2d392de3d3540c6");
-        PIN.put("Lapde;->a()J", "9e7a21a1061ccc87ec2c884c039cb78c09827e69815d62a4a3a43146c7cb04b3");
-        PIN.put("Ldrc;-><init>(Landroid/content/Context;)V", "dae12c1634e8194ec47bb23fd2d80c6b01360fdbaaea5c43b91f251288b3cfb8");
-        PIN.put("Ldci;-><clinit>()V", "f12da79158ea298dc6876772a63ddea02618cc5f608e37a461176e69e9e7cb30");
-        PIN.put("Ldci;-><init>(Landroid/view/WindowInsets;)V", "815e97e89735620df5ef51458080e839ab1eed7a06445288c44b1e4e938d7b4e");
-        PIN.put("Ldbx;->G(Landroid/view/View;)Lcxv;", "3c6b2a84b8685ce12bb55f66c886f69d44f6ad4f7c4be01f4e79c605c34d1438");
-        PIN.put("Ldba;->b(Landroid/view/View;)Ldck;", "0358005332fdaf60172eec3d92f41b6788305c6834e96374a03c9bf6af0789d0");
-        PIN.put("Ldbp;->a(Landroid/view/View;Ldbn;)V", "3b51908f1c0d58e14513b24819efb1521c748f50743f3381f75cf7a4d42d0687");
+        PIN.put("Laarj;->run()V", "6c73f5ef5fabd576abb58dff7701da3ced220ce2436c04751243d256e8e062e7");
+        PIN.put("Ljfs;-><init>(Landroid/content/Context;Lqxn;Lqjg;Lxlm;Lxmk;Ltoi;Lrvr;Lzhv;Laddm;Ljava/util/concurrent/Executor;Lxdy;Ljbp;Lsmt;Lwll;Ljfr;Ljgv;)V", "150fd624855670f090676070579cf8bdb18e14e663dac7376559cbff22a76013");
+        PIN.put("Lecc;->a(Landroid/content/Context;)Lebz;", "028a58ce329038c3a1311ef54a686d13c17349c8c4b9d548303b0434dc45ad98");
+        PIN.put("Lapbv;->h()V", "4bf647139828a5963c6783a42fbe9c8b1f495161dfc9a963056aa16c5088dab2");
+        PIN.put("Lapbx;->a()J", "f00e9bb443b9ae79b33d06614d3ea4ee75d4bfb8639357fbbfb54908e9bd04fd");
+        PIN.put("Ldpr;-><init>(Landroid/content/Context;)V", "e6036e27e0c84b7e398a9fe790e2af39bf231221793bc08027696be59ca082c2");
+        PIN.put("Ldcc;-><clinit>()V", "b96b14f6555d24e91f9bacce450bb95ea12d0ad7ec97769dda85300fffd924d2");
+        PIN.put("Ldcc;-><init>(Landroid/view/WindowInsets;)V", "0041f79c7d3df3341126905405b524a42d3bdd376b7e99b3dffa96a08d67a959");
+        PIN.put("Ldbr;->F(Landroid/view/View;)Lcxt;", "9f5c1d760151fe5c038ef5af49f8522467666c1f01c4094910ffe5a39a1aa142");
+        PIN.put("Ldbj;->a(Landroid/view/View;Ldbh;)V", "84fc8f9452088866badb05f0eeaa3a72f24ff791570d46fa19ba0e31372ed14b");
         PIN.put(OUT0+"->m(I)I", "c8fb2371d55086bc8f12d9a82ad568c46f6ada1748f4187547734b97741691dd");
         PIN.put(OUT0+"->m(Landroid/graphics/Outline;Landroid/graphics/Path;)V", "886ec7b5eb64a3fa9242f5342364ce90f099833f5a0a2091bc185d115335eed4");
         PIN.put(OUT0+"->m(Landroid/app/ActivityManager;Ljava/lang/String;II)Ljava/util/List;", "23017b7aa155c9fda43bf7d6e8d21b78f4bcfcd64692b139d124ef832a60a387");
         PIN.put(OUT0+"->m(Landroid/app/ActivityManager;[B)V", "ce2b2fef9b69227578ac2ebb9e3cfebb37e6e4d07ea51356c5d2f4eacae27ff9");
         PIN.put(OUT0+"->m(Landroid/view/accessibility/AccessibilityNodeInfo;)Ljava/lang/CharSequence;", "43276fccd8a4fbdc277f748c438c92b421b60525bb9bff79dc15dc6eb3956884");
         PIN.put(OUT0+"->m(Landroid/view/accessibility/AccessibilityNodeInfo;Ljava/lang/CharSequence;)V", "ad24275d9d2c8bdbf128c1b8eb972f7606ef5d20b8db4a0b7b52702cf68fd7ea");
-        PIN.put(OUT2+"->m(Landroid/content/Context;)Ljava/lang/String;", "a591b5284da2b9f39815c0e3bd3dbf15e2572ef54726c24b33c53281cb08c75d");
+        PIN.put(OUT0+"->m(Landroid/content/Context;)Ljava/lang/String;", "a591b5284da2b9f39815c0e3bd3dbf15e2572ef54726c24b33c53281cb08c75d");
         PIN.put(OUT0+"->m(Landroid/view/Window;Z)V", "e8e685949fadfdf2b9dba98ea5a8878d3d2df17d5b2679d70cc1ca16cfbd37b5");
         PIN.put(OUT0+"->m(Landroid/view/View;)Ljava/lang/CharSequence;", "2302d2ec86ad12d3849d7f0a83d8483d78332817b356859d89971dabf2750c7c");
         PIN.put(OUT0+"->m(Landroid/view/View;Ljava/lang/CharSequence;)V", "27e743e9819f88f43f08531ea7f9b767e2cd835e59360bab98f2a7d9a22e3018");
         PIN.put(OUT0+"->m()Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;", "f56aaea0a22dc1ec79f4c0546be8771aa7d3214f2b86ca864763bbcc5d57057b");
         PIN.put(OUT0+"->m$1()Landroid/view/accessibility/AccessibilityNodeInfo$AccessibilityAction;", "3443be5e57de44b3d8f7310b4370506b51004e10734e2c926225102069116c73");
-        // Sole callee of Lcen;->a(View)Z, which Compose's InnerNodeCoordinator draw (Lcar;->C)
+        // Sole callee of Lcdy;->a(View)Z, which Compose's InnerNodeCoordinator draw (Lcad;->C, Lcak;->C)
         // calls on every frame without an SDK check: NoSuchMethodError on DiLink 3 / API29.
         PIN.put(OUT0+"->m(Landroid/view/View;)Z", "7afa31c569f8933a97db75d231b49d05bdc513dc758b347590764cd4f7b219af");
     }
@@ -81,42 +83,53 @@ final class Api29Hooks {
     static void patch(MutableMethod m){
         String key=m.getDefiningClass()+"->"+descriptor(m);String expected=PIN.get(key);check(expected!=null,"Unexpected API29 method "+key);check(expected.equals(fingerprint(m)),"API29 original fingerprint mismatch "+key);
         var out=m.getImplementation();List<Instruction> code=new ArrayList<>(out.getInstructions());String d=descriptor(m),type=m.getDefiningClass();
-        if(type.equals("Laasx;")){
+        if(type.equals("Laarj;")){
             int at=only(code,OUT0+"->m(Landroid/view/WindowManager;)Landroid/view/WindowMetrics;");
             check(reference(code.get(at+2)).equals(OUT0+"->m(Landroid/view/WindowMetrics;)Landroid/graphics/Rect;"),"Popup WindowMetrics chain changed");
+            check(code.get(at-4).getOpcode()==Opcode.CONST_STRING&&((OneRegisterInstruction)code.get(at-4)).getRegisterA()==4&&
+                reference(code.get(at-3)).equals("Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;")&&
+                ((FiveRegisterInstruction)code.get(at-3)).getRegisterD()==4,"Popup window-service scratch changed");
+            check(code.get(at+8).getOpcode()==Opcode.AGET&&((ThreeRegisterInstruction)code.get(at+8)).getRegisterC()==3,"Popup location index register changed");
             Label original=out.newLabelForIndex(at),join=out.newLabelForIndex(at+4);
-            // Only this popup case reaches this site; v3's last value ("window") is dead,
-            // and getHeight redefines v3 before any subsequent read. v0/v1/v2/v4/v7 retained.
-            prepend(m,at,List.of(sdk(3),new BuilderInstruction22b(Opcode.ADD_INT_LIT8,3,3,-30),new BuilderInstruction21t(Opcode.IF_GEZ,3,original),
+            // Only this popup case reaches this site; v4's last value ("window") is dead and is
+            // never read again in this case. v3 is NOT free in 26.10: it still holds the constant 1
+            // that the following aget uses as index. v0/v1/v2/v3/v8 retained.
+            prepend(m,at,List.of(sdk(4),new BuilderInstruction22b(Opcode.ADD_INT_LIT8,4,4,-30),new BuilderInstruction21t(Opcode.IF_GEZ,4,original),
                 call("getWindowBounds",List.of("Landroid/view/WindowManager;"),"Landroid/graphics/Rect;",1),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,1),new BuilderInstruction20t(Opcode.GOTO_16,join)));
-        } else if(type.equals("Ljhd;")){
-            int at=only(code,"La$$ExternalSyntheticApiModelOutline0;->m()Landroid/icu/util/ULocale;");
+        } else if(type.equals("Ljfs;")){
+            int at=only(code,"La$$ExternalSyntheticApiModelOutline3;->m()Landroid/icu/util/ULocale;");
             int joinAt=only(code,OUT0+"->m(Landroid/icu/number/FormattedNumber;)Ljava/lang/String;")+2;
-            check(code.get(joinAt).getOpcode()==Opcode.NEW_ARRAY,"Whole-percent formatter rejoin changed");
+            check(code.get(at-2).getOpcode()==Opcode.IGET&&reference(code.get(at-2)).equals("Ljfr;->b:I")&&
+                ((TwoRegisterInstruction)code.get(at-2)).getRegisterA()==1,"Whole-percent source register changed");
+            check(code.get(at+10).getOpcode()==Opcode.INT_TO_DOUBLE&&((TwoRegisterInstruction)code.get(at+10)).getRegisterB()==1,"Whole-percent formatter input changed");
+            check(code.get(joinAt-1).getOpcode()==Opcode.MOVE_RESULT_OBJECT&&((OneRegisterInstruction)code.get(joinAt-1)).getRegisterA()==1,"Whole-percent formatter output changed");
+            check(code.get(joinAt).getOpcode()==Opcode.NEW_ARRAY&&((TwoRegisterInstruction)code.get(joinAt)).getRegisterA()==4,"Whole-percent formatter rejoin changed");
+            check(out.getTryBlocks().isEmpty(),"Whole-percent constructor gained exception regions");
             Label original=out.newLabelForIndex(at),join=out.newLabelForIndex(joinAt);
-            // Existing v15 is a WHOLE percent (91 means 91%, never 9100%). v3/v4 dead here;
-            // original ICU replaces both on API30+, API29's next NEW_ARRAY replaces v3.
-            prepend(m,at,List.of(sdk(3),new BuilderInstruction21s(Opcode.CONST_16,4,30),new BuilderInstruction22t(Opcode.IF_GE,3,4,original),
-                call("formatWholePercent",List.of("I"),"Ljava/lang/String;",15),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,15),new BuilderInstruction20t(Opcode.GOTO_16,join)));
-        } else if(type.equals("Leeh;")){
+            // Existing v1 is a WHOLE percent (91 means 91%, never 9100%). v4/v5 dead here: original
+            // ICU replaces both on API30+, API29's next NEW_ARRAY replaces v4 and v5 is never read again.
+            // v2 (0) and v3 (1) are live constants used after the rejoin and stay untouched.
+            prepend(m,at,List.of(sdk(4),new BuilderInstruction21s(Opcode.CONST_16,5,30),new BuilderInstruction22t(Opcode.IF_GE,4,5,original),
+                call("formatWholePercent",List.of("I"),"Ljava/lang/String;",1),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,1),new BuilderInstruction20t(Opcode.GOTO_16,join)));
+        } else if(type.equals("Lecc;")){
             Label original=out.newLabelForIndex(0);
             prepend(m,0,List.of(sdk(0),new BuilderInstruction21s(Opcode.CONST_16,1,30),new BuilderInstruction22t(Opcode.IF_GE,0,1,original),
                 call("getWindowBounds",List.of("Landroid/content/Context;"),"Landroid/graphics/Rect;",2),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,0),
-                new BuilderInstruction21c(Opcode.NEW_INSTANCE,1,new ImmutableTypeReference("Leee;")),
+                new BuilderInstruction21c(Opcode.NEW_INSTANCE,1,new ImmutableTypeReference("Lebz;")),
                 new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL,1,2,0,0,0,0,new ImmutableMethodReference("Landroid/content/Context;","getResources",List.of(),"Landroid/content/res/Resources;")),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,2),
                 new BuilderInstruction35c(Opcode.INVOKE_VIRTUAL,1,2,0,0,0,0,new ImmutableMethodReference("Landroid/content/res/Resources;","getDisplayMetrics",List.of(),"Landroid/util/DisplayMetrics;")),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,2),
                 new BuilderInstruction22c(Opcode.IGET,2,2,new ImmutableFieldReference("Landroid/util/DisplayMetrics;","density","F")),
-                new BuilderInstruction35c(Opcode.INVOKE_DIRECT,3,1,0,2,0,0,new ImmutableMethodReference("Leee;","<init>",List.of("Landroid/graphics/Rect;","F"),"V")),new BuilderInstruction11x(Opcode.RETURN_OBJECT,1)));
-        } else if(type.equals("Lapdc;")){
+                new BuilderInstruction35c(Opcode.INVOKE_DIRECT,3,1,0,2,0,0,new ImmutableMethodReference("Lebz;","<init>",List.of("Landroid/graphics/Rect;","F"),"V")),new BuilderInstruction11x(Opcode.RETURN_OBJECT,1)));
+        } else if(type.equals("Lapbv;")){
             Label original=out.newLabelForIndex(0);prepend(m,0,List.of(sdk(0),new BuilderInstruction21s(Opcode.CONST_16,1,30),new BuilderInstruction22t(Opcode.IF_GE,0,1,original),new BuilderInstruction10x(Opcode.RETURN_VOID)));
-            // API29 leaves s null. Lapde's paired leak-warning guard below handles that
+            // API29 leaves s null. Lapbx's paired leak-warning guard below handles that
             // optional diagnostic without skipping connection-pool/socket cleanup.
-        } else if(type.equals("Lapde;")){
-            int field=only(code,"Lapda;->a:Ljava/lang/Object;"),at=field+1,joinAt=field+5;
+        } else if(type.equals("Lapbx;")){
+            int field=only(code,"Lapbt;->a:Ljava/lang/Object;"),at=field+1,joinAt=field+5;
             check(d.equals("a()J")&&out.getRegisterCount()==21,"CloseGuard cleanup schema changed");
             check(code.get(field).getOpcode()==Opcode.IGET_OBJECT&&code.get(field) instanceof TwoRegisterInstruction&&
                 ((TwoRegisterInstruction)code.get(field)).getRegisterA()==1&&((TwoRegisterInstruction)code.get(field)).getRegisterB()==1,"CloseGuard field/register changed");
-            check(reference(code.get(field-1)).equals("Lapfo;->b:Lapfo;")&&((OneRegisterInstruction)code.get(field-1)).getRegisterA()==5,"CloseGuard platform scratch changed");
+            check(reference(code.get(field-1)).equals("Lapep;->b:Lapep;")&&((OneRegisterInstruction)code.get(field-1)).getRegisterA()==5,"CloseGuard platform scratch changed");
             check(reference(code.get(at)).equals("Ljava/lang/Object;->getClass()Ljava/lang/Class;")&&
                 ((FiveRegisterInstruction)code.get(at)).getRegisterCount()==1&&((FiveRegisterInstruction)code.get(at)).getRegisterC()==1,"CloseGuard dereference changed");
             check(reference(code.get(at+1)).equals(OUT0+"->m(Ljava/lang/Object;)Landroid/util/CloseGuard;")&&
@@ -145,35 +158,34 @@ final class Api29Hooks {
             // The real guard has already been read into v1. v5's platform singleton
             // is dead here: both cleanup successors redefine it (0x79/0x89) before
             // any read. Leave every original instruction/try region in place.
+            // 26.10 keeps the 26.09 shape: 21 registers, warning 0x63..0x6d, same registers.
             // API30+ and a nonnull API29 guard still execute the original warning.
             prepend(m,at,List.of(sdk(5),new BuilderInstruction22b(Opcode.ADD_INT_LIT8,5,5,-30),
                 new BuilderInstruction21t(Opcode.IF_GEZ,5,original),new BuilderInstruction21t(Opcode.IF_EQZ,1,join)));
-        } else if(type.equals("Ldrc;")){
-            int at=only(code,"Ldrl;-><init>(Landroid/content/Context;Lei;)V")-4;
+        } else if(type.equals("Ldpr;")){
+            int at=only(code,"Ldpz;-><init>(Landroid/content/Context;Lpgc;)V")-4;
             check(code.get(at).getOpcode()==Opcode.IF_NEZ&&((OneRegisterInstruction)code.get(at)).getRegisterA()==1,"MediaRouter backend branch changed");
             int address=0;for(int i=0;i<at;i++)address+=code.get(i).getCodeUnits();
             int target=address+((OffsetInstruction)code.get(at)).getCodeOffset();int targetIndex=0,pos=0;while(pos<target){pos+=code.get(targetIndex++).getCodeUnits();}check(pos==target,"MediaRouter branch target changed");Label skip=out.newLabelForIndex(targetIndex);
             out.replaceInstruction(at,sdk(2));out.addInstruction(at+1,new BuilderInstruction21s(Opcode.CONST_16,3,30));out.addInstruction(at+2,new BuilderInstruction22t(Opcode.IF_LT,2,3,skip));out.addInstruction(at+3,new BuilderInstruction21t(Opcode.IF_NEZ,1,skip));
-        } else if(type.equals("Ldci;")&&d.equals("<clinit>()V")){
+        } else if(type.equals("Ldcc;")&&d.equals("<clinit>()V")){
             Label original=out.newLabelForIndex(0);prepend(m,0,List.of(sdk(0),new BuilderInstruction21s(Opcode.CONST_16,1,30),new BuilderInstruction22t(Opcode.IF_GE,0,1,original),
                 call("consumedWindowInsets",List.of(),"Landroid/view/WindowInsets;"),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,0),new BuilderInstruction11n(Opcode.CONST_4,1,0),
-                new BuilderInstruction35c(Opcode.INVOKE_STATIC,2,0,1,0,0,0,new ImmutableMethodReference("Ldci;","p",List.of("Landroid/view/WindowInsets;","Landroid/view/View;"),"Ldci;")),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,0),
-                new BuilderInstruction21c(Opcode.SPUT_OBJECT,0,new ImmutableFieldReference("Ldci;","a","Ldci;")),new BuilderInstruction10x(Opcode.RETURN_VOID)));
-        } else if(type.equals("Ldci;")){
+                new BuilderInstruction35c(Opcode.INVOKE_STATIC,2,0,1,0,0,0,new ImmutableMethodReference("Ldcc;","p",List.of("Landroid/view/WindowInsets;","Landroid/view/View;"),"Ldcc;")),new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,0),
+                new BuilderInstruction21c(Opcode.SPUT_OBJECT,0,new ImmutableFieldReference("Ldcc;","a","Ldcc;")),new BuilderInstruction10x(Opcode.RETURN_VOID)));
+        } else if(type.equals("Ldcc;")){
+            // Ldbu is WindowInsetsCompat Impl29 (super chain dbt/dbs/dbr/dbz); Ldbv (Impl30) extends it.
             Label original=out.newLabelForIndex(1);prepend(m,1,List.of(sdk(0),new BuilderInstruction21s(Opcode.CONST_16,1,30),new BuilderInstruction22t(Opcode.IF_GE,0,1,original),
-                new BuilderInstruction21c(Opcode.NEW_INSTANCE,0,new ImmutableTypeReference("Ldca;")),new BuilderInstruction35c(Opcode.INVOKE_DIRECT,3,0,2,3,0,0,new ImmutableMethodReference("Ldca;","<init>",List.of("Ldci;","Landroid/view/WindowInsets;"),"V")),
-                new BuilderInstruction22c(Opcode.IPUT_OBJECT,0,2,new ImmutableFieldReference("Ldci;","b","Ldcf;")),new BuilderInstruction10x(Opcode.RETURN_VOID)));
-        } else if(type.equals("Ldbx;")){
+                new BuilderInstruction21c(Opcode.NEW_INSTANCE,0,new ImmutableTypeReference("Ldbu;")),new BuilderInstruction35c(Opcode.INVOKE_DIRECT,3,0,2,3,0,0,new ImmutableMethodReference("Ldbu;","<init>",List.of("Ldcc;","Landroid/view/WindowInsets;"),"V")),
+                new BuilderInstruction22c(Opcode.IPUT_OBJECT,0,2,new ImmutableFieldReference("Ldcc;","b","Ldbz;")),new BuilderInstruction10x(Opcode.RETURN_VOID)));
+        } else if(type.equals("Ldbr;")){
             // R8 removed the old visible-insets reflection path. Native h(View)
             // explicitly supports null and substitutes Insets.NONE; normal API29
-            // system/stable/IME inset sources in Ldca remain active. Both incoming
+            // system/stable/IME inset sources in Ldbu remain active. Both incoming
             // registers are dead here: the API30 original only constructs/throws.
             Label original=out.newLabelForIndex(0);prepend(m,0,List.of(sdk(0),new BuilderInstruction21s(Opcode.CONST_16,1,30),new BuilderInstruction22t(Opcode.IF_GE,0,1,original),new BuilderInstruction11n(Opcode.CONST_4,0,0),new BuilderInstruction11x(Opcode.RETURN_OBJECT,0)));
-        } else if(type.equals("Ldba;")){
-            // Both pinned callers handle null through genuine InputMethodManager show/hide.
-            Label original=out.newLabelForIndex(0);prepend(m,0,List.of(sdk(0),new BuilderInstruction22b(Opcode.ADD_INT_LIT8,0,0,-30),new BuilderInstruction21t(Opcode.IF_GEZ,0,original),new BuilderInstruction11n(Opcode.CONST_4,0,0),new BuilderInstruction11x(Opcode.RETURN_OBJECT,0)));
-        } else if(type.equals("Ldbp;")){
-            // Animation callbacks are an API30 feature. Insets continue through Ldca on API29.
+        } else if(type.equals("Ldbj;")){
+            // Animation callbacks are an API30 feature. Insets continue through Ldbu on API29.
             Label original=out.newLabelForIndex(0);prepend(m,0,List.of(sdk(0),new BuilderInstruction22b(Opcode.ADD_INT_LIT8,0,0,-30),new BuilderInstruction21t(Opcode.IF_GEZ,0,original),new BuilderInstruction10x(Opcode.RETURN_VOID)));
         } else {
             String name;
@@ -183,7 +195,7 @@ final class Api29Hooks {
             else if(d.equals("m(Landroid/app/ActivityManager;[B)V"))name="setProcessStateSummary";
             else if(d.equals("m(Landroid/view/accessibility/AccessibilityNodeInfo;)Ljava/lang/CharSequence;"))name="getStateDescription";
             else if(d.equals("m(Landroid/view/accessibility/AccessibilityNodeInfo;Ljava/lang/CharSequence;)V"))name="setStateDescription";
-            else if(type.equals(OUT2))name="getAttributionTag";
+            else if(d.equals("m(Landroid/content/Context;)Ljava/lang/String;"))name="getAttributionTag";
             else if(d.equals("m(Landroid/view/Window;Z)V"))name="setDecorFitsSystemWindows";
             else if(d.equals("m(Landroid/view/View;)Ljava/lang/CharSequence;"))name="getStateDescription";
             else if(d.equals("m(Landroid/view/View;Ljava/lang/CharSequence;)V"))name="setStateDescription";

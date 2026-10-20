@@ -26,6 +26,8 @@ public final class AutomotiveMicrogPatch {
  private static final String PROVIDER="Llocal/maps/cluster/MicrogProvider;",BOOTSTRAP="Llocal/maps/cluster/PatchBootstrap;";
  private static final String APPLICATION="Lcom/google/android/apps/gmm/car/embedded/app/EmbeddedGoogleMapsApplication;";
  private static final String CONNECTION_RESULT="Lcom/google/android/gms/common/ConnectionResult;",AVAILABILITY_CHANNEL="com.google.android.gms.availability";
+ /** Port 26.10 phase B (API29, 3D, search, UI scale): re-pinned to 26.10 in revision 54. */
+ static final boolean PHASE_B=true;
  private static final BytecodePatch PATCH=create();
  public static BytecodePatch getAutomotiveMicrogPatch(){return PATCH;}
  private static void isolateIdentity(Document doc){
@@ -51,7 +53,7 @@ public final class AutomotiveMicrogPatch {
   }
  }
  private static void requireInput(PackageMetadata metadata){
-  if(!"com.google.android.apps.maps".equals(metadata.getPackageName())||!"1068809778".equals(metadata.getVersionCode())||!"26.09.280001.E".equals(metadata.getVersionName()))throw new IllegalStateException("Exact original AAOS 26.09 input required");
+  if(!"com.google.android.apps.maps".equals(metadata.getPackageName())||!"1068833407".equals(metadata.getVersionCode())||!"26.10.120001.E".equals(metadata.getVersionName()))throw new IllegalStateException("Exact original AAOS 26.10 input required");
   try{
    boolean match=false;
    for(var certificates:metadata.getSigningCertificates().values())for(var certificate:certificates){
@@ -152,19 +154,18 @@ public final class AutomotiveMicrogPatch {
    }catch(Exception e){throw new IllegalStateException("AAOS laboratory manifest failed",e);}
    return Unit.INSTANCE;
   });
-  BytecodePatchBuilder patch=new BytecodePatchBuilder("Maps Automotive for BYD (MicroG-RE TEST)","Experimental TEST preview for original Maps Automotive 26.09.280001.E: MicroG-RE sign-in, cluster/HUD and optional read-only BYD EV data.",true);
+  BytecodePatchBuilder patch=new BytecodePatchBuilder("Maps Automotive for BYD (MicroG-RE TEST)","Experimental TEST preview for original Maps Automotive 26.10.120001.E: MicroG-RE sign-in, cluster/HUD and optional read-only BYD EV data.",true);
   var knownBev=KnownBevOption.register(patch);
-  patch.compatibleWith(new Compatibility("com.google.android.apps.maps","Maps Automotive 26.09 TEST",null,ApkFileType.APK_REQUIRED,(Integer)null,
+  patch.compatibleWith(new Compatibility("com.google.android.apps.maps","Maps Automotive 26.10 TEST",null,ApkFileType.APK_REQUIRED,(Integer)null,
    SIGNERS,
-   List.of(new AppTarget("26.09.280001.E",1068809778,true,30,"Original AAOS ARM64 26.09.280001.E input"))));
+   List.of(new AppTarget("26.10.120001.E",1068833407,true,30,"Original AAOS ARM64 26.10.120001.E input"))));
   patch.dependsOn(resources.build$morphe_patcher());
   // The String overload resolves the resource through Morphe's own class loader, not this bundle's.
   patch.extendWith(()->{var stream=AutomotiveMicrogPatch.class.getClassLoader().getResourceAsStream(EXTENSION);if(stream==null)throw new IllegalStateException("Missing "+EXTENSION);return stream;});
   patch.execute(context->{
    requireInput(context.getPackageMetadata());
-   Api29Hooks.apply(context);
-   Buildings3dHooks.apply(context);
-   SearchAlignmentHooks.apply(context);
+   // Port 26.10 phase B: API29, 3D and search run first, on the untouched original 26.10 input.
+   if(PHASE_B){Api29Hooks.apply(context);Buildings3dHooks.apply(context);SearchAlignmentHooks.apply(context);}
    int routes=0,classes=0,gates=0;
    for(var source:context.getAllClassesWithStrings()){
     if(source.getType().startsWith(OWN)||!routed(source))continue;
@@ -180,8 +181,8 @@ public final class AutomotiveMicrogPatch {
      }
     }
    }
-   // spl.l is GoogleApiAvailabilityLight.isGooglePlayServicesAvailable(Context,int): answer for MicroG-RE.
-   for(var m:context.mutableClassDefBy("Lspl;").getMethods())
+   // soz.l is GoogleApiAvailabilityLight.isGooglePlayServicesAvailable(Context,int): answer for MicroG-RE.
+   for(var m:context.mutableClassDefBy("Lsoz;").getMethods())
     if(m.getName().equals("l")&&m.getParameterTypes().toString().equals("[Landroid/content/Context;, I]")&&m.getReturnType().equals("I")&&m.getImplementation()!=null){
      InstructionExtensions.INSTANCE.addInstructions(m,0,"invoke-static {p1}, "+PROVIDER+"->availability(Landroid/content/Context;)I\nmove-result v0\nreturn v0");gates++;
     }
@@ -192,7 +193,7 @@ public final class AutomotiveMicrogPatch {
    ClusterHooks.location(context);
    ClusterHooks.apply(context);
    WheelZoomHooks.apply(context);
-   UiScaleHooks.apply(context);
+   if(PHASE_B)UiScaleHooks.apply(context);
    NavigationHooks.apply(context);
    VehicleEvHooks.apply(context);
    KnownBevOption.apply(context,knownBev.getValue());

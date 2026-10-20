@@ -2,37 +2,37 @@
 
 We have ended development and support for **our phone edition of Google Maps for BYD**. Our work now focuses on the **Automotive edition**, designed for Android automotive systems. You can keep your existing phone edition installed while you try Automotive; it is not required by the new version.
 
-The current test release is **Morphe preview 3**. It provides our `.mpp` patches. You create the Maps APK locally by applying them to the matching clean original Maps Automotive APK. Google sign-in is provided by **MicroG-RE (7.2.1 tested)**, independently of phone Maps.
+The current test release is **Morphe preview 4**, for **Maps Automotive 26.10.120001.E**. It provides our `.mpp` patches. You create the Maps APK locally by applying them to the matching clean original Maps Automotive APK. Google sign-in is provided by **MicroG-RE (7.2.1 tested)**, independently of phone Maps.
 
-## What changes in preview 3
+## What changes in preview 4
 
-Preview 3 (patch revision 52, diagnostic version `patch-lab.52-unified`) adds steering-wheel zoom for the instrument-cluster map, a working pointer offset and cluster zoom during navigation, and a Unknown/BEV/PHEV/HEV vehicle profile. It also adds experimental support for Android 10 / DiLink 3 (including a DiLink 3 cluster-map test) and a DiLink 5.1 instrument-theme profile. The preview 2 interface features remain. See [the feature guide](README.md#new-in-preview-3).
+Preview 4 (patch revision 54, diagnostic version `patch-lab.54-maps2610`) moves every preview 3 feature to the newer original **Maps Automotive 26.10.120001.E**. It also keeps steering-wheel zoom working after you switch the car off and on, adds CCS1 to the vehicle profile, and lets the DiLink 3 cluster map resume by itself after a clean session. See [the feature guide](README.md#new-in-preview-4).
 
-If you already made a preview 1 or preview 2 APK, patch the same supported clean original with preview 3 and **reuse your existing signing key**. You can then update your Automotive installation without uninstalling it. Refreshing the Morphe source alone does not install that update. The [Telegram ready APK](READY-APK-preview.2.md) remains preview 2/build 34.
+Preview 4 needs a **different original APK** from preview 3. If you already made a preview 1, 2 or 3 APK, patch the **26.10.120001.E** original with preview 4 and **reuse your existing signing key**. It installs over your current Automotive app as an update and keeps its data. Refreshing the Morphe source alone does not install that update. Preview 3 stays available for 26.09.280001.E. The [Telegram ready APK](READY-APK-preview.2.md) remains preview 2/build 34.
 
 ## Download these files
 
 - [Morphe Manager for Android — official Releases](https://github.com/MorpheApp/morphe-manager/releases).
 - Preferred: [Add our TEST patch source to Morphe](https://morphe.software/add-source?github=romanchukg-cloud/maps-automotive-for-byd-patches&name=Maps%20Automotive%20for%20BYD%20%28TEST%29), or paste `https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches` in **Sources → + → Remote**. Morphe fetches the `.mpp`; this source currently serves TEST previews only, including its default main feed.
-- [Our Morphe preview 3 patch bundle — Local fallback](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.3/maps-automotive-for-byd-morphe-preview.3.mpp).
+- [Our Morphe preview 4 patch bundle — Local fallback](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.4/maps-automotive-for-byd-morphe-preview.4.mpp).
 - [MicroG-RE — official Releases](https://github.com/MorpheApp/MicroG-RE/releases). Choose the matching **ARM64 APK**. This preview requires at least 7.2.1, which is the tested version; newer releases are not automatically verified.
-- Your own **clean original Maps Automotive 26.09.280001.E**, version code **1068809778**, ARM64 APK file. We do not distribute Google's original APK. Obtain the matching original file yourself and compare it with the exact input below.
+- Your own **clean original Maps Automotive 26.10.120001.E**, version code **1068833407**, ARM64 APK file (APKMirror variant arm64-v8a + x86_64, nodpi). We do not distribute Google's original APK. It is listed, for example, on [APKMirror](https://www.apkmirror.com/apk/google-inc/google-maps-android-automotive/google-maps-android-automotive-26-10-120001-e-release/), a third-party site; compare your file with the exact input below. A later 26.10 build such as 26.10.120003.E is not accepted.
 
-The resulting Automotive app requires an ARM64 head unit with Android 10 or newer (Android 10 support is experimental). You can patch on an Android device and transfer the result to the head unit. The Manager workflow was tested with **preview 1 using Morphe Manager 1.35.0 on Android API32**. Preview 2 and preview 3 have not been retested in Android Manager; later Manager releases can also change their UI. On-head-unit patching performance is not established across BYD firmware. For a computer, use [Morphe Desktop from its official Releases page](https://github.com/MorpheApp/morphe-desktop/releases) and the [Desktop fallback guide](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md#computer-fallback-morphe-desktop-cli), tested with Desktop 1.18.1.
+The resulting Automotive app requires an ARM64 head unit with Android 10 or newer (Android 10 support is experimental). You can patch on an Android device and transfer the result to the head unit. The Manager workflow was tested with **preview 1 using Morphe Manager 1.35.0 on Android API32**. Preview 2, 3 and 4 have not been retested in Android Manager; later Manager releases can also change their UI. On-head-unit patching performance is not established across BYD firmware. For a computer, use [Morphe Desktop from its official Releases page](https://github.com/MorpheApp/morphe-desktop/releases) and the [Desktop fallback guide](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md#computer-fallback-morphe-desktop-cli), tested with Desktop 1.18.1.
 
 ## Which Maps file should I select?
 
 | File | Use as Morphe input? |
 | --- | --- |
-| Clean original **Maps Automotive 26.09.280001.E**, code 1068809778, ARM64, matching the hash below | **Yes** |
+| Clean original **Maps Automotive 26.10.120001.E**, code 1068833407, ARM64, matching the hash below | **Yes** |
 | Your installed phone Google Maps / Google Maps for BYD, or an APK exported from it | **No** |
 | Old Automotive for BYD, an APK extracted from that installation, or an already patched Morphe output | **No** |
-| Another Maps Automotive version or architecture | **No** |
+| Another Maps Automotive version or architecture, including 26.09 (use preview 3 for it) and 26.10.120003.E | **No** |
 
 The clean input's package is `com.google.android.apps.maps`. The phone edition can use that same package name, so the package name alone does **not** identify the correct file. Check the Automotive version, version code, architecture, original Google signature and exact SHA-256:
 
 ```text
-a9ecc4c18fac089c3c55fd20bed65233b7ea4db029da9b824305bf0b4b5716c9
+d9dc74c9fa0f5bee0911ed1594a19adc0761258d524b5031ed480674d81f5ff9
 ```
 
 Patches are applied to this **APK file**. You do not patch the phone app already installed on the head unit, and you do not need to install the clean original before patching it. Do not use force/continue-on-error if the input is rejected.
@@ -42,7 +42,7 @@ Patches are applied to this **APK file**. You do not patch the phone app already
 1. Install **Morphe Manager**. Copy the clean original APK to that Android device.
 2. **Preferred: Remote source.** Open [Add Maps Automotive for BYD (TEST)](https://morphe.software/add-source?github=romanchukg-cloud/maps-automotive-for-byd-patches&name=Maps%20Automotive%20for%20BYD%20%28TEST%29) and confirm, or use **Home → Sources → + → Remote** with `https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches`. Morphe downloads the patch bundle. **Local fallback:** download our `.mpp`, then select it in **Sources → + → Local**.
 3. Open **Settings → Advanced → Expert settings → Expert mode** and enable it. Leave **Optimize for device architecture OFF**, especially when preparing the APK on a different device from the car.
-4. Select **Maps Automotive 26.09 TEST** from our source; if several sources are offered, choose ours and leave other sources' patches unselected for this app. Then choose **26.09.280001.E → No, I already have an APK** and select the clean original file described above. Automatic original-APK Download has not been verified for this AAOS build.
+4. Select **Maps Automotive 26.10 TEST** from our source; if several sources are offered, choose ours and leave other sources' patches unselected for this app. Then choose **26.10.120001.E → No, I already have an APK** and select the clean original file described above. Automatic original-APK Download has not been verified for this AAOS build.
 5. Select only **Maps Automotive for BYD (MicroG-RE TEST)**. For ordinary map use, leave its **Battery electric vehicle (CCS2)** option OFF. Enable that option only for a confirmed battery electric vehicle when you want the experimental CCS2 route integration; it is not a PHEV mode.
 6. Choose **Proceed to patching** and keep Manager in the foreground. When it finishes, choose **Save** to export the signed APK. Transfer the saved APK to the head unit. Install it by opening the file with the normal Android file manager; do not rely on Manager's Install status. That button reported Installed without installing in the API32 test; a separate installation of the exported file succeeded through ADB.
 7. **Back up the signing key:** open **Settings → System → Import & export → Signing key → Export** in Manager. Keep that private backup separately from Manager settings. Import the same key before patching on another device. Do not create a new signing identity for every update.
@@ -78,12 +78,10 @@ After that setup, the reader can start without a computer. It samples about once
 
 ## What has been checked
 
-Revision 34 was installed on one BYD Tang and the owner accepted its main-screen appearance, then stopped further checks. A complete 34 account/route/reboot/UI test suite was not run. Night mode, RTL, other windows and rounded-corners-plus-scale combinations remain unverified.
+Revision 54 runs on one BYD Tang as an update with data and accounts kept. On that car the map, Search with the EV charge-at-arrival estimate, the instrument-cluster map and steering-wheel zoom were checked, including zoom after switching the car off and on without touching the setting. On an Android 10 emulator it installs as an update, passes the Android 10 verifier and starts without errors. Pointer offset and zoom during an active route, 3D buildings, interface size and Search alignment were moved to 26.10 with host tests; their car evidence belongs to earlier 26.09 revisions. This was not a full regression of every feature.
 
-Earlier revision 30/31 tests confirmed visible native 3D building changes on an emulator and the Tang. Revisions 32/33 checked Search alignment and automatic scale changes, including deferral during an active route. These are focused earlier-revision results, not a repeat of the full suite on 34.
+The Remote import, source-card details, Local patch/export, separate installation, provider handling and settings tests in Manager 1.35.0/API32 belong to **preview 1**. The clean Manager emulator had no Google account and did not prove map tiles, live vehicle data or physical cluster output. Preview 4 needs a separate Manager check. The correct original AAOS APK must still be supplied manually.
 
-The Remote import, source-card details, Local patch/export, separate installation, provider handling and settings tests in Manager 1.35.0/API32 belong to **preview 1**. The clean Manager emulator had no Google account and did not prove map tiles, live vehicle data or physical cluster output. Preview 3 needs a separate Manager check. The correct original AAOS APK must still be supplied manually.
+The optional reader/EV code is unchanged. Morphe revision 25 on one Tang supplied fresh charge/range after a full head-unit reboot without a computer and produced a stationary Paris preview with two automatic charging stops. These older results do not validate revision 54 reboot behavior, road predictions or charging duration. DiLink 3 and DiLink 5.1 have no car test of revision 54. Physical HUD/audio, satellite imagery in the Morphe cluster and the general native navigation-service startup timeout remain open; see the release notes.
 
-The optional reader/EV code is unchanged. Morphe revision 25 on one Tang supplied fresh charge/range after a full head-unit reboot without a computer and produced a stationary Paris preview with two automatic charging stops. These older results do not validate revision 52 reboot behavior, road predictions or charging duration. Physical cluster/HUD/audio, satellite imagery in the Morphe cluster and the general native navigation-service startup timeout remain open; see the release notes.
-
-[Full guide and Desktop fallback](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md) · [Morphe preview 3 release notes](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/tag/morphe-preview.3)
+[Full guide and Desktop fallback](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/README.md) · [Morphe preview 4 release notes](https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/tag/morphe-preview.4)
