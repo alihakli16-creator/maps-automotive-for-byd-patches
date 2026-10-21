@@ -29,6 +29,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     private int displayId=-1;
     private boolean launchPending,mainSeen;
     private long launchAt;
+    private final ClusterBackgroundStart backgroundStart;
     private final boolean diLink51=DiLink51Profile.supported(Build.FINGERPRINT);
     private DiLink51Monitor profileMonitor;
     private long profileMonitorEpoch;
@@ -246,6 +247,8 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     }
 
     private ClusterHost(Application app) {
+        ClusterStats.start(android.os.Process.getStartElapsedRealtime());
+        backgroundStart=new ClusterBackgroundStart(app,android.os.Process.getStartElapsedRealtime(),SystemClock.elapsedRealtime());
         this.app=app;displays=(DisplayManager)app.getSystemService(Context.DISPLAY_SERVICE);
         displays.registerDisplayListener(this,main);
         if(DiLink3Projection.isCandidate())DiLink3Projection.init(app,()->main.post(this::reconcile));
@@ -259,6 +262,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
             }
             public void onActivityCreated(Activity a,Bundle b){
                 if(a.getClass().getName().equals(NATIVE)) {
+                    ClusterStats.created(SystemClock.elapsedRealtime(),!mainSeen);
                     cluster=a;launchPending=false;
                     View root=a.getWindow().getDecorView();
                     root.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
@@ -267,13 +271,15 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
                     Log.i(TAG,"native AAOS cluster created display="+(display==null?-1:display.getDisplayId()));
                 } else if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")) {
                     ClusterZoom.mainCreated(a);
+                    ClusterStats.main(SystemClock.elapsedRealtime());
+                    backgroundStart.mainSeen();
                     mainSeen=true;main.postDelayed(()->reconcile(),1500);
                 }
             }
             public void onActivityDestroyed(Activity a){
                 ClusterZoom.mainDestroyed(a);
                 if(diLink3Owned&&a==diLink3Activity&&!closing){unexpectedDiLink3Destroyed(a);return;}
-                if(a==cluster&&!closing){if(diLink51)invalidateProfile();cluster=null;clearViewport();main.postDelayed(()->reconcile(),1000);}
+                if(a==cluster&&!closing){ClusterStats.unexpected(SystemClock.elapsedRealtime());if(!mainSeen)backgroundStart.failed(ClusterStats.Fallback.UNEXPECTED_CLOSE,SystemClock.elapsedRealtime());if(diLink51)invalidateProfile();cluster=null;clearViewport();main.postDelayed(()->reconcile(),1000);}
             }
             public void onActivityStarted(Activity a){}
             public void onActivityResumed(Activity a){}
@@ -285,12 +291,13 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
             public void onConfigurationChanged(Configuration c){main.post(()->restartForTheme());}
             public void onLowMemory(){}
         });
-        main.postDelayed(new Runnable(){public void run(){reconcile();restartForTheme();recordClusterViewport();main.postDelayed(this,2000);}},3000);
+        main.postDelayed(new Runnable(){public void run(){reconcile();restartForTheme();recordClusterViewport();main.postDelayed(this,2000);ClusterStats.tick(SystemClock.elapsedRealtime());}},3000);
         Log.i(TAG,"installed "+BuildInfo.VERSION+"; native AAOS cluster host");
     }
     private void clearViewport(){ClusterZoom.detach();layerController=new java.lang.ref.WeakReference<>(null);viewportManager=new java.lang.ref.WeakReference<>(null);clusterRoot=new java.lang.ref.WeakReference<>(null);appliedPointerY=Float.NaN;}
     private void reconcile() {
-        if(!mainSeen||closing)return;
+        if(closing)return;
+        if(!mainSeen&&!backgroundStart.allowed(SystemClock.elapsedRealtime(),diLink51||DiLink3Projection.isCandidate())){if(backgroundStart.stopped()&&(cluster!=null||displayPresence!=null))closePresence(ClusterStats.Close.BACKGROUND);return;}
         boolean enabled=ClusterSettings.state().mapEnabled&&!new java.io.File(app.getExternalFilesDir(null),"cluster-disabled").exists();
         if(DiLink3Projection.isCandidate()){
             DiLink3Projection.reconcile(enabled);
@@ -301,12 +308,15 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         if(diLink51){reconcileProfile(enabled);return;}
         Display target=null;
         for(Display d:displays.getDisplays())if((d.getName().startsWith("shared_")&&d.getName().contains("XDJAScreenProjection"))||(BuildInfo.VERSION.startsWith("patch-lab.")&&d.getName().startsWith("Overlay #"))){target=d;break;}
-        if(!enabled||target==null){closePresence();return;}
+        if(!enabled||target==null){closePresence(!enabled?ClusterStats.Close.OFF:ClusterStats.Close.NO_DISPLAY);return;}
         if(cluster!=null&&displayPresence!=null&&displayPresence.isShowing()&&displayId==target.getDisplayId()){
-            ClusterZoom.visibility(cluster,true);return;
+            ClusterZoom.visibility(cluster,true);backgroundStart.alive(SystemClock.elapsedRealtime());return;
         }
         if(launchPending||SystemClock.elapsedRealtime()-launchAt<15000)return;
-        closePresence();
+        closePresence(ClusterStats.Close.RELAUNCH);
+        final boolean withoutMain=!mainSeen;
+        if(withoutMain)backgroundStart.attempt();
+        ClusterStats.attempt(SystemClock.elapsedRealtime(),withoutMain);
         launchPending=true;launchAt=SystemClock.elapsedRealtime();displayId=target.getDisplayId();
         final Display selected=target;
         try {
@@ -321,12 +331,13 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
                     try {long began=SystemClock.uptimeMillis();
                         try{createEmbedded(getContext(),selected,holder);}
                         finally{Log.i("MapsNavStartup","clusterCreate ms="+(SystemClock.uptimeMillis()-began));}}
-                    catch(Throwable e){Log.e(TAG,"embedded native cluster",e);main.post(()->closePresence());}
+                    catch(Throwable e){Log.e(TAG,"embedded native cluster",e);if(withoutMain)backgroundStart.failed(ClusterStats.Fallback.CREATE_FAILED,SystemClock.elapsedRealtime());main.post(()->closePresence(ClusterStats.Close.ERROR));}
                 }
             };
             displayPresence.show();
+            if(withoutMain)backgroundStart.shown(cluster!=null,SystemClock.elapsedRealtime());
             ClusterZoom.visibility(cluster,true);
-        } catch(Throwable e){Log.e(TAG,"cluster presentation",e);closePresence();}
+        } catch(Throwable e){Log.e(TAG,"cluster presentation",e);if(withoutMain)backgroundStart.failed(ClusterStats.Fallback.PRESENTATION_FAILED,SystemClock.elapsedRealtime());closePresence(ClusterStats.Close.ERROR);}
         finally{launchPending=false;}
     }
     /** Separate opt-in backend (SDK 29 only); DiLink 5.1 profile and Tang selection are separate paths. */
@@ -483,7 +494,9 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         ClusterZoom.attach(cluster,decor);
         Log.i(TAG,"native cluster embedded in Presentation display="+target.getDisplayId());
     }
-    private void closePresence(){
+    private void closePresence(){closePresence(ClusterStats.Close.OTHER);}
+    private void closePresence(ClusterStats.Close reason){
+        closeStats(reason);
         if(diLink3Owned){closeDiLink3Presence(null);return;}
         if(closing)return;
         if(diLink51){closeProfilePresence();return;}
@@ -501,6 +514,10 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         cluster=null;embeddedCreated=embeddedStarted=embeddedResumed=false;clearViewport();
         if(window!=null)try{window.dismiss();}catch(RuntimeException ignored){}
         closing=false;
+    }
+    /** 54F: counts only a close that has something to close; DiLink 3 / 5.1 are counted as the reason. */
+    private void closeStats(ClusterStats.Close reason){
+        if(!closing&&(cluster!=null||displayPresence!=null))ClusterStats.closed(diLink3Owned?ClusterStats.Close.DILINK3:diLink51?ClusterStats.Close.PROFILE51:reason,SystemClock.elapsedRealtime());
     }
     /** A real destroy callback has already run native onDestroy; never call it twice. */
     private void unexpectedDiLink3Destroyed(Activity destroyed){
@@ -643,11 +660,11 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     static void themeSettingChanged(){if(instance!=null)instance.main.post(()->instance.restartForTheme());}
     private void restartForTheme(){
         if(cluster==null||cluster.isFinishing()||clusterNight()==appliedNight)return;
-        closePresence();launchPending=false;launchAt=0;
+        closePresence(ClusterStats.Close.THEME);launchPending=false;launchAt=0;
         main.postDelayed(()->reconcile(),500);
     }
-    public void onDisplayAdded(int id){reconcile();}
-    public void onDisplayRemoved(int id){reconcile();}
+    public void onDisplayAdded(int id){ClusterStats.display(true,SystemClock.elapsedRealtime());reconcile();}
+    public void onDisplayRemoved(int id){ClusterStats.display(false,SystemClock.elapsedRealtime());reconcile();}
     public void onDisplayChanged(int id){reconcile();}
     private void captureClusterFrame(){
         java.io.File marker=new java.io.File(app.getExternalFilesDir(null),"capture-cluster");

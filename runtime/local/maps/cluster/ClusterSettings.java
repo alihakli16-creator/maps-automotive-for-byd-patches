@@ -9,7 +9,7 @@ import android.widget.*;
 /** Persistent, live settings for our instrument-cluster route overlay. */
 public final class ClusterSettings {
     static final class State {
-        final boolean visible, mapEnabled, vehicleGuidance, pictureInPicture, satellite;
+        final boolean visible, mapEnabled, vehicleGuidance, pictureInPicture, satellite, backgroundStart;
         final int size, side, margin, vertical, pointerVertical, clusterTheme, logoPosition;
         State(android.content.SharedPreferences p) {
             mapEnabled=p.getBoolean("map_enabled",true);
@@ -25,6 +25,7 @@ public final class ClusterSettings {
             clusterTheme=theme==THEME_LIGHT||theme==THEME_SYSTEM||theme==THEME_AUTO?theme:THEME_DARK;
             logoPosition=p.getInt("logo_position",LOGO_BOTTOM_LEFT)==LOGO_TOP_RIGHT?LOGO_TOP_RIGHT:LOGO_BOTTOM_LEFT;
             pictureInPicture=p.getBoolean("picture_in_picture",false);
+            backgroundStart=p.getBoolean(ClusterBackgroundStart.KEY,false);
         }
     }
     static final int THEME_DARK=0, THEME_LIGHT=1, THEME_SYSTEM=2, THEME_AUTO=3, LOGO_BOTTOM_LEFT=0, LOGO_TOP_RIGHT=1;

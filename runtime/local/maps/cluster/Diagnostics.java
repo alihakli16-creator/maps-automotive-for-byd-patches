@@ -80,6 +80,7 @@ final class Diagnostics {
                 Switch toggle=new Switch(c);toggle.setText("Automatically send diagnostics");toggle.setChecked(informed&&automatic);toggle.setEnabled(informed);p.addView(toggle);
                 if(!informed){Button review=button(c,"Review diagnostics choice");review.setOnClickListener(v->showNotice(a));p.addView(review);}
                 TextView status=text(c,summary);p.addView(status);
+                p.addView(text(c,clusterStats()));
                 toggle.setOnCheckedChangeListener((v,on)->{
                     work.post(()->{if(on){if(!queue.choice(true))toast(a,"Could not save your choice.");}else if(!queue.stopAutomatic())toast(a,"Could not save your choice.");});
                 });
@@ -129,9 +130,11 @@ final class Diagnostics {
     private static String pretty(JSONObject value){try{return value.toString(2);}catch(JSONException e){return value.toString();}}
     private static void share(Activity a,JSONObject report) {
         if(!alive(a))return;
-        try{a.startActivity(Intent.createChooser(new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT,"Google Maps for BYD diagnostics").putExtra(Intent.EXTRA_TEXT,pretty(report)),"Export diagnostics"));}
+        try{a.startActivity(Intent.createChooser(new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT,"Google Maps for BYD diagnostics").putExtra(Intent.EXTRA_TEXT,pretty(report)+"\n\n"+clusterStats()),"Export diagnostics"));}
         catch(Exception e){toast(a,"No app is available to export diagnostics.");}
     }
+    /** 54F: local only, never inside the uploaded report (the server contract rejects unregistered event types). */
+    private static String clusterStats(){return "Cluster stats (local, not uploaded): "+ClusterStats.snapshot(SystemClock.elapsedRealtime());}
     private static void record(String type,JSONObject data) {
         long now=SystemClock.elapsedRealtime();
         while(!events.isEmpty()&&(events.size()>=100||now-events.peekFirst().optLong("time")>600000)){events.removeFirst();truncated=true;}

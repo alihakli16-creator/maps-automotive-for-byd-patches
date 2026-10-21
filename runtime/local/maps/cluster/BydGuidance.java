@@ -46,7 +46,7 @@ public final class BydGuidance {
                 public boolean shown(){return preferences.getBoolean("guidance_shown",false);}
                 public boolean save(boolean shown){return preferences.edit().putBoolean("guidance_shown",shown).commit();}
             });
-            String rejection=HudReceiver.rejection(app);
+            String rejection=HudReceiver.rejection(app),adapter=AmapAdapter.packageName(app);
             untestedHudAvailable=HudCompatibility.UNTESTED.equals(rejection);
             SharedPreferences journal=app.getSharedPreferences("local_byd_standalone_hud",Context.MODE_PRIVATE);
             if(rejection==null||untestedHudAvailable&&ClusterSettings.untestedHud()) {
@@ -62,8 +62,8 @@ public final class BydGuidance {
                     try{HudReceiver.send(app,HudPackets.END);journal.edit().putBoolean("pending_clear",false).commit();}
                     catch(RuntimeException e){Log.w(TAG,"standalone HUD recovery clear",e);}
                 }
-                outputDescription="HUD transport: AMap. A standalone HUD receiver passed all checks, but this firmware build is untested. You can try it below.";
-            } else outputDescription="HUD transport: AMap. Standalone unavailable ("+rejection+").";
+                outputDescription="HUD transport: AMap via "+adapter+". A standalone HUD receiver passed all checks, but this firmware build is untested. You can try it below.";
+            } else outputDescription="HUD transport: AMap via "+adapter+". Standalone unavailable ("+rejection+").";
             long now=SystemClock.elapsedRealtime();
             if(ready(now))enableOutput(now);
         });
@@ -139,7 +139,7 @@ public final class BydGuidance {
         Log.i(TAG,clear?"standalone HUD clear dispatched":guidance?"standalone HUD guidance dispatched":"standalone HUD start dispatched");
     }
     private static void send(Context context,GuidanceFrame frame) {
-        Intent intent=new Intent(BydGuidanceProtocol.ACTION).setPackage(BydGuidanceProtocol.PACKAGE).addFlags(BydGuidanceProtocol.FLAGS);
+        Intent intent=new Intent(BydGuidanceProtocol.ACTION).setPackage(AmapAdapter.packageName(context)).addFlags(BydGuidanceProtocol.FLAGS);
         for(Map.Entry<String,Object> entry:BydGuidanceProtocol.message(frame).entrySet()) {
             Object value=entry.getValue();
             if(value instanceof Integer)intent.putExtra(entry.getKey(),((Integer)value).intValue());

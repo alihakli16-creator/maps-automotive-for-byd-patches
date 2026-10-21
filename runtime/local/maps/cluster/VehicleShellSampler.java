@@ -17,27 +17,65 @@ public final class VehicleShellSampler {
         Runtime.getRuntime().addShutdownHook(new Thread(()->{Process child=delivery;if(child!=null)child.destroy();},"vehicle-reader-shutdown"));
         long started=SystemClock.elapsedRealtime();
         System.out.println(continuous?"continuous_vehicle_reader_started":"bounded_vehicle_reader_started");
-        try{
-            for(int cycle=0;VehicleReadingRules.continueSampling(continuous,cycle,SystemClock.elapsedRealtime()-started);cycle++){
-                if(continuous){
-                    boolean renewed;try{renewed=call("renew",new JSONObject().put("session",args[0]));}catch(Exception unavailable){renewed=false;}
-                    // Off, stopped, expired, rebooted or mismatched sessions cannot be resurrected.
-                    if(!renewed){System.out.println("reader_renewal_rejected_or_unavailable");break;}
-                }
-                JSONObject sample;
-                try{sample=VehicleBinderReader.read(args[0]);}catch(Exception unavailable){sample=null;}
-                if(!continuous&&SystemClock.elapsedRealtime()-started>=VehicleReadingRules.LEASE_MS)break;
-                if(sample==null){call("end",new JSONObject().put("session",args[0]));System.out.println("vehicle_source_unavailable_session_ended");break;}
-                if(sample!=null){
-                    boolean sent;try{sent=call("sample",sample);}catch(Exception unavailable){sent=false;}
-                    if(!sent){call("end",new JSONObject().put("session",args[0]));System.out.println("sample_rejected_or_delivery_unavailable");break;}
-                    System.out.println("vehicle_sample_delivered");
-                }else System.out.println("vehicle_source_unavailable");
-                Thread.sleep(VehicleReadingRules.PERIOD_MS);
-            }
-        }finally{Process child=delivery;if(child!=null)child.destroy();}
+        try{run(continuous,args[0],started,PROVIDER,DEVICE);}
+        finally{Process child=delivery;if(child!=null)child.destroy();}
         System.out.println(continuous?"continuous_vehicle_reader_finished":"bounded_vehicle_reader_finished");
     }
+    /** The provider and BYD binder calls of one session; PROVIDER is the only production implementation. */
+    interface Channel {
+        boolean call(String method,JSONObject packet)throws Exception;
+        JSONObject read(String session)throws Exception;
+    }
+    private static final Channel PROVIDER=new Channel(){
+        public boolean call(String method,JSONObject packet)throws Exception{return VehicleShellSampler.call(method,packet);}
+        public JSONObject read(String session)throws Exception{return VehicleBinderReader.read(session);}
+    };
+    static void run(boolean continuous,String session,long started,Channel channel,VehicleWakeWait.Source clock)throws Exception{
+        for(int cycle=0;VehicleReadingRules.continueSampling(continuous,cycle,clock.elapsed()-started);cycle++){
+            if(continuous){
+                boolean renewed;try{renewed=channel.call("renew",new JSONObject().put("session",session));}catch(Exception unavailable){renewed=false;}
+                // Off, stopped, expired, rebooted or mismatched sessions cannot be resurrected.
+                if(!renewed){System.out.println("reader_renewal_rejected_or_unavailable");break;}
+            }
+            JSONObject sample;
+            try{sample=channel.read(session);}catch(Exception unavailable){sample=null;}
+            if(!continuous&&clock.elapsed()-started>=VehicleReadingRules.LEASE_MS)break;
+            if(sample==null){channel.call("end",new JSONObject().put("session",session));System.out.println("vehicle_source_unavailable_session_ended");break;}
+            if(sample!=null){
+                boolean sent;try{sent=channel.call("sample",sample);}catch(Exception unavailable){sent=false;}
+                if(!sent){channel.call("end",new JSONObject().put("session",session));System.out.println("sample_rejected_or_delivery_unavailable");break;}
+                System.out.println("vehicle_sample_delivered");
+            }else System.out.println("vehicle_source_unavailable");
+            // 54H: continuous mode samples at once after the car wakes (next cycle renews first, so an ended session stops).
+            if(continuous)woke(VehicleWakeWait.await(clock));else clock.sleep(VehicleReadingRules.PERIOD_MS);
+        }
+    }
+    private static void woke(String reason){
+        if(VehicleWakeWait.PERIOD.equals(reason))return;
+        System.out.println("vehicle_wake_sample_"+reason);
+        try{android.util.Log.i("MapsVehicleWake","wake sample: "+reason);}catch(RuntimeException ignored){}
+    }
+    /** Shell process clock and IPowerManager.isInteractive() via ServiceManager, as for autoservice:
+     * no permission, no Context, no wake lock. A missing interface leaves only the clock-jump signal. */
+    private static final VehicleWakeWait.Source DEVICE=new VehicleWakeWait.Source(){
+        private Object power;private java.lang.reflect.Method interactive;private boolean unsupported;
+        public long elapsed(){return SystemClock.elapsedRealtime();}
+        public long uptime(){return SystemClock.uptimeMillis();}
+        public void sleep(long ms)throws InterruptedException{Thread.sleep(ms);}
+        public Boolean interactive(){
+            if(unsupported)return null;
+            try{
+                if(interactive==null){
+                    Object binder=Class.forName("android.os.ServiceManager").getMethod("getService",String.class).invoke(null,"power");
+                    if(binder==null)return null;
+                    power=Class.forName("android.os.IPowerManager$Stub").getMethod("asInterface",android.os.IBinder.class).invoke(null,binder);
+                    interactive=Class.forName("android.os.IPowerManager").getMethod("isInteractive");
+                }
+                return (Boolean)interactive.invoke(power);
+            }catch(ClassNotFoundException|NoSuchMethodException|ClassCastException missing){unsupported=true;return null;}
+            catch(Exception transientFailure){interactive=null;power=null;return null;}
+        }
+    };
     static JSONObject options(JSONObject packet)throws Exception{return exchange("reader_options",packet,"options");}
     static void cache(JSONObject packet)throws Exception{exchange("reader_cache",packet,null);}
     private static boolean call(String method,JSONObject packet)throws Exception{

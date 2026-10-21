@@ -3,9 +3,10 @@ package local.maps.cluster;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** AdapterAmapService protocol for the user's DiLink 5 / Android 12 car. */
+/** AdapterAmapService protocol for the user's DiLink 5 / Android 12 car; the package is chosen by AmapAdapter.
+ * END (KEY_TYPE 10019) carries no TYPE: the adapter's 10019 branch reads only EXTRA_STATE (9 or 12 stops). */
 final class BydGuidanceProtocol {
-    static final String ACTION="AUTONAVI_STANDARD_BROADCAST_SEND", PACKAGE="com.byd.amapservice";
+    static final String ACTION="AUTONAVI_STANDARD_BROADCAST_SEND";
     static final int FLAGS=0x01000000;
     static Map<String,Object> message(GuidanceFrame f) {
         Map<String,Object> data=new LinkedHashMap<>();

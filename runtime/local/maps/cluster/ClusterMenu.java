@@ -148,6 +148,7 @@ final class ClusterMenu {
     private void main(){
         start("main","Instrument cluster");ClusterSettings.State s=ClusterSettings.state();
         toggle("Show cluster map","Show map on instrument cluster","map_enabled",s.mapEnabled);
+        if(!DiLink51Setup.supported()&&!DiLink3Projection.isCandidate())toggle("Start cluster map without opening Maps","Show the cluster map when Maps starts in the background",ClusterBackgroundStart.KEY,s.backgroundStart);
         toggle("Turn guidance","Send turn guidance to cluster and HUD","vehicle_guidance",s.vehicleGuidance);
         action("Map colours",theme(s.clusterTheme),()->choices("Map colours","cluster_theme",new String[]{"Auto","Match screen","Light","Dark"},new int[]{3,2,1,0},"Auto follows sunrise and sunset at the car's position. Match screen follows the head unit. During navigation, Maps chooses its own colours. "+ClusterHost.themeDescription()));
         toggle("Satellite map","Satellite map on instrument cluster","cluster_satellite",s.satellite);
