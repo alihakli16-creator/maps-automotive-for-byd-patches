@@ -1,14 +1,8 @@
-# Building the Morphe TEST preview bundle
+# Build the Morphe TEST preview 6 bundle
 
-This source tree is self-contained: 13 patch Java files and the complete 85-file owned runtime module. It builds the `.mpp` patch bundle without a Maps APK, account, signing key or device. It does not install anything or contact a server.
+The self-contained source tree has **17 patch Java files** (13 Maps +4 Google) and **93 owned runtime Java files** (89 Maps +4 Google). It builds one `.mpp` containing two app-specific patches without an original APK, account, signing key or device. It neither installs anything nor contacts a server.
 
-Requirements:
-
-- Python 3 and JDK 17 or newer (`java` and `javac` on PATH).
-- Android SDK platform 35 and build-tools 36.0.0.
-- Morphe Desktop 1.18.1 all-JAR, SHA-256 `1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b`.
-
-Run from this source directory, replacing the three paths with your own:
+Requirements: Python3, JDK17+ on PATH, Android SDK platform35 and build-tools36.0.0, and Morphe Desktop1.18.1 all-JAR, SHA-256 `1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b`.
 
 ```sh
 python3 build.py \
@@ -17,10 +11,10 @@ python3 build.py \
   --out /path/to/new-output-directory
 ```
 
-The output directory must not already exist. The script creates `maps-automotive-for-byd-morphe-preview.5.mpp`, `SHA256SUMS`, `BUILD.json`, intermediate own classes/DEX files and a build log. No original Google application classes or APK are included. The bundle embeds all corresponding patch/runtime Java sources and GPL/upstream notices. ZIP timestamps and entry ordering are fixed; use the same JDK/build-tools for exact binary reproduction.
+The output directory must not exist. Outputs include `maps-automotive-for-byd-morphe-preview.6.mpp`, SHA256SUMS, BUILD.json and a build log. The builder runs the71 recovery and301 Google provider/routing checks before packaging. The bundle includes their test source, patch/runtime Java source and GPL/upstream notices. `extensions/aaos.mpe` uses minAPI29; the independent `extensions/gsa.mpe` uses minAPI32. These runtime modules are byte-identical to the tested Maps 54N and Google 08 modules when built with the verified toolchain. ZIP metadata and member order are fixed; exact reproduction needs the same JDK/build tools.
 
-Applying the bundle is a separate step using the supported original Maps Automotive 26.10.120001.E ARM64 APK (versionCode 1068833407, SHA-256 `d9dc74c9fa0f5bee0911ed1594a19adc0761258d524b5031ed480674d81f5ff9`). Preview 3 sources remain at tag `morphe-preview.3` for 26.09.280001.E. Independently verify its original APK signature before patching. The Google application is not supplied in this source tree. A patched APK must be signed separately with the installer's own consistent key. This builder supplies no signing helper or key and performs no installation.
+The bundle carries only our implementation. No Google APK, Google implementation classes, keys or account material are supplied. The app targets and input hashes are in [GEMINI-BUILD.en.md](GEMINI-BUILD.en.md). Apply only the patch for the selected app; retain original-input/version/signature checks. Sign resulting apps with your own consistent **same key**, separately from this bundle build.
 
-`known_bev` defaults to false. Set it to true only for a confirmed battery electric vehicle using CCS2 charging stations. It supplies early vehicle identity; it does not choose a vehicle model/capacity, enable the reader or invent charge/range. Profile and reader setup are separate steps.
+`known_bev` stays OFF by default. Enable it only for a confirmed battery electric vehicle/CCS2 test setup; it does not choose capacity, enable the reader or invent charge/range. PHEV profiles do not enable a combined fuel/energy model.
 
-This builds experimental **Morphe preview 5 / patch revision 54** (build 54H) for Maps Automotive 26.10.120001.E. It carries the preview 4 features plus the optional cluster map without opening Maps, the reader wake-up after switching the car on, the AMap adapter choice for DiLink 3 and instrument-cluster diagnostics counters. The internal `patch-lab.54-maps2610` name preserves the diagnostics-upload guard; public preview metadata does not enable uploads or the legacy APK updater. Preview 5 has not been retested in Android Manager.
+Maps preserves `patch-lab.54-maps2610`; Google preserves `GSA-LAB.08` metadata for traceability. The public release identifier is preview 6; these internal markers do not imply a newer app version or enable diagnostics uploads/legacy APK OTA. [BYD/Gemini setup](GEMINI-SETUP.en.md).

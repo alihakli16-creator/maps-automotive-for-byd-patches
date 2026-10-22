@@ -155,6 +155,7 @@ final class ClusterMenu {
         action("Map layout",null,this::layout);
         if(DiLink51Setup.supported()){DiLink51Setup.init(activity.getApplication(),null);action("BYD instrument theme","DiLink 5.1 · full and side map layers",this::oemLayout);}
         action("Steering-wheel zoom",WheelServiceSetup.enabled()?"On · instrument cluster only":"Off",this::wheel);
+        action("Gemini voice assistant",GeminiLaunch.wheelEnabled()?"Long-press microphone enabled":"Map button and steering wheel",this::gemini);
         if(DiLink3Projection.isCandidate())action("DiLink 3 cluster test",DiLink3Projection.enabled()?"Experimental projection enabled":"Off",this::diLink3);
         action("Route card",s.visible?s.size+"% · "+(s.side==0?"Left":"Right"):"Off",this::card);
         toggle("Picture-in-picture","Picture-in-picture when leaving Maps","picture_in_picture",s.pictureInPicture);
@@ -200,6 +201,28 @@ final class ClusterMenu {
         note("Also keep Show cluster map enabled. This test creates the known DiLink 3 projection display and sends the native Google cluster screen there. It does not enable the BYD battery reader and does not claim HUD support.");
         note("127.0.0.1:5555 is this head unit. Keep it unchanged. Send the exact status, firmware version and whether a map is physically visible. No uninstall or account reset is needed.");
         note("Restore pauses this session. Turn the test option off after testing to keep it off on the next Maps launch.");
+    }
+    private void gemini(){
+        start("gemini","Gemini voice assistant");
+        toggle("Show Gemini button","Voice mode icon below the cluster-map toggle in the side column",GeminiLaunch.BUTTON_KEY,prefs.getBoolean(GeminiLaunch.BUTTON_KEY,true));
+        action("Launch mode",GeminiLaunch.modeName(),()->choices("Gemini launch mode",GeminiLaunch.MODE_KEY,new String[]{"Conversation (Gemini Live)","Microphone"},new int[]{1,0},null));
+        toggle("Long-press microphone","Use the steering-wheel microphone long press on DiLink 5.0",GeminiLaunch.WHEEL_KEY,prefs.getBoolean(GeminiLaunch.WHEEL_KEY,false));
+        toggle("Compact assistant","Show Gemini over Maps when Google is the default digital assistant",GeminiLaunch.COMPACT_KEY,prefs.getBoolean(GeminiLaunch.COMPACT_KEY,true));
+        LinearLayout recoveryRow=row("Automatic compact recovery","Restore Google after BYD clears the assistant; requires local ADB");
+        MapsSwitch recovery=new MapsSwitch(context);recovery.setChecked(GeminiRecovery.enabled());recovery.setContentDescription("Automatic compact recovery");
+        LinearLayout.LayoutParams recoveryLp=new LinearLayout.LayoutParams(dp(64),dp(48));recoveryLp.leftMargin=dp(12);recoveryRow.addView(recovery,recoveryLp);
+        recovery.setOnCheckedChangeListener((button,on)->{
+            if(!recovery.isEnabled())return;recovery.setEnabled(false);
+            GeminiRecovery.configure(activity,on,()->{if(dialog.isShowing()&&"gemini".equals(page))gemini();});
+        });
+        recoveryRow.setBackground(ripple(0));recoveryRow.setOnClickListener(v->{if(recovery.isEnabled())recovery.performClick();});rule();
+        note(GeminiRecovery.status());
+        action("Digital assistant",GeminiLaunch.googleAssistant(activity)?"Google · compact mode available":"Choose Google for compact mode",()->GeminiLaunch.assistantSettings(activity));
+        action("Open Gemini",GeminiLaunch.available(activity)?GeminiLaunch.modeName():"Install Gemini and finish sign-in first",()->GeminiLaunch.open(activity));
+        action("Wheel key service",WheelServiceSetup.connected()?"Connected": "Open steering-wheel setup to enable the key service",this::wheel);
+        note("Long press uses the Tang DiLink 5.0 microphone key. The short press keeps the BYD assistant; the custom star keeps cluster zoom. The map and cluster do not need an active route. Keys pass through during phone calls.");
+        note("Automatic compact recovery is optional. Approve the Maps ADB key once on this head unit, using Always allow. After a BYD reset, tapping the Maps voice button or holding the wheel microphone restores Google and opens the selected voice mode. A computer is not needed. Another selected digital assistant is kept. No recovery runs while Maps is in the background or without a voice-button tap.");
+        note("Uses the existing wheel key service enabled in Steering-wheel zoom. Keep that service enabled. Compact mode uses the Android assistant over Maps while Maps is on screen. Select Google as the default digital assistant once. Otherwise, or outside Maps, the full Gemini app opens. One tap starts the selected Microphone or Conversation mode. This requires the updated patched Google app with Maps voice modes. Google app and Gemini must already be set up with MicroG-RE. Allow Contacts and Location for MicroG-RE, and Microphone for Google.");
     }
     private void interfaceSize(){
         start("interface_size","Interface size");int selected=MainUiScale.selected(prefs);
@@ -403,6 +426,7 @@ final class ClusterMenu {
         entry.addView(text("Vehicle name (optional)",28,ink));
         EditText model=new EditText(context);model.setTextColor(ink);model.setTextSize(28);model.setSingleLine(true);model.setHint("Your vehicle name");model.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(80)});
         if(profile!=null)model.setText(profile.model);model.setContentDescription("Optional owner entered vehicle name");entry.addView(model);
+        note("This name is shared with Google Maps Connected cars when Maps next syncs vehicle information. An empty name keeps the standard name. The registration code stays the same.");
         TextView capacityLabel=text("Usable battery capacity (kWh)",28,ink);entry.addView(capacityLabel);
         EditText capacity=new EditText(context);capacity.setTextColor(ink);capacity.setTextSize(28);capacity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         if(profile!=null&&profile.capacityWh>0)capacity.setText(java.math.BigDecimal.valueOf(profile.capacityWh,3).stripTrailingZeros().toPlainString());capacity.setContentDescription("Owner entered usable battery capacity in kWh");entry.addView(capacity);body.addView(entry);rule();

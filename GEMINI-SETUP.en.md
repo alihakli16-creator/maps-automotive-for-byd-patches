@@ -1,0 +1,14 @@
+# Gemini in Maps Automotive — quick setup (TEST preview 6)
+
+First installation? See [the complete two-part guide](START-HERE.en.md), starting with Morphe.
+
+**Tested on Tang / DiLink 5.0 / Android API 32.** This optional Google/Gemini setup needs **API 32+**; it does not support DiLink 3/API 29. Maps can still be used independently.
+
+1. **Install the apps.** Apply our `.mpp` separately to the supported **Maps Automotive 26.10.120001.E** and **Google 17.62.11.ve.arm64** originals. **Sign both with the same backed-up key.** Install the original Gemini shell separately. Use [the build guide](GEMINI-BUILD.en.md), including Google's10-split installation path. Same-key Maps updates keep data; replacing a differently signed Google app loses its local settings. Do not clear Maps or delete microG accounts.
+2. **Set up MicroG-RE.** Download from [official Releases](https://github.com/MorpheApp/MicroG-RE/releases): **7.2.2 minimum; 7.2.2 tested**. Allow **Contacts/Location for MicroG-RE**, then add your account there. Allow **Contacts/Location for Maps** and **Contacts/Microphone for Google**; allow Google Location for current-position requests. Open Gemini and finish its setup/consents yourself. Confirm it answers.
+3. **Allow Google self-start.** BYD **General → Apps → Disable Self-Start → Google = OFF**. OFF here means Google is **allowed** to start. Keep Maps startup/background operation allowed too if using the reader/cluster. Menu labels vary by firmware.
+4. **Enable compact conversation.** Maps → **Instrument cluster → Gemini voice assistant**: **Launch mode → Conversation (Gemini Live)**, **Compact assistant ON**, **Automatic compact recovery ON**. Enable local/network ADB and approve the **Maps** key with **Always allow**. `127.0.0.1:5555` means this head unit. Choose **Google** as Android's digital assistant; recovery can restore Google when no other assistant is selected. Expect **Google assistant is ready**. Current recovery needs local ADB, but **no computer after setup**.
+5. **Try it.** Return to the map and tap the conversation icon below the cluster-map toggle. Say “Navigate by car to Berlin Hauptbahnhof”; tap **Navigate / Open in Maps** if offered. For one spoken request instead, choose **Launch mode → Microphone**.
+6. **Optional wheel button.** Enable **Long-press microphone** and keep **Wheel key service Connected** through the existing steering-wheel setup. On the tested Tang, hold the wheel microphone to start the selected mode. Short press keeps BYD's assistant; the star keeps cluster zoom.
+
+If full Gemini opens, recheck steps3/4, matching signing keys and Google assistant selection. **Keep recovery ON:** recovery OFF opened full Gemini on the tested Tang. If account selection stalls, first check **MicroG-RE's own permissions**. Internet/account/Gemini availability are required. Final car reboot and other firmware are not yet verified. [Build details and limits](GEMINI-BUILD.en.md).

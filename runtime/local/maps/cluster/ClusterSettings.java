@@ -74,21 +74,21 @@ public final class ClusterSettings {
     static void init(Application app) {
         if(preferences!=null)return;
         preferences=app.getSharedPreferences("local_cluster_settings",Context.MODE_PRIVATE);
-        current=new State(preferences); preferences.registerOnSharedPreferenceChangeListener(changes);
+        current=new State(preferences); preferences.registerOnSharedPreferenceChangeListener(changes);GeminiLaunch.init(app);
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks(){
             public void onActivityResumed(Activity a){
                 AppCorners.resumed(a);
                 if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")) {
-                    resumedMaps=new java.lang.ref.WeakReference<>(a);applyPictureInPicture(a);MainUiScale.resumed(a);
+                    resumedMaps=new java.lang.ref.WeakReference<>(a);GeminiLaunch.resumed(a);applyPictureInPicture(a);MainUiScale.resumed(a);
                     a.getWindow().getDecorView().post(()->{attach(a);Diagnostics.resumed(a);AccountAccess.resumed(a);SignInAccess.resumed(a);});
                 }
             }
             public void onActivityCreated(Activity a,Bundle b){}
             public void onActivityStarted(Activity a){}
-            public void onActivityPaused(Activity a){if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")){MainUiScale.paused(a);AccountAccess.paused();SignInAccess.paused();}}
+            public void onActivityPaused(Activity a){if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")){GeminiLaunch.paused(a);MainUiScale.paused(a);AccountAccess.paused();SignInAccess.paused();}}
             public void onActivityStopped(Activity a){}
             public void onActivitySaveInstanceState(Activity a,Bundle b){}
-            public void onActivityDestroyed(Activity a){AppCorners.destroyed(a);MainUiScale.destroyed(a);ClusterMenu.destroyed(a);}
+            public void onActivityDestroyed(Activity a){GeminiLaunch.paused(a);AppCorners.destroyed(a);MainUiScale.destroyed(a);ClusterMenu.destroyed(a);}
         });
     }
     private static int dp(Context c,int value){return Math.round(value*c.getResources().getDisplayMetrics().density);}

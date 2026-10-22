@@ -10,7 +10,7 @@ import com.android.tools.smali.dexlib2.builder.*;
 import com.android.tools.smali.dexlib2.builder.instruction.*;
 import com.android.tools.smali.dexlib2.immutable.reference.*;
 
-/** Eight pinned native EV insertion rules. No Google method bodies are bundled. */
+/** Pinned native EV and Connected cars display-name rules. No Google method bodies are bundled. */
 final class VehicleEvHooks {
     // 26.10 names: repository hlh->hjo, carrier rco->rjs, vehicle-info factory fkn.m->fhj.l.
     private static final String REPO="Lhjo;", BRIDGE="Llocal/maps/cluster/VehicleEvBridge;", CARRIER="Lrjs;", FACTORY_TYPE="Lfhj;";
@@ -35,6 +35,19 @@ final class VehicleEvHooks {
         for(int n=0;n<registers.length;n++)check(actual[n]==registers[n],"EV invocation registers changed");
     }
     private static int onlyRef(List<Instruction> code,String reference){int at=-1;for(int i=0;i<code.size();i++)if(ref(code.get(i)).equals(reference)){check(at<0,"Repeated pinned EV reference "+reference);at=i;}check(at>=0,"Missing pinned EV reference "+reference);return at;}
+    static void connectedName(MutableMethod method){
+        check(method.getDefiningClass().equals("Lgva;")&&descriptor(method).equals("a(Ljava/lang/Object;)Ljava/lang/Object;"),"Unexpected Connected cars method");
+        check(Api29Hooks.fingerprint(method).equals("f63a5f20cc3224bd89204e6d1956175b068dcd69d838995c8ac5a20b73a059ec"),"Connected cars name fingerprint changed");
+        var body=method.getImplementation();check(body!=null&&body.getRegisterCount()==12,"Connected cars name registers changed");
+        List<Instruction> code=new ArrayList<>(body.getInstructions());
+        int at=onlyRef(code,"Lajod;->c:Ljava/lang/String;");Instruction write=code.get(at);
+        check(write.getOpcode()==Opcode.IPUT_OBJECT&&write instanceof TwoRegisterInstruction,"Connected cars name store changed");
+        var registers=(TwoRegisterInstruction)write;check(registers.getRegisterA()==3&&registers.getRegisterB()==5,"Connected cars name operands changed");
+        // Keep native branches targeting the field write attached to the new call.
+        body.replaceInstruction(at,new BuilderInstruction35c(Opcode.INVOKE_STATIC,1,3,0,0,0,0,new ImmutableMethodReference(BRIDGE,"connectedCarDisplayName",List.of("Ljava/lang/String;"),"Ljava/lang/String;")));
+        body.addInstruction(at+1,new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT,3));
+        body.addInstruction(at+2,new BuilderInstruction22c(Opcode.IPUT_OBJECT,3,5,((ReferenceInstruction)write).getReference()));
+    }
     /** Package-visible for tests using the exact original methods, without a mock patch context. */
     static void patch(MutableMethod m){
         String d=descriptor(m),type=m.getDefiningClass();boolean repo=type.equals(REPO),factory=type.equals(FACTORY_TYPE)&&d.equals(FACTORY);
@@ -94,6 +107,8 @@ final class VehicleEvHooks {
         patch(method(ctx,CARRIER,"c(Z)V"));count++;
         patch(method(ctx,FACTORY_TYPE,FACTORY));count++;
         check(count==8,"Expected eight native EV hooks");
+        connectedName(method(ctx,"Lgva;","a(Ljava/lang/Object;)Ljava/lang/Object;"));
         System.out.println("Native EV hooks: 8; repository registration/freshness, owned publication, availability and scoped vehicle profile");
+        System.out.println("Connected cars: one scoped display-name hook; registration/session ID unchanged");
     }
 }

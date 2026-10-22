@@ -8,7 +8,7 @@ import android.graphics.drawable.*;
 import android.view.*;
 import android.widget.*;
 
-/** Two map controls anchored to the measured native one-bar column, including its animations. */
+/** Cluster and voice controls anchored to the measured native one-bar column, including its animations. */
 final class ClusterButtons {
     private static final String TAG="local.cluster.buttons";
     static void attach(Activity a) {
@@ -21,16 +21,18 @@ final class ClusterButtons {
     private static int dp(Context c,int n){return Math.round(n*c.getResources().getDisplayMetrics().density);}
     private static final class Controls implements ViewTreeObserver.OnPreDrawListener {
         final Activity activity; final ViewGroup root; final ScrollView column; final LinearLayout buttons;
-        final ImageButton settings,map; final FrameLayout settingsSlot; final Icon settingsIcon=new Icon(false),mapIcon=new Icon(true);
+        final ImageButton settings,map,voice; final FrameLayout settingsSlot,voiceSlot; final Icon settingsIcon=new Icon(false),mapIcon=new Icon(true),voiceIcon=new Icon(false,true);
         View template,bar,bottom; Drawable nativeBackground; int lastColour,lastSurface,lastActive;
-        boolean styled,wasOn; int tx,ty,tw,th;
+        boolean styled,wasOn;int voiceMode=-1; int tx,ty,tw,th;
         Controls(Activity a,ViewGroup r) {
             activity=a;root=r;column=new ScrollView(a);column.setTag(TAG);column.setFillViewport(false);
             column.setClipToPadding(false);column.setClipChildren(false);column.setVerticalScrollBarEnabled(false);
             buttons=new LinearLayout(a);buttons.setOrientation(LinearLayout.VERTICAL);buttons.setClipChildren(false);
             settings=button(settingsIcon,"Instrument cluster settings");map=button(mapIcon,"Hide map on instrument cluster");
             settingsSlot=(FrameLayout)settings.getParent();buttons.removeView(settingsSlot);
-            settings.setTag("local.cluster.settings.button");map.setTag("local.cluster.map.button");
+            voice=button(voiceIcon,"Open Gemini");voiceSlot=(FrameLayout)voice.getParent();
+            settings.setTag("local.cluster.settings.button");map.setTag("local.cluster.map.button");voice.setTag("local.cluster.gemini.button");
+            GeminiLaunch.init(a);voice.setOnClickListener(v->GeminiLaunch.open(a));
             settings.setOnClickListener(v->ClusterSettings.show(a));
             map.setOnClickListener(v->{ClusterSettings.toggleMap();updateState();});
             column.addView(buttons);column.setVisibility(View.INVISIBLE);
@@ -56,7 +58,7 @@ final class ClusterButtons {
                 bar=root.findViewById(id(activity,"one_bar_ellipsizing_container"));
                 bottom=root.findViewById(id(activity,"one_bar_bottom_group"));styled=false;
             }
-            if(template==null||bar==null||!bar.isShown()||activity.isInPictureInPictureMode()||template.getWidth()==0){column.setVisibility(View.INVISIBLE);settingsSlot.setVisibility(View.INVISIBLE);return true;}
+            if(template==null||bar==null||!bar.isShown()||activity.isInPictureInPictureMode()||template.getWidth()==0){column.setVisibility(View.INVISIBLE);settingsSlot.setVisibility(View.INVISIBLE);voiceSlot.setVisibility(View.INVISIBLE);return true;}
             Rect anchor=new Rect(),area=new Rect();template.getGlobalVisibleRect(anchor);bar.getGlobalVisibleRect(area);
             int end=anchor.bottom;int slot=template.getHeight();
             if(bar instanceof ViewGroup){ViewGroup g=(ViewGroup)bar;for(int i=0;i<g.getChildCount();i++){
@@ -67,7 +69,11 @@ final class ClusterButtons {
             }}
             int gap=Math.max(0,(slot-template.getHeight())/2);
             int limit=area.bottom;Rect obstacle=new Rect();if(bottom!=null&&bottom.isShown()&&bottom.getGlobalVisibleRect(obstacle))limit=Math.min(limit,obstacle.top);
-            int height=Math.min(slot,limit-end);
+            int rows=GeminiLaunch.buttonEnabled()?2:1;
+            voiceSlot.setVisibility(rows==2?View.VISIBLE:View.GONE);
+            int height=ClusterButtonPlacement.columnHeight(slot,rows,limit-end);
+            column.setVerticalScrollBarEnabled(height<rows*slot);column.setScrollbarFadingEnabled(false);
+            if(rows==1||height>=rows*slot)column.scrollTo(0,0);
             int[] origin=new int[2];root.getLocationOnScreen(origin);
             FrameLayout.LayoutParams right=(FrameLayout.LayoutParams)settingsSlot.getLayoutParams();
             // Mirror against the actual native column, including Maps' per-app language.
@@ -85,7 +91,7 @@ final class ClusterButtons {
             if(tx!=x||ty!=y||tw!=width||th!=height){
                 tx=x;ty=y;tw=width;th=height;FrameLayout.LayoutParams lp=(FrameLayout.LayoutParams)column.getLayoutParams();lp.width=width;lp.height=height;lp.leftMargin=x;lp.topMargin=y;column.setLayoutParams(lp);
             }
-            for(ImageButton b:new ImageButton[]{map}){
+            for(ImageButton b:new ImageButton[]{map,voice}){
                 View slotView=(View)b.getParent();ViewGroup.LayoutParams sp=slotView.getLayoutParams();
                 if(sp.width!=width||sp.height!=slot){sp.width=width;sp.height=slot;slotView.setLayoutParams(sp);}
                 FrameLayout.LayoutParams bp=(FrameLayout.LayoutParams)b.getLayoutParams();
@@ -102,9 +108,9 @@ final class ClusterButtons {
                 if(v.getBackground()!=null&&v.getBackground().getConstantState()!=null){nativeBackground=v.getBackground();break;}
                 if(!(v.getParent() instanceof View))break;v=(View)v.getParent();
             }
-            settings.setBackground(background(surface));map.setBackground(background(surface));settings.setClipToOutline(true);map.setClipToOutline(true);
-            float elevation=template.getElevation();settings.setElevation(Math.max(elevation,dp(activity,2)));map.setElevation(Math.max(elevation,dp(activity,2)));
-            settingsIcon.colour=ink;settingsIcon.invalidateSelf();styled=true;wasOn=!ClusterSettings.state().mapEnabled;
+            for(ImageButton b:new ImageButton[]{settings,map,voice}){b.setBackground(background(surface));b.setClipToOutline(true);}
+            float elevation=template.getElevation();for(ImageButton b:new ImageButton[]{settings,map,voice})b.setElevation(Math.max(elevation,dp(activity,2)));
+            settingsIcon.colour=ink;settingsIcon.invalidateSelf();voiceIcon.colour=ink;voiceIcon.invalidateSelf();styled=true;wasOn=!ClusterSettings.state().mapEnabled;
         }
         Drawable background(int colour){
             GradientDrawable circle=new GradientDrawable();circle.setShape(GradientDrawable.OVAL);circle.setColor(colour);
@@ -113,19 +119,30 @@ final class ClusterButtons {
             return new RippleDrawable(ripple,circle,mask);
         }
         void updateState(){
+            int mode=GeminiLaunch.mode();if(voiceMode!=mode){voiceMode=mode;voiceIcon.conversation=mode==1;voiceIcon.invalidateSelf();String name=mode==1?"Talk to Gemini Live":"Speak to Gemini";voice.setContentDescription(name);voice.setTooltipText(name);}
             boolean on=ClusterSettings.state().mapEnabled;
             if(wasOn!=on){map.setSelected(on);map.setActivated(on);mapIcon.on=on;mapIcon.colour=on?lastActive:lastColour;mapIcon.invalidateSelf();String text=(on?"Hide":"Show")+" map on instrument cluster";map.setContentDescription(text);map.setTooltipText(text);wasOn=on;}
         }
     }
     /** Dashboard toggle and instrument settings, at the same optical size as the native gear. */
     private static final class Icon extends Drawable {
-        final boolean map;boolean on;int colour=0xff303134;final Paint paint=new Paint(3);
-        Icon(boolean m){map=m;}
+        final boolean map,voice;boolean on,conversation=true;int colour=0xff303134;final Paint paint=new Paint(3);
+        Icon(boolean m){this(m,false);}Icon(boolean m,boolean v){map=m;voice=v;}
         public void draw(Canvas canvas){
             Rect b=getBounds();canvas.save();canvas.translate(b.left,b.top);canvas.scale(b.width()/48f,b.height()/48f);
             paint.setColor(colour);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.8f);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);
             Path p=new Path();
-            if(map){
+            if(voice){
+                paint.setColor(0xff8ab4f8);paint.setStrokeWidth(2.6f);
+                if(conversation){
+                    // Own waveform glyph: no launcher tile or square bitmap background.
+                    float[] height={8,17,25,17,8};
+                    for(int i=0;i<height.length;i++){float x=14+i*5;canvas.drawLine(x,24-height[i]/2,x,24+height[i]/2,paint);}
+                }else{
+                    canvas.drawRoundRect(20,12,28,27,4,4,paint);
+                    canvas.drawArc(16,17,32,33,0,180,false,paint);canvas.drawLine(24,33,24,37,paint);canvas.drawLine(20,37,28,37,paint);
+                }
+            }else if(map){
                 canvas.drawRoundRect(12,16,36,32,4,4,paint);
                 canvas.drawArc(15,20,23,28,185,170,false,paint);canvas.drawArc(25,20,33,28,185,170,false,paint);
                 canvas.drawLine(19,25,21,22,paint);canvas.drawLine(29,25,27,22,paint);

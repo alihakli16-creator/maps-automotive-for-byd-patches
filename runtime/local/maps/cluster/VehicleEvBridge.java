@@ -33,6 +33,12 @@ public final class VehicleEvBridge {
     private static Thread thread(Runnable r,String name){Thread t=new Thread(r,name);t.setDaemon(true);return t;}
     private VehicleEvBridge(){}
 
+    /** Display name only. Cached owner profile; never changes CarInfo or registration/session IDs. */
+    public static String connectedCarDisplayName(String original){
+        VehicleEvProfile.Profile profile=VehicleEvProfile.current();
+        return profile==null||profile.model.isEmpty()?original:profile.model;
+    }
+
     /** Vehicle identity is owner supplied; live charging-plan capability requires accepted fresh data. */
     public static Object wrapVehicleInfo(Object original){return VehicleEvInfo.wrap(original);}
     static boolean hasVehicleProfile(){return identityMatches(VehicleEvBuildProfile.knownBev());}

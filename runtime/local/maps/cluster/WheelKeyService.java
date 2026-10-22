@@ -29,11 +29,14 @@ public final class WheelKeyService extends AccessibilityService {
     // Long.MAX_VALUE denotes the explicit custom-key mode; it has no elapsed timeout.
     private volatile long modeEndsAt,modeGeneration;
     private static volatile String lastControl="No Tang control key observed yet.";
+    private final GeminiVoiceKeys voiceKeys=new GeminiVoiceKeys();
+    private volatile boolean geminiAvailable;private volatile long geminiAt;
+    private long geminiDue;
     private WheelKeyPolicy policy;
     private WheelKeyPolicy.Bindings policyBindings;
     @Override public void onCreate(){
         super.onCreate();ClusterZoomTrace.init();current=this;alive=true;
-        WheelServiceSetup.init(getApplication());
+        WheelServiceSetup.init(getApplication());GeminiLaunch.init(this);
         observerThread=new HandlerThread("MapsWheelState");observerThread.start();observer=new Handler(observerThread.getLooper());observer.post(refresh);
     }
     private final Runnable refresh=new Runnable(){public void run(){
@@ -43,6 +46,8 @@ public final class WheelKeyService extends AccessibilityService {
             audioSafe=manager!=null&&manager.getMode()==AudioManager.MODE_NORMAL&&!manager.isBluetoothScoOn();
             audioAt=SystemClock.uptimeMillis();
         }catch(RuntimeException unavailable){audioSafe=false;audioAt=0;}
+        if(now>=geminiDue){geminiAvailable=GeminiLaunch.available(WheelKeyService.this);geminiDue=now+4000;}
+        geminiAt=SystemClock.uptimeMillis();
         if(now>=deviceDue){
             Map<Integer,String> next=new HashMap<>();
             try{for(int id:InputDevice.getDeviceIds()){InputDevice device=InputDevice.getDevice(id);if(device!=null&&device.getName()!=null)next.put(id,device.getName());}devices=Collections.unmodifiableMap(next);}
@@ -61,6 +66,14 @@ public final class WheelKeyService extends AccessibilityService {
             if(device.length()>64)device=device.substring(0,64);
             lastControl="code "+event.getKeyCode()+", scan "+event.getScanCode()+", "+device;
         }
+        boolean voiceSafe=audioSafe&&audioAt>0&&now>=audioAt&&now-audioAt<1500;
+        int voice=voiceKeys.handle(event.getAction(),event.getKeyCode(),event.getScanCode(),event.getDeviceId(),name,event.getDownTime(),event.getRepeatCount(),event.isCanceled(),
+            GeminiLaunch.wheelEnabled(),geminiAvailable&&geminiAt>0&&now>=geminiAt&&now-geminiAt<1500,voiceSafe,now);
+        if(voice==GeminiVoiceKeys.OPEN)ui.post(()->{
+            long at=SystemClock.uptimeMillis();
+            if(alive&&GeminiLaunch.wheelEnabled()&&audioSafe&&audioAt>0&&at>=audioAt&&at-audioAt<1500)GeminiLaunch.open(this);
+        });
+        if(voice!=GeminiVoiceKeys.PASS)return true;
         WheelKeyPolicy.Bindings bindings=WheelServiceSetup.bindings();
         if(policy==null||policyBindings!=bindings){
             if(policy==null)policy=new WheelKeyPolicy(bindings);else policy.updateBindings(bindings);
@@ -95,12 +108,12 @@ public final class WheelKeyService extends AccessibilityService {
     }
     @Override public void onAccessibilityEvent(AccessibilityEvent event){}
     @Override public void onInterrupt(){endMode();}
-    @Override public boolean onUnbind(Intent intent){modeEndsAt=0;modeGeneration++;if(current==this)WheelServiceSetup.serviceConnected(false);if(policy!=null)policy.disconnected();return super.onUnbind(intent);}
+    @Override public boolean onUnbind(Intent intent){modeEndsAt=0;modeGeneration++;if(current==this)WheelServiceSetup.serviceConnected(false);voiceKeys.disconnected();if(policy!=null)policy.disconnected();return super.onUnbind(intent);}
     @Override public void onDestroy(){
         alive=false;audioSafe=false;modeEndsAt=0;modeGeneration++;
         if(observer!=null)observer.removeCallbacksAndMessages(null);
         if(observerThread!=null)observerThread.quitSafely();
         if(current==this){current=null;WheelServiceSetup.serviceConnected(false);}
-        if(policy!=null)policy.disconnected();super.onDestroy();
+        voiceKeys.disconnected();if(policy!=null)policy.disconnected();super.onDestroy();
     }
 }

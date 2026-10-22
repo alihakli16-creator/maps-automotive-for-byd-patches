@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build this own-source Morphe TEST bundle; no Maps input, signing or device access."""
+"""Build this own-source Morphe TEST bundle; Maps + optional Google app; no input APK, signing or device access."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -12,8 +12,8 @@ import sys
 import zipfile
 
 CLI_SHA256 = "1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b"
-ARTIFACT = "maps-automotive-for-byd-morphe-preview.5.mpp"
-VERSION = "0.1.0-preview.5"
+ARTIFACT = "maps-automotive-for-byd-morphe-preview.6.mpp"
+VERSION = "0.1.0-preview.6"
 PATCH_NAME = "Maps Automotive for BYD (MicroG-RE TEST)"
 ROOT = Path(__file__).resolve().parent
 
@@ -48,8 +48,8 @@ def main():
     require(match and int(match.group(1)) >= 17, "JDK17 or newer is required on PATH.")
     patch_sources = sorted((ROOT / "src").rglob("*.java"))
     runtime_sources = sorted((ROOT / "runtime").rglob("*.java"))
-    require(len(patch_sources) == 13 and len(runtime_sources) == 85,
-            "The complete 13-file patch and 85-file staged runtime source trees are required.")
+    require(len(patch_sources) == 17 and len(runtime_sources) == 93,
+            "The complete 17-file patch and 93-file staged runtime source trees are required.")
     for name in ("LICENSE", "UPSTREAM-NOTICE", "NOTICE"):
         require((ROOT / name).is_file(), "Missing required notice: " + name)
     # A fresh directory gives every build an immutable output location.
@@ -70,15 +70,32 @@ def main():
     run("javac", "--release", "17", "-cp", cli, "-d", classes, *patch_sources)
     run(d8, "--min-api", "29", "--lib", android, "--classpath", cli,
         "--output", dex, *sorted(classes.rglob("*.class")))
-    run("javac", "-source", "8", "-target", "8", "-Xlint:-options", "-cp", android,
-        "-d", extension_classes, *runtime_sources)
-    run(d8, "--min-api", "29", "--lib", android, "--output", extension,
-        *sorted(extension_classes.rglob("*.class")))
+    extensions = {}
+    for module, min_api in (("cluster", "29"), ("gsa", "32")):
+        module_sources = sorted((ROOT / "runtime/local/maps" / module).rglob("*.java"))
+        module_classes, module_dex = extension_classes / module, extension / module
+        module_dex.mkdir()
+        run("javac", "-source", "8", "-target", "8", "-Xlint:-options", "-cp", android,
+            "-d", module_classes, *module_sources)
+        run(d8, "--min-api", min_api, "--lib", android, "--output", module_dex,
+            *sorted(module_classes.rglob("*.class")))
+        extensions["aaos" if module == "cluster" else "gsa"] = module_dex / "classes.dex"
+
+    test_sources = sorted((ROOT / "tests").rglob("*.java"))
+    require(len(test_sources) == 2, "Both recovery and Google provider/routing tests are required.")
+    test_classes = out / "test-classes"
+    run("javac", "--release", "17", "-d", test_classes,
+        ROOT / "runtime/local/maps/cluster/GeminiRecoveryPolicy.java",
+        ROOT / "runtime/local/maps/gsa/ProviderPolicy.java",
+        ROOT / "src/local/maps/gsapatches/ProtocolRoutes.java",
+        ROOT / "src/local/maps/gsapatches/ServiceActions.java", *test_sources)
+    run("java", "-cp", test_classes, "local.maps.cluster.GeminiRecoveryTest")
+    run("java", "-cp", test_classes, "local.maps.gsapatches.PolicyRoutesTest")
 
     manifest = (
         "Manifest-Version: 1.0\r\n"
-        "Name: Maps Automotive for BYD (MicroG-RE TEST)\r\n"
-        "Description: TEST Android10, DiLink3 and DiLink 5.1 cluster, navigation pointer and zoom controls, BEV/PHEV profile\r\n"
+        "Name: Maps Automotive for BYD + Gemini (TEST)\r\n"
+        "Description: TEST Maps54N and optional Google08 Gemini support for MicroG-RE\r\n"
         "Version: " + VERSION + "\r\n"
         "Author: romanchukg-cloud\r\n"
         "License: GPL-3.0-only\r\n"
@@ -97,8 +114,9 @@ def main():
         for path in sorted(classes.rglob("*.class")):
             put(archive, path.relative_to(classes).as_posix(), path.read_bytes())
         put(archive, "classes.dex", (dex / "classes.dex").read_bytes())
-        put(archive, "extensions/aaos.mpe", (extension / "classes.dex").read_bytes())
-        for path in patch_sources + runtime_sources:
+        for module, path in extensions.items():
+            put(archive, "extensions/" + module + ".mpe", path.read_bytes())
+        for path in patch_sources + runtime_sources + test_sources:
             put(archive, path.relative_to(ROOT).as_posix(), path.read_bytes())
         for name in ("LICENSE", "UPSTREAM-NOTICE", "NOTICE"):
             put(archive, name, (ROOT / name).read_bytes())
@@ -106,6 +124,12 @@ def main():
     source_hashes = {path.relative_to(ROOT).as_posix(): sha256(path)
                      for path in patch_sources + runtime_sources}
     record = {
+        "agent": "ChatGPT",
+        "status": "prepared_not_published",
+        "maps_functional_revision": "54N",
+        "google_functional_revision": "08",
+        "google_input": "17.62.11.ve.arm64/301813762/API32+",
+        "patch_names": [PATCH_NAME, "Google app for BYD (MicroG-RE TEST)"],
         "mpp": ARTIFACT,
         "sha256": sha256(bundle),
         "bytes": bundle.stat().st_size,
@@ -116,7 +140,7 @@ def main():
         "maps_input": "26.10.120001.E/1068833407",
         "desktop_version": "1.18.1",
         "desktop_api_sha256": CLI_SHA256,
-        "extension_sha256": sha256(extension / "classes.dex"),
+        "extension_sha256": {module: sha256(path) for module, path in extensions.items()},
         "patch_dex_sha256": sha256(dex / "classes.dex"),
         "source_sha256": source_hashes,
         "patch_java_count": len(patch_sources),
@@ -128,6 +152,7 @@ def main():
         "runtime_provider_guard": True,
         "diagnostics_uploads_disabled": True,
         "Morphe_Manager_tested": False,
+        "host_tests": {"recovery_protocol": 71, "google_provider_routes": 301, "result": "PASS"},
     }
     (out / "BUILD.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     (out / "SHA256SUMS").write_text(record["sha256"] + "  " + ARTIFACT + "\n", encoding="utf-8")

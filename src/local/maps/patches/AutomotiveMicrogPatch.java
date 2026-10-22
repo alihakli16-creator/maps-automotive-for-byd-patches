@@ -137,7 +137,7 @@ public final class AutomotiveMicrogPatch {
     if(queries==null){queries=doc.createElement("queries");doc.getDocumentElement().appendChild(queries);}
     Element query=doc.createElement("package");query.setAttribute("android:name","app.revanced.android.gms");queries.appendChild(query);
     // 54E: both AMap adapter package names, so AmapAdapter can see which one is installed (targetSdk 36).
-    for(String name:List.of("com.byd.clusterdebug","com.autonavi.amapauto","com.byd.amapservice","com.example.amapservice")){
+    for(String name:List.of("com.google.android.apps.bard","com.google.android.googlequicksearchbox","com.byd.clusterdebug","com.autonavi.amapauto","com.byd.amapservice","com.example.amapservice")){
      boolean present=false;for(int i=0;i<queries.getChildNodes().getLength();i++)if(queries.getChildNodes().item(i) instanceof Element&&name.equals(((Element)queries.getChildNodes().item(i)).getAttribute("android:name")))present=true;
      if(!present){Element e=doc.createElement("package");e.setAttribute("android:name",name);queries.appendChild(e);}
     }
