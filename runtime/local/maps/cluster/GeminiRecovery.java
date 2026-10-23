@@ -62,6 +62,13 @@ final class GeminiRecovery {
     }
     /** Called off UI only. No ADB retry or approval unless this is the explicit Enable action. */
     static boolean recover(Context c,boolean authorize,BooleanSupplier callerActive){
+        // A voice tap also repairs a binding stuck in STARTING; the explicit Enable check keeps 54N behaviour.
+        return recover(c,authorize,callerActive,!authorize,false);
+    }
+    /** After a shown session without a Gemini window. True only when Google was re-registered and is
+     * now bound; a binding that was already ready means Gemini is just slow, so nothing is retried. */
+    static boolean recoverStalled(Context c,BooleanSupplier callerActive){return recover(c,false,callerActive,true,true);}
+    private static boolean recover(Context c,boolean authorize,BooleanSupplier callerActive,boolean stalled,boolean onlyRestored){
         init(c);
         if(!enabled||!callerActive.getAsBoolean())return false;
         synchronized(io){
@@ -73,7 +80,7 @@ final class GeminiRecovery {
             BooleanSupplier allowed=()->enabled&&epoch==generation.get()&&callerActive.getAsBoolean()&&SystemClock.uptimeMillis()-start<8000;
             try(VehicleLocalAdb adb=VehicleLocalAdb.open(c.getNoBackupFilesDir(),authorize,allowed)){
                 active=adb;
-                GeminiRecoveryPolicy.Result result=GeminiRecoveryPolicy.repair(adb::execute,allowed);
+                GeminiRecoveryPolicy.Result result=GeminiRecoveryPolicy.repair(adb::execute,allowed,stalled);
                 if(result==GeminiRecoveryPolicy.Result.OTHER_ASSISTANT){status="Another assistant is selected. Automatic recovery leaves it unchanged.";return false;}
                 // Selection is not readiness: a stopped GSA can leave mBound=false indefinitely.
                 String user=adb.execute("am get-current-user").trim();
@@ -86,8 +93,8 @@ final class GeminiRecovery {
                 if(!allowed.getAsBoolean())throw new IOException("cancelled");
                 boolean selected=GeminiLaunch.googleAssistant(c),ready=selected&&bound;
                 status=ready?"Google assistant is ready. Recovery uses local ADB; no computer is needed.":"Google selection is still starting. Tap the voice button again.";
-                Log.i("MapsGeminiRecovery","result="+result+" selected="+selected+" bound="+bound);
-                return ready;
+                Log.i("MapsGeminiRecovery","result="+result+" selected="+selected+" bound="+bound+(stalled?" stalled=true":""));
+                return onlyRestored?ready&&result==GeminiRecoveryPolicy.Result.RESTORED:ready;
             }catch(VehicleLocalAdb.ApprovalRequiredException e){status="Approve the Maps ADB key once: turn recovery off and on, then allow it. Voice-button retries never request approval.";}
             catch(Exception e){status="Recovery could not finish. Enable ADB on this head unit and retry. No computer is needed after key approval.";Log.i("MapsGeminiRecovery","result=unavailable type="+e.getClass().getSimpleName());}
             finally{active=null;}

@@ -16,7 +16,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Key-only accessibility service: no window content, gesture injection, or key rewriting. */
+/** Key-only accessibility service: no window content, gesture injection, or key rewriting.
+ * Its one action is the system Back that closes compact Gemini on a second Gemini press. */
 public final class WheelKeyService extends AccessibilityService {
     private static volatile WheelKeyService current;
     private final Handler ui=new Handler(Looper.getMainLooper());
@@ -28,7 +29,8 @@ public final class WheelKeyService extends AccessibilityService {
     private volatile boolean alive;
     // Long.MAX_VALUE denotes the explicit custom-key mode; it has no elapsed timeout.
     private volatile long modeEndsAt,modeGeneration;
-    private static volatile String lastControl="No Tang control key observed yet.";
+    private static volatile String lastControl="No assigned control key observed yet.";
+    private static final WheelKeyPolicy.Recent recent=new WheelKeyPolicy.Recent();
     private final GeminiVoiceKeys voiceKeys=new GeminiVoiceKeys();
     private volatile boolean geminiAvailable;private volatile long geminiAt;
     private long geminiDue;
@@ -61,13 +63,23 @@ public final class WheelKeyService extends AccessibilityService {
     @Override protected void onServiceConnected(){super.onServiceConnected();WheelServiceSetup.serviceConnected(true);}
     @Override protected boolean onKeyEvent(KeyEvent event){
         long now=SystemClock.uptimeMillis();String name=devices.get(event.getDeviceId());if(name==null)deviceDue=0;
-        if(WheelServiceSetup.enabled()&&(event.getKeyCode()==305||event.getKeyCode()==291||event.getKeyCode()==292)&&event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0){
+        WheelKeyPolicy.Event pressed=new WheelKeyPolicy.Event(event.getAction(),event.getKeyCode(),event.getScanCode(),event.getDeviceId(),name,event.getDownTime(),event.getRepeatCount(),event.isCanceled());
+        // Assigning a button comes first, so the pressed key never also zooms, changes volume or opens Gemini.
+        WheelKeyPolicy.Learning.Capture capture=WheelServiceSetup.learning.handle(pressed,now);
+        if(capture.binding!=null)WheelServiceSetup.learned(capture.role,capture.binding);
+        boolean consumed=capture.consume||dispatch(event,now,name);
+        recent.add(System.currentTimeMillis(),pressed,consumed);
+        return consumed;
+    }
+    private boolean dispatch(KeyEvent event,long now,String name){
+        WheelKeyPolicy.Bindings assigned=WheelServiceSetup.bindings();int code=event.getKeyCode();
+        if(WheelServiceSetup.enabled()&&(code==assigned.mode.code||code==assigned.in.code||code==assigned.out.code)&&event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0){
             String device=name==null?"unknown device":name.replaceAll("[\\p{Cntrl}]", "?");
             if(device.length()>64)device=device.substring(0,64);
             lastControl="code "+event.getKeyCode()+", scan "+event.getScanCode()+", "+device;
         }
         boolean voiceSafe=audioSafe&&audioAt>0&&now>=audioAt&&now-audioAt<1500;
-        int voice=voiceKeys.handle(event.getAction(),event.getKeyCode(),event.getScanCode(),event.getDeviceId(),name,event.getDownTime(),event.getRepeatCount(),event.isCanceled(),
+        int voice=voiceKeys.handle(WheelServiceSetup.geminiBinding(),event.getAction(),event.getKeyCode(),event.getScanCode(),event.getDeviceId(),name,event.getDownTime(),event.getRepeatCount(),event.isCanceled(),
             GeminiLaunch.wheelEnabled(),geminiAvailable&&geminiAt>0&&now>=geminiAt&&now-geminiAt<1500,voiceSafe,now);
         if(voice==GeminiVoiceKeys.OPEN)ui.post(()->{
             long at=SystemClock.uptimeMillis();
@@ -97,6 +109,9 @@ public final class WheelKeyService extends AccessibilityService {
         return result.consume;
     }
     public static String lastKey(){return lastControl;}
+    /** UI thread. Global Back closes the compact Gemini window that covers Maps. */
+    static boolean back(){WheelKeyService service=current;try{return service!=null&&service.alive&&service.performGlobalAction(GLOBAL_ACTION_BACK);}catch(RuntimeException e){return false;}}
+    public static String recentKeys(){return recent.describe(java.util.TimeZone.getDefault());}
     public static boolean modeActive(){WheelKeyService service=current;return service!=null&&service.alive&&WheelServiceSetup.enabled()&&service.modeEndsAt!=0;}
     private void scheduleEndMode(long generation){ui.post(()->{if(alive&&current==this&&modeGeneration==generation){modeEndsAt=0;modeGeneration++;if(policy!=null)policy.endMode();}});}
     static void endMode(){WheelKeyService service=current;if(service!=null)service.scheduleEndMode(service.modeGeneration);}
@@ -108,7 +123,7 @@ public final class WheelKeyService extends AccessibilityService {
     }
     @Override public void onAccessibilityEvent(AccessibilityEvent event){}
     @Override public void onInterrupt(){endMode();}
-    @Override public boolean onUnbind(Intent intent){modeEndsAt=0;modeGeneration++;if(current==this)WheelServiceSetup.serviceConnected(false);voiceKeys.disconnected();if(policy!=null)policy.disconnected();return super.onUnbind(intent);}
+    @Override public boolean onUnbind(Intent intent){WheelServiceSetup.learning.disconnected();modeEndsAt=0;modeGeneration++;if(current==this)WheelServiceSetup.serviceConnected(false);voiceKeys.disconnected();if(policy!=null)policy.disconnected();return super.onUnbind(intent);}
     @Override public void onDestroy(){
         alive=false;audioSafe=false;modeEndsAt=0;modeGeneration++;
         if(observer!=null)observer.removeCallbacksAndMessages(null);

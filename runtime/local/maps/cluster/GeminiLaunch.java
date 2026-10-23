@@ -27,8 +27,17 @@ final class GeminiLaunch {
  static boolean compactEnabled(){return preferences==null||preferences.getBoolean(COMPACT_KEY,true);}
  static int mode(){return preferences==null||preferences.getInt(MODE_KEY,1)!=0?1:0;}
  static String modeName(){return mode()==1?"Conversation (Gemini Live)":"Microphone";}
- static void resumed(Activity a){resumed=new java.lang.ref.WeakReference<>(a);}
- static void paused(Activity a){if(resumed.get()==a)resumed.clear();}
+ /** Counts pauses of the resumed Maps activity: compact Gemini always pauses Maps when it opens. */
+ private static volatile long pauses;
+ static final long STALL_CHECK_MS=2500;
+ /** Compact Gemini is translucent: Maps is paused under it but stays started. The full app or another
+  * screen stops Maps. So "paused right after our request and not stopped" means compact Gemini is on top. */
+ private static volatile long requestedAt=Long.MIN_VALUE/2;
+ private static volatile java.lang.ref.WeakReference<Activity> covered=new java.lang.ref.WeakReference<>(null);
+ static final long COVER_WINDOW_MS=3000;
+ static void resumed(Activity a){resumed=new java.lang.ref.WeakReference<>(a);covered=new java.lang.ref.WeakReference<>(null);}
+ static void paused(Activity a){if(resumed.get()==a){pauses++;resumed.clear();if(SystemClock.uptimeMillis()-requestedAt<COVER_WINDOW_MS)covered=new java.lang.ref.WeakReference<>(a);}}
+ static void stopped(Activity a){if(covered.get()==a)covered=new java.lang.ref.WeakReference<>(null);}
  static boolean googleAssistant(Context c){try{String s=android.provider.Settings.Secure.getString(c.getContentResolver(),"voice_interaction_service");ComponentName n=s==null?null:ComponentName.unflattenFromString(s);return n!=null&&GOOGLE.equals(n.getPackageName());}catch(RuntimeException e){return false;}}
  static void assistantSettings(Activity a){try{a.startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS));}catch(RuntimeException e){Toast.makeText(a,"Open Android default apps and select Google as the digital assistant.",Toast.LENGTH_LONG).show();}}
  static boolean available(Context c){try{return c.getPackageManager().getLaunchIntentForPackage(PACKAGE)!=null;}catch(RuntimeException e){return false;}}
@@ -43,6 +52,11 @@ final class GeminiLaunch {
  private static void cancel(Context c){worker.execute(()->{try{c.getContentResolver().call(Uri.parse("content://"+AUTHORITY),"cancel",null,null);}catch(RuntimeException ignored){}});}
  static boolean open(Context context){
   init(context);
+  // A second press while our compact Gemini covers Maps closes it instead of opening the full app.
+  Activity under=covered.get();
+  if(under!=null&&resumed.get()==null&&!under.isFinishing()&&!under.isDestroyed()&&WheelKeyService.back()){
+   covered=new java.lang.ref.WeakReference<>(null);android.util.Log.i("MapsGemini","second press closed compact Gemini");return true;
+  }
   if(!available(context)){Toast.makeText(context,"Install Gemini and finish its Google sign-in first.",Toast.LENGTH_LONG).show();return false;}
   if(!opening.compareAndSet(false,true))return true;
   Context app=context.getApplicationContext();Activity requested=resumed.get();
@@ -54,13 +68,31 @@ final class GeminiLaunch {
   });
   return true;
  }
+ /** A shown session that never paused Maps did not open Gemini (only the screen-edge glow).
+  * One stalled recovery per tap; the retry is only made after Google was actually re-registered. */
+ private static void checkStalled(Context context,Context app,Activity requested,String selected,long before){
+  if(pauses!=before||resumed.get()!=requested||requested.isFinishing()||requested.isDestroyed()||requested.isInPictureInPictureMode())return;
+  if(!GeminiRecovery.enabled()||!compactEnabled()||!opening.compareAndSet(false,true))return;
+  android.util.Log.i("MapsGemini","no Gemini window after "+STALL_CHECK_MS+" ms; checking the Google voice service");
+  worker.execute(()->{
+   boolean restored=false;
+   try{restored=GeminiRecovery.recoverStalled(app,()->resumed.get()==requested&&pauses==before&&compactEnabled()&&!requested.isFinishing()&&!requested.isDestroyed());}
+   finally{
+    final boolean retry=restored;
+    if(!retry)opening.set(false);
+    else{boolean rearmed=prepare(app,selected);ui.post(()->launchPrepared(context,app,requested,selected,rearmed,2,false));}
+   }
+  });
+ }
  private static void launchPrepared(Context context,Context app,Activity requested,String selected,boolean armed,int retries,boolean allowRecovery){
     boolean waiting=false;
     try{
      if(requested!=null&&(resumed.get()!=requested||requested.isFinishing()||requested.isDestroyed())){if(armed)cancel(app);return;}
      if(!armed)Toast.makeText(context,"One-tap voice needs the updated patched Google app. Choose Microphone or Live in Gemini for now.",Toast.LENGTH_LONG).show();
      if(compactEnabled()&&googleAssistant(app)&&requested!=null&&!requested.isInPictureInPictureMode()){
-      try{if(requested.showAssist(new Bundle())){android.util.Log.i("MapsGemini","assistant mode requested="+selected+" armed="+armed);return;}}catch(RuntimeException ignored){}
+      try{if(requested.showAssist(new Bundle())){requestedAt=SystemClock.uptimeMillis();android.util.Log.i("MapsGemini","assistant mode requested="+selected+" armed="+armed);
+       if(allowRecovery&&GeminiRecovery.enabled()){final long before=pauses;ui.postDelayed(()->checkStalled(context,app,requested,selected,before),STALL_CHECK_MS);}
+       return;}}catch(RuntimeException ignored){}
       if(retries>0){waiting=true;ui.postDelayed(()->launchPrepared(context,app,requested,selected,armed,retries-1,false),350);return;}
      }
      if(allowRecovery&&GeminiRecovery.enabled()&&compactEnabled()&&requested!=null&&!requested.isInPictureInPictureMode()){

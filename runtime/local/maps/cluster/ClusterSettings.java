@@ -10,7 +10,7 @@ import android.widget.*;
 public final class ClusterSettings {
     static final class State {
         final boolean visible, mapEnabled, vehicleGuidance, pictureInPicture, satellite, backgroundStart;
-        final int size, side, margin, vertical, pointerVertical, clusterTheme, logoPosition;
+        final int size, side, margin, vertical, pointerVertical, pointerHorizontal, clusterTheme, logoPosition;
         State(android.content.SharedPreferences p) {
             mapEnabled=p.getBoolean("map_enabled",true);
             satellite=p.getBoolean("cluster_satellite",false);
@@ -21,6 +21,8 @@ public final class ClusterSettings {
             margin=Math.max(0,Math.min(20,p.getInt("margin",5)));
             vertical=Math.max(-25,Math.min(25,p.getInt("vertical",0)));
             pointerVertical=Math.max(-25,Math.min(25,p.getInt("pointer_vertical",10)));
+            // 0 keeps the native horizontal anchor (the centre of the free viewport).
+            pointerHorizontal=Math.max(-25,Math.min(25,p.getInt("pointer_horizontal",0)));
             int theme=p.getInt("cluster_theme",THEME_AUTO);
             clusterTheme=theme==THEME_LIGHT||theme==THEME_SYSTEM||theme==THEME_AUTO?theme:THEME_DARK;
             logoPosition=p.getInt("logo_position",LOGO_BOTTOM_LEFT)==LOGO_TOP_RIGHT?LOGO_TOP_RIGHT:LOGO_BOTTOM_LEFT;
@@ -35,7 +37,7 @@ public final class ClusterSettings {
     private static final android.content.SharedPreferences.OnSharedPreferenceChangeListener changes=(p,key)->{
         if(AppCorners.KEY.equals(key)){AppCorners.refresh();return;}
         current=new State(p); CardPlacement.refresh();
-        if("pointer_vertical".equals(key))ClusterHost.refreshClusterCamera();
+        if("pointer_vertical".equals(key)||"pointer_horizontal".equals(key))ClusterHost.refreshClusterCamera();
         if("map_enabled".equals(key))ClusterHost.mapSettingChanged();
         if("vehicle_guidance".equals(key))BydGuidance.settingsChanged();
         if("cluster_theme".equals(key))ClusterHost.themeSettingChanged();
@@ -86,7 +88,7 @@ public final class ClusterSettings {
             public void onActivityCreated(Activity a,Bundle b){}
             public void onActivityStarted(Activity a){}
             public void onActivityPaused(Activity a){if(a.getClass().getName().equals("com.google.android.maps.MapsActivity")){GeminiLaunch.paused(a);MainUiScale.paused(a);AccountAccess.paused();SignInAccess.paused();}}
-            public void onActivityStopped(Activity a){}
+            public void onActivityStopped(Activity a){if(a.getClass().getName().equals("com.google.android.maps.MapsActivity"))GeminiLaunch.stopped(a);}
             public void onActivitySaveInstanceState(Activity a,Bundle b){}
             public void onActivityDestroyed(Activity a){GeminiLaunch.paused(a);AppCorners.destroyed(a);MainUiScale.destroyed(a);ClusterMenu.destroyed(a);}
         });

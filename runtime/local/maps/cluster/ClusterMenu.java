@@ -68,7 +68,7 @@ final class ClusterMenu {
         body=new LinearLayout(context);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(0,0,0,dp(12));scroll.addView(body);
         panel.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));dialog.setContentView(panel);
         dialog.setOnKeyListener((d,key,e)->{if(key!=KeyEvent.KEYCODE_BACK)return false;if(e.getAction()==KeyEvent.ACTION_UP)back();return true;});
-        dialog.setOnDismissListener(d->{prefs.unregisterOnSharedPreferenceChangeListener(changes);if(open==this)open=null;});
+        dialog.setOnDismissListener(d->{WheelServiceSetup.cancelLearning();prefs.unregisterOnSharedPreferenceChangeListener(changes);if(open==this)open=null;});
         prefs.registerOnSharedPreferenceChangeListener(changes);main();
     }
     private static int id(Context c,String name){return MapsResources.id(c.getResources(),name,"id");}
@@ -206,7 +206,12 @@ final class ClusterMenu {
         start("gemini","Gemini voice assistant");
         toggle("Show Gemini button","Voice mode icon below the cluster-map toggle in the side column",GeminiLaunch.BUTTON_KEY,prefs.getBoolean(GeminiLaunch.BUTTON_KEY,true));
         action("Launch mode",GeminiLaunch.modeName(),()->choices("Gemini launch mode",GeminiLaunch.MODE_KEY,new String[]{"Conversation (Gemini Live)","Microphone"},new int[]{1,0},null));
-        toggle("Long-press microphone","Use the steering-wheel microphone long press on DiLink 5.0",GeminiLaunch.WHEEL_KEY,prefs.getBoolean(GeminiLaunch.WHEEL_KEY,false));
+        toggle("Steering-wheel Gemini button","Open Gemini with the assigned wheel button",GeminiLaunch.WHEEL_KEY,prefs.getBoolean(GeminiLaunch.WHEEL_KEY,false));
+        LinearLayout voiceKey=action("Gemini button",WheelServiceSetup.describe(WheelServiceSetup.geminiBinding())+" · tap, then press the wheel button",()->{
+            if(!WheelServiceSetup.startLearning(4))Toast.makeText(activity,WheelServiceSetup.learningStatus(),Toast.LENGTH_LONG).show();});
+        LinearLayout voiceLearning=row("Button assignment",WheelServiceSetup.learningStatus());rule();
+        action("Restore Tang microphone button","Long press, key 312/312",WheelServiceSetup::restoreTangGemini);
+        LinearLayout voiceReceived=row("Recent keys",WheelKeyService.recentKeys());rule();
         toggle("Compact assistant","Show Gemini over Maps when Google is the default digital assistant",GeminiLaunch.COMPACT_KEY,prefs.getBoolean(GeminiLaunch.COMPACT_KEY,true));
         LinearLayout recoveryRow=row("Automatic compact recovery","Restore Google after BYD clears the assistant; requires local ADB");
         MapsSwitch recovery=new MapsSwitch(context);recovery.setChecked(GeminiRecovery.enabled());recovery.setContentDescription("Automatic compact recovery");
@@ -220,7 +225,14 @@ final class ClusterMenu {
         action("Digital assistant",GeminiLaunch.googleAssistant(activity)?"Google · compact mode available":"Choose Google for compact mode",()->GeminiLaunch.assistantSettings(activity));
         action("Open Gemini",GeminiLaunch.available(activity)?GeminiLaunch.modeName():"Install Gemini and finish sign-in first",()->GeminiLaunch.open(activity));
         action("Wheel key service",WheelServiceSetup.connected()?"Connected": "Open steering-wheel setup to enable the key service",this::wheel);
-        note("Long press uses the Tang DiLink 5.0 microphone key. The short press keeps the BYD assistant; the custom star keeps cluster zoom. The map and cluster do not need an active route. Keys pass through during phone calls.");
+        note("By default the Gemini button is the Tang DiLink 5.0 long press on the microphone key; the short press keeps the BYD assistant and the custom star keeps cluster zoom. On other firmware, tap Gemini button and press the wheel button you want within 10 seconds; that press is not passed to the car. Press the Gemini button again to close compact Gemini. A zoom button cannot also open Gemini. Recent keys shows what this head unit sends to Android. The map and cluster do not need an active route. Keys pass through during phone calls.");
+        final long expected=pageGeneration;
+        readerMain.postDelayed(new Runnable(){public void run(){
+            if(!dialog.isShowing()||!"gemini".equals(page)){WheelServiceSetup.cancelLearning();return;}
+            if(pageGeneration!=expected)return;
+            summary(voiceKey,WheelServiceSetup.describe(WheelServiceSetup.geminiBinding())+" · tap, then press the wheel button");
+            summary(voiceLearning,WheelServiceSetup.learningStatus());summary(voiceReceived,WheelKeyService.recentKeys());readerMain.postDelayed(this,500);
+        }},500);
         note("Automatic compact recovery is optional. Approve the Maps ADB key once on this head unit, using Always allow. After a BYD reset, tapping the Maps voice button or holding the wheel microphone restores Google and opens the selected voice mode. A computer is not needed. Another selected digital assistant is kept. No recovery runs while Maps is in the background or without a voice-button tap.");
         note("Uses the existing wheel key service enabled in Steering-wheel zoom. Keep that service enabled. Compact mode uses the Android assistant over Maps while Maps is on screen. Select Google as the default digital assistant once. Otherwise, or outside Maps, the full Gemini app opens. One tap starts the selected Microphone or Conversation mode. This requires the updated patched Google app with Maps voice modes. Google app and Gemini must already be set up with MicroG-RE. Allow Contacts and Location for MicroG-RE, and Microphone for Google.");
     }
@@ -242,6 +254,8 @@ final class ClusterMenu {
         start("layout","Map layout");ClusterSettings.State s=ClusterSettings.state();
         action("Google Maps logo",s.logoPosition==0?"Bottom left":"Top right",()->choices("Google Maps logo","logo_position",new String[]{"Bottom left","Top right"},new int[]{0,1},null));
         slider("Pointer vertical offset","pointer_vertical",-25,25,s.pointerVertical);note("Negative moves the pointer up; positive moves it down.");
+        slider("Pointer horizontal offset","pointer_horizontal",-25,25,s.pointerHorizontal);note("Negative moves the pointer left; positive moves it right. 0 keeps the standard centre.");
+        action("Reset pointer position","Vertical 10%, horizontal 0%",()->{prefs.edit().putInt("pointer_vertical",10).putInt("pointer_horizontal",0).apply();layout();});
     }
     private void oemLayout(){
         if(!DiLink51Setup.supported()){main();return;}
@@ -290,6 +304,14 @@ final class ClusterMenu {
         LinearLayout service=row("Service",WheelServiceSetup.status());rule();
         LinearLayout camera=row("Map controls",ClusterZoom.description());rule();
         LinearLayout key=row("Last control key",WheelKeyService.lastKey());rule();
+        WheelKeyPolicy.Bindings assigned=WheelServiceSetup.bindings();
+        LinearLayout[] buttons=new LinearLayout[3];
+        for(int role=1;role<=3;role++){final int which=role;WheelKeyPolicy.Binding b=which==1?assigned.mode:which==2?assigned.in:assigned.out;
+            buttons[which-1]=action(WheelServiceSetup.roleName(which)+" button",WheelServiceSetup.describe(b)+" · tap, then press the wheel button",()->{
+                if(!WheelServiceSetup.startLearning(which))Toast.makeText(activity,WheelServiceSetup.learningStatus(),Toast.LENGTH_LONG).show();});}
+        LinearLayout learning=row("Button assignment",WheelServiceSetup.learningStatus());rule();
+        action("Restore BYD Tang buttons","Custom 305, volume + 291, volume − 292",WheelServiceSetup::restoreTangButtons);
+        LinearLayout received=row("Recent keys",WheelKeyService.recentKeys());rule();
         if(WheelServiceSetup.enabled())action("Authorize or retry","Allow the Maps ADB key on this head unit",()->
             WheelServiceSetup.configure(activity,true,true,()->{if(dialog.isShowing()&&"wheel".equals(page))wheel();}));
         action("Zoom in","Instrument cluster map only",()->clusterZoom(1));
@@ -297,14 +319,18 @@ final class ClusterMenu {
         action("Reset cluster zoom","Return to automatic map zoom",()->{ClusterZoom.reset();wheel();});
         note("Press the custom steering wheel button to turn cluster zoom controls on, then use volume + or − to zoom the instrument cluster map. Press the custom button again to restore volume controls. A call, unavailable cluster map or turning this feature off ends the control mode; press the custom button again afterwards.");
         note("The chosen map zoom stays until Reset cluster zoom or the cluster map is recreated. The central map keeps its own scale. Outside the control mode, the volume buttons work normally.");
-        note("Default buttons are for BYD Tang. The console volume control may send the same events and zoom too. Other firmware can use different buttons.");
+        note("Default buttons are for BYD Tang (DiLink 5.0). The console volume control may send the same events and zoom too. On other firmware, tap a button above and press the wheel button you want within 10 seconds; that press is not passed to the car. Recent keys lists what this head unit sends to Android and whether Maps kept it. If a wheel button never appears there, the head unit handles it itself and it cannot zoom the map.");
         note("Setup uses ADB on this head unit and a key-only accessibility service. Approve the standard ADB prompt once. It does not read screen content. ADB must remain enabled for service restoration after force-stop; open Maps again after force-stop.");
         final long expected=pageGeneration;
         readerMain.postDelayed(new Runnable(){public void run(){
-            if(!dialog.isShowing()||!"wheel".equals(page)||pageGeneration!=expected)return;
+            if(!dialog.isShowing()||!"wheel".equals(page)){WheelServiceSetup.cancelLearning();return;}
+            if(pageGeneration!=expected)return;
             summary(service,WheelServiceSetup.status());
             summary(camera,(WheelKeyService.modeActive()?"Controls active · ":"")+ClusterZoom.description());
-            summary(key,WheelKeyService.lastKey());readerMain.postDelayed(this,500);
+            summary(key,WheelKeyService.lastKey());
+            WheelKeyPolicy.Bindings now=WheelServiceSetup.bindings();
+            for(int role=1;role<=3;role++)summary(buttons[role-1],WheelServiceSetup.describe(role==1?now.mode:role==2?now.in:now.out)+" · tap, then press the wheel button");
+            summary(learning,WheelServiceSetup.learningStatus());summary(received,WheelKeyService.recentKeys());readerMain.postDelayed(this,500);
         }},500);
     }
     private void clusterZoom(int direction){

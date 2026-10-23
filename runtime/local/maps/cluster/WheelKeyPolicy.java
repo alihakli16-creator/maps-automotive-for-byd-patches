@@ -29,6 +29,8 @@ public final class WheelKeyPolicy {
             this.mode=mode;this.in=in;this.out=out;
         }
         public static Bindings tang(){return new Bindings(new Binding(305,300,"simulate-keys"),new Binding(291,115,"simulate-keys"),new Binding(292,114,"simulate-keys"));}
+        /** Tang DiLink 5.0 long press on the microphone key: the default Gemini key. */
+        public static Binding tangGemini(){return new Binding(312,312,"simulate-keys");}
         int role(Event event){return mode.matches(event)?1:in.matches(event)?2:out.matches(event)?3:0;}
     }
     public static final class Event {
@@ -75,6 +77,69 @@ public final class WheelKeyPolicy {
         if(!mode(now))return new Result(false,0,false);
         owned.put(id,role);
         return new Result(true,role==2?1:-1,true);
+    }
+
+    /** Zoom role using this key: 1 custom, 2 in, 3 out, 0 none. */
+    public static int zoomRole(Bindings current,Binding key){return current.mode.same(key)?1:current.in.same(key)?2:current.out.same(key)?3:0;}
+    /** A button already used by another role swaps with it, so the three bindings stay distinct. */
+    public static Bindings assign(Bindings current,int role,Binding learned){
+        if(current==null||learned==null||role<1||role>3)throw new IllegalArgumentException("Invalid wheel assignment");
+        Binding mode=current.mode,in=current.in,out=current.out,old=role==1?mode:role==2?in:out;
+        if(mode.same(learned))mode=old;if(in.same(learned))in=old;if(out.same(learned))out=old;
+        if(role==1)mode=learned;else if(role==2)in=learned;else out=learned;
+        return new Bindings(mode,in,out);
+    }
+
+    /** Press-to-assign for wheels other than the Tang. One press is taken and its repeats/release are
+     * consumed, so the car does not act on it. Home/back/power/recents are never taken. */
+    public static final class Learning {
+        public static final long TIMEOUT=10000;
+        public static final class Capture {
+            static final Capture PASS=new Capture(false,0,null),CONSUME=new Capture(true,0,null);
+            public final boolean consume;public final int role;public final Binding binding;
+            Capture(boolean consume,int role,Binding binding){this.consume=consume;this.role=role;this.binding=binding;}
+        }
+        private int role;private long until;private final Map<String,Boolean> taken=new HashMap<>();
+        /** Roles 1–3 are the zoom keys, 4 is the Gemini key. */
+        public synchronized void start(int role,long now){if(role<1||role>4||now<0)throw new IllegalArgumentException("Unknown wheel role");this.role=role;until=now+TIMEOUT;}
+        public synchronized void cancel(){role=0;until=0;}
+        public synchronized int role(long now){if(role!=0&&(now<0||now>=until))cancel();return role;}
+        public synchronized long remaining(long now){return role(now)==0?0:until-now;}
+        public synchronized Capture handle(Event event,long now){
+            String id=event.identity();
+            if(taken.containsKey(id)){if(event.action==UP)taken.remove(id);return Capture.CONSUME;}
+            int active=role(now);
+            if(active==0||event.action!=DOWN||event.repeat!=0||event.canceled||reserved(event.code))return Capture.PASS;
+            Binding binding;
+            try{binding=new Binding(event.code,event.scan,event.device);}catch(IllegalArgumentException unnamed){return Capture.PASS;}
+            if(taken.size()>=32)taken.clear();
+            taken.put(id,Boolean.TRUE);cancel();
+            return new Capture(true,active,binding);
+        }
+        public synchronized void disconnected(){cancel();taken.clear();}
+        static boolean reserved(int code){return code==3||code==4||code==26||code==187;}
+    }
+
+    /** Recent presses for the settings diagnostic, newest first. Only codes and the device name. */
+    public static final class Recent {
+        public static final int SIZE=20;
+        private final long[] at=new long[SIZE];private final int[] code=new int[SIZE],scan=new int[SIZE],id=new int[SIZE];
+        private final String[] device=new String[SIZE];private final boolean[] kept=new boolean[SIZE];private int next,count;
+        public synchronized void add(long wall,Event event,boolean consumed){
+            if(event.action!=DOWN||event.repeat!=0)return;
+            String name=event.device==null?"unknown device":event.device.replaceAll("\\p{Cntrl}","?");if(name.length()>40)name=name.substring(0,40);
+            at[next]=wall;code[next]=event.code;scan[next]=event.scan;id[next]=event.deviceId;device[next]=name;kept[next]=consumed;
+            next=(next+1)%SIZE;if(count<SIZE)count++;
+        }
+        public synchronized int size(){return count;}
+        public synchronized String describe(java.util.TimeZone zone){
+            if(count==0)return "No keys received yet. Press a steering-wheel button. If nothing appears, this head unit handles that button before Android.";
+            java.text.SimpleDateFormat time=new java.text.SimpleDateFormat("HH:mm:ss",java.util.Locale.US);time.setTimeZone(zone);
+            StringBuilder out=new StringBuilder();
+            for(int i=0;i<count;i++){int k=(next-1-i+SIZE)%SIZE;if(i>0)out.append('\n');
+                out.append(time.format(new java.util.Date(at[k]))).append("  key ").append(code[k]).append('/').append(scan[k]).append("  ").append(device[k]).append(" #").append(id[k]).append(kept[k]?"  · Maps":"  · passed");}
+            return out.toString();
+        }
     }
 
     /** Validated colon-list utilities. Preserve all unrelated text/order and remove only our ID. */

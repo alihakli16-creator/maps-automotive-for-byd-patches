@@ -72,15 +72,20 @@ final class GeminiRecoveryPolicy {
         String output=shell.execute("cmd role "+action+" --user "+user+" "+ROLE+" "+GOOGLE+" 0; printf '|maps_gemini_role_rc=%s|' \"$?\"").trim();
         if(!output.equals(marker))throw new IOException("role_rejected");
     }
-    static Result repair(Shell shell,BooleanSupplier allowed)throws IOException{
+    static Result repair(Shell shell,BooleanSupplier allowed)throws IOException{return repair(shell,allowed,false);}
+    /** stalled: a session was shown but no Gemini window followed. On Tang after a quickboot wake the
+     * manager binding can stay STARTING (mBound=true mService=null) for good; if it is still STARTING
+     * after two more one-second checks it gets the same Google-only re-register as UNBOUND. */
+    static Result repair(Shell shell,BooleanSupplier allowed,boolean stalled)throws IOException{
         check(allowed);if(!shell.execute("id -u").trim().equals("2000"))throw new IOException("not_shell");
         String u=user(shell);
         if(!safe(shell,u,allowed))return Result.OTHER_ASSISTANT;
         if(setting(shell,u,"voice_interaction_service")==Choice.GOOGLE){
             Binding b=binding(shell.execute("dumpsys voiceinteraction"),u);
+            for(int i=0;stalled&&b==Binding.STARTING&&i<2;i++){check(allowed);b=binding(shell.execute("sleep 1; dumpsys voiceinteraction"),u);}
             if(b==Binding.BOUND)return Result.READY;
-            if(b==Binding.STARTING)return Result.STARTING;
-            if(b!=Binding.UNBOUND)throw new IOException("binding_unavailable");
+            if(b==Binding.STARTING&&!stalled)return Result.STARTING;
+            if(b!=Binding.UNBOUND&&b!=Binding.STARTING)throw new IOException("binding_unavailable");
             // A force-stop can leave Google selected but unbound. Re-register only our Google role.
         }
         // Remove only Google if Android still holds its stale role. Never clear all holders.

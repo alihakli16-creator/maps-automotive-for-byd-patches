@@ -119,7 +119,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     private static java.lang.ref.WeakReference<Object> viewportManager = new java.lang.ref.WeakReference<>(null);
     private static java.lang.ref.WeakReference<View> clusterRoot = new java.lang.ref.WeakReference<>(null);
     private static java.lang.ref.WeakReference<Object> layerController=new java.lang.ref.WeakReference<>(null);
-    private static volatile float appliedPointerY = Float.NaN;
+    private static volatile float appliedPointerY = Float.NaN, appliedPointerX = Float.NaN;
     public static boolean isClusterViewport(Object manager) {
         return instance != null && instance.cluster != null && manager != null && viewportManager.get() == manager;
     }
@@ -132,6 +132,17 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         float y = clusterPointerY(manager, original);
         if (viewportManager.get() == manager) appliedPointerY = y;
         return y;
+    }
+    /** Absolute like Y, so repeated anchor hooks cannot accumulate; 0 keeps the native X. */
+    public static float clusterPointerX(Object manager, float original) {
+        ClusterSettings.State state = ClusterSettings.state();
+        return isClusterViewport(manager) && state != null && state.pointerHorizontal != 0
+            ? state.pointerHorizontal / 50f : original;
+    }
+    public static float applyClusterPointerX(Object manager, float original) {
+        float x = clusterPointerX(manager, original);
+        if (viewportManager.get() == manager) appliedPointerX = x;
+        return x;
     }
     static void refreshClusterCamera() {
         Object manager = viewportManager.get();
@@ -154,7 +165,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
             String result = "cardVisible=" + state.visible + " side=" + state.side + " size=" + state.size
                 + " satellite=" + state.satellite + " margin=" + state.margin + " vertical=" + state.vertical + " theme=" + state.clusterTheme + " night=" + instance.appliedNight + " logo=" + state.logoPosition
                 + " footer=" + state.visible + " mapViewport=" + viewport + " baseBounds=" + bounds
-                + " pointerOffset=" + state.pointerVertical + " cameraAnchor=" + anchor + " liveCameraY=" + appliedPointerY
+                + " pointerOffset=" + state.pointerVertical + " pointerHorizontal=" + state.pointerHorizontal + " cameraAnchor=" + anchor + " liveCameraY=" + appliedPointerY + " liveCameraX=" + appliedPointerX
                 + " appLocale=" + instance.app.getResources().getConfiguration().getLocales().toLanguageTags()
                 + " clusterLocale=" + (clusterRoot.get() == null ? "unavailable" : clusterRoot.get().getResources().getConfiguration().getLocales().toLanguageTags());
             Log.i(TAG, result);
@@ -294,7 +305,7 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
         main.postDelayed(new Runnable(){public void run(){reconcile();restartForTheme();recordClusterViewport();main.postDelayed(this,2000);ClusterStats.tick(SystemClock.elapsedRealtime());}},3000);
         Log.i(TAG,"installed "+BuildInfo.VERSION+"; native AAOS cluster host");
     }
-    private void clearViewport(){ClusterZoom.detach();layerController=new java.lang.ref.WeakReference<>(null);viewportManager=new java.lang.ref.WeakReference<>(null);clusterRoot=new java.lang.ref.WeakReference<>(null);appliedPointerY=Float.NaN;}
+    private void clearViewport(){ClusterZoom.detach();layerController=new java.lang.ref.WeakReference<>(null);viewportManager=new java.lang.ref.WeakReference<>(null);clusterRoot=new java.lang.ref.WeakReference<>(null);appliedPointerY=Float.NaN;appliedPointerX=Float.NaN;}
     private void reconcile() {
         if(closing)return;
         if(!mainSeen&&!backgroundStart.allowed(SystemClock.elapsedRealtime(),diLink51||DiLink3Projection.isCandidate())){if(backgroundStart.stopped()&&(cluster!=null||displayPresence!=null))closePresence(ClusterStats.Close.BACKGROUND);return;}
