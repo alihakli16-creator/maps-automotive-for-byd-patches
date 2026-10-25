@@ -43,7 +43,7 @@ public final class AssistantModes {
     intent.setExtrasClassLoader(loader);Parcelable previous=intent.getParcelableExtra("robin_router_args");
     Parcelable route=live(loader,previous,floaty);intent.putExtra("robin_router_args",route);
    }
-   applied=true;Log.i("GsaMapsMode","applied="+mode);
+   applied=true;CarVoiceStrip.modeApplied(activity,mode);Log.i("GsaMapsMode","applied="+mode);
   }catch(Exception|LinkageError failure){
    applied=false;Log.w("GsaMapsMode","mode unavailable: "+failure.getClass().getSimpleName());
    android.widget.Toast.makeText(activity,"Choose the microphone or Live button in Gemini. One-tap mode is unavailable.",android.widget.Toast.LENGTH_LONG).show();

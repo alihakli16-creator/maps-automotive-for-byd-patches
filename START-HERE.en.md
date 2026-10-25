@@ -1,6 +1,6 @@
 # Maps from scratch, then optional Gemini
 
-**TEST preview 7 guide.** Refresh the Remote source and check it shows preview 7 before following the Gemini steps. If you also have a Local or older source, turn the others off: all previews use the same patch name. You can also import the release `.mpp` as a Local source. The two tutorial videos are planned and have not been recorded yet.
+**TEST preview 8 guide.** Refresh the Remote source and check it shows preview 8 before following the Gemini steps. If you also have a Local or older source, turn the others off: all previews use the same patch name. You can also import the release `.mpp` as a Local source. The two tutorial videos are planned and have not been recorded yet.
 
 **Two independent parts:** Part 1 gets Maps working from a fresh Morphe installation. Part 2 adds Gemini to working Maps. Ordinary map use does not require Gemini, the companion Google app, or the optional BYD data reader.
 
@@ -76,15 +76,15 @@ Basic Maps and the Gemini button do not require enabling battery reading. To use
 
 ### 1. Check the baseline
 
-Keep the working Maps installation and signing key. This Google/Gemini build requires **Android API 32+** and **MicroG-RE 7.2.2+**; 7.2.2 is the tested provider. Android 10/DiLink 3 support for Maps does not extend to this Gemini package. For an older Maps preview, repatch with the current preview 7 and your same key first.
+Keep the working Maps installation and signing key. This Google/Gemini build requires **Android API 32+** and **MicroG-RE 7.2.2+**; 7.2.2 is the tested provider. Android 10/DiLink 3 support for Maps does not extend to this Gemini package. For an older Maps preview, repatch with the current preview 8 and your same key first.
 
 ### 2. Build the companion Google app
 
 Use the exact original **Google 17.62.11.ve.arm64 /301813762 API 32+ APKM**,120–480dpi variant, specified in [GEMINI-BUILD.en.md](GEMINI-BUILD.en.md). Select **Google app for BYD (MicroG-RE TEST)**, not the Maps patch, and **use the same key as Maps**.
 
-**Current verified route:** the computer helper in GEMINI-BUILD.en.md keeps the original 10-split layout, patches base and signs/verifies all 10 APKs. Install the complete set together, not `base.apk` alone. It has the same payload as the Google 08 set used on the Tang.
+**Current verified route:** the computer helper in GEMINI-BUILD.en.md keeps the original 10-split layout, patches base and signs/verifies all 10 APKs. Install the complete set together, not `base.apk` alone. Use the current Google20 patch; the earlier Google08 Tang results used this split layout.
 
-**Android Manager route:** with Manager 2.0.0 on a fresh API 32 emulator, the whole original APKM merged, patched, exported and installed as one signed APK. Select Google app Gemini TEST → No, I already have an APK → the whole Google APKM; select only our Google patch, choose Patch, then Save and Install. Keep the same key as Maps, embedded VM ON and architecture optimization OFF. Android may ask to allow installation from Morphe; decide this yourself in the system dialog. Google opens and ART verification passes. Account sign-in and a Gemini chat request passed. Compact Gemini and route handoff for this merged output were deferred by the owner to car testing; finish them before filming the phone-only tutorial. The computer helper remains the exact tested Tang split layout.
+**Android Manager route:** with Manager 2.0.0 on a fresh API 32 emulator, the whole original APKM merged, patched, exported and installed as one signed APK. Select Google app Gemini TEST → No, I already have an APK → the whole Google APKM; select only our Google patch, choose Patch, then Save and Install. Keep the same key as Maps, embedded VM ON and architecture optimization OFF. Android may ask to allow installation from Morphe; decide this yourself in the system dialog. Google opens and ART verification passes. Account sign-in and a Gemini chat request passed. The owner subsequently installed Google20 through Morphe on Tang: the compact Live capsule reached LISTENING and closed. Spotify attenuation failed. New Live route/call/reboot tests are not claimed; the earlier split-set path remains available.
 
 ### 3. Install Google and the original Gemini shell
 
@@ -104,15 +104,17 @@ Open Gemini and finish its setup/consents yourself. Confirm it answers a simple 
 
 Open Maps → **Instrument cluster → Gemini voice assistant**:
 
-- **Launch mode → Conversation (Gemini Live)** or **Microphone**.
+- Live is always selected in preview8; there is no Launch mode selector or **Microphone**.
 - **Compact assistant → ON**.
 - **Automatic compact recovery → ON**.
 
 Enable local/network ADB on the head unit and authorize the **Maps key** with **Always allow**. The `127.0.0.1:5555` address means the head unit itself. Choose **Google** as Android's digital assistant; with no competing assistant selected, recovery can restore Google through approved local ADB. The expected status is **Google assistant is ready**. Local ADB stays needed for recovery; a computer is not needed afterwards. The recovery leaves another selected assistant unchanged.
 
-### 6. Screen button, wheel and route
+### 6. Screen button, wheel and music test
 
-Return to the main map. Tap the voice-mode icon below the cluster-map toggle. The selected compact Conversation/Microphone mode should open. Ask “Navigate by car to Berlin Hauptbahnhof”; confirm **Navigate / Open in Maps** if Gemini offers it. Requests can require confirmation; do not promise every phrase starts navigation automatically.
+Return to the main map and tap the conversation icon below the cluster-map toggle. The small **Live** capsule should open; use its pause/resume and × controls. Ordinary Microphone mode is no longer offered. While parked, play music first, open Live, then close it: report whether music gets quieter or pauses and whether it returns. **Spotify did not get quieter on the tested Tang with Google20.**
+
+**Live-to-Maps directions are not verified.** The earlier ordinary Gemini route test does not prove Live support. Google currently documents directions as unavailable in Live chats ([official help](https://support.google.com/gemini/answer/16622866)). Do not use a route request as the required Live installation test.
 
 For the tested Tang wheel, enable **Long-press microphone** and keep the existing **Wheel key service Connected**. Hold the wheel microphone. Short press keeps BYD's assistant and the star keeps cluster zoom. Other firmware/key codes need their own check. A short phone shot of the physical button can be combined with the screen recording.
 

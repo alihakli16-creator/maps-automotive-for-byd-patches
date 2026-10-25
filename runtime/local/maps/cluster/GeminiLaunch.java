@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 final class GeminiLaunch {
  static final String PACKAGE="com.google.android.apps.bard", GOOGLE="com.google.android.googlequicksearchbox";
  static final String AUTHORITY=GOOGLE+".local.maps.assistant";
- static final String BUTTON_KEY="gemini_map_button",WHEEL_KEY="gemini_wheel_long_press",COMPACT_KEY="gemini_compact_assistant",MODE_KEY="gemini_launch_mode";
+ static final String BUTTON_KEY="gemini_map_button",WHEEL_KEY="gemini_wheel_long_press",COMPACT_KEY="gemini_compact_assistant";
  private static final ExecutorService worker=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"MapsGeminiMode");t.setDaemon(true);return t;});
  private static final Handler ui=new Handler(Looper.getMainLooper());
  private static final AtomicBoolean opening=new AtomicBoolean();
@@ -25,8 +25,6 @@ final class GeminiLaunch {
  static boolean wheelEnabled(){return wheel;}
  static boolean buttonEnabled(){return preferences==null||preferences.getBoolean(BUTTON_KEY,true);}
  static boolean compactEnabled(){return preferences==null||preferences.getBoolean(COMPACT_KEY,true);}
- static int mode(){return preferences==null||preferences.getInt(MODE_KEY,1)!=0?1:0;}
- static String modeName(){return mode()==1?"Conversation (Gemini Live)":"Microphone";}
  /** Counts pauses of the resumed Maps activity: compact Gemini always pauses Maps when it opens. */
  private static volatile long pauses;
  static final long STALL_CHECK_MS=2500;
@@ -60,7 +58,7 @@ final class GeminiLaunch {
   if(!available(context)){Toast.makeText(context,"Install Gemini and finish its Google sign-in first.",Toast.LENGTH_LONG).show();return false;}
   if(!opening.compareAndSet(false,true))return true;
   Context app=context.getApplicationContext();Activity requested=resumed.get();
-  final String selected=mode()==1?"conversation":"microphone";
+  final String selected="conversation";
   worker.execute(()->{
    // Wakes a force-stopped Google package before Android tries to bind its voice service.
    boolean armed=prepare(app,selected);
@@ -88,7 +86,7 @@ final class GeminiLaunch {
     boolean waiting=false;
     try{
      if(requested!=null&&(resumed.get()!=requested||requested.isFinishing()||requested.isDestroyed())){if(armed)cancel(app);return;}
-     if(!armed)Toast.makeText(context,"One-tap voice needs the updated patched Google app. Choose Microphone or Live in Gemini for now.",Toast.LENGTH_LONG).show();
+     if(!armed)Toast.makeText(context,"One-tap Gemini Live needs the updated patched Google app. Open Live in Gemini for now.",Toast.LENGTH_LONG).show();
      if(compactEnabled()&&googleAssistant(app)&&requested!=null&&!requested.isInPictureInPictureMode()){
       try{if(requested.showAssist(new Bundle())){requestedAt=SystemClock.uptimeMillis();android.util.Log.i("MapsGemini","assistant mode requested="+selected+" armed="+armed);
        if(allowRecovery&&GeminiRecovery.enabled()){final long before=pauses;ui.postDelayed(()->checkStalled(context,app,requested,selected,before),STALL_CHECK_MS);}

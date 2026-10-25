@@ -23,14 +23,14 @@ final class ClusterButtons {
         final Activity activity; final ViewGroup root; final ScrollView column; final LinearLayout buttons;
         final ImageButton settings,map,voice; final FrameLayout settingsSlot,voiceSlot; final Icon settingsIcon=new Icon(false),mapIcon=new Icon(true),voiceIcon=new Icon(false,true);
         View template,bar,bottom; Drawable nativeBackground; int lastColour,lastSurface,lastActive;
-        boolean styled,wasOn;int voiceMode=-1; int tx,ty,tw,th;
+        boolean styled,wasOn; int tx,ty,tw,th;
         Controls(Activity a,ViewGroup r) {
             activity=a;root=r;column=new ScrollView(a);column.setTag(TAG);column.setFillViewport(false);
             column.setClipToPadding(false);column.setClipChildren(false);column.setVerticalScrollBarEnabled(false);
             buttons=new LinearLayout(a);buttons.setOrientation(LinearLayout.VERTICAL);buttons.setClipChildren(false);
             settings=button(settingsIcon,"Instrument cluster settings");map=button(mapIcon,"Hide map on instrument cluster");
             settingsSlot=(FrameLayout)settings.getParent();buttons.removeView(settingsSlot);
-            voice=button(voiceIcon,"Open Gemini");voiceSlot=(FrameLayout)voice.getParent();
+            voice=button(voiceIcon,"Talk to Gemini Live");voiceSlot=(FrameLayout)voice.getParent();
             settings.setTag("local.cluster.settings.button");map.setTag("local.cluster.map.button");voice.setTag("local.cluster.gemini.button");
             GeminiLaunch.init(a);voice.setOnClickListener(v->GeminiLaunch.open(a));
             settings.setOnClickListener(v->ClusterSettings.show(a));
@@ -80,9 +80,13 @@ final class ClusterButtons {
             // anchor.left is an outer inset only in LTR; in RTL it spans almost the whole screen.
             Rect visible=new Rect();root.getWindowVisibleDisplayFrame(visible);
             Rect sceneBounds=new Rect();View scene=root.findViewById(id(activity,"scene_card"));
-            if(scene!=null)scene.getGlobalVisibleRect(sceneBounds);
-            int settingsX=ClusterButtonPlacement.settingsLeft(visible.left,visible.right,anchor.left,anchor.right,sceneBounds.left,sceneBounds.right)-origin[0];
-            int top=anchor.top-origin[1];
+            boolean sceneShown=scene!=null&&scene.getGlobalVisibleRect(sceneBounds)&&scene.isShown();
+            // Next to Search: the opposite corner was hard to reach from the driver's seat.
+            int beside=sceneShown?ClusterButtonPlacement.besideCard(visible.left,visible.right,anchor.width(),sceneBounds.left,sceneBounds.right,dp(activity,12),area.left,area.right):-1;
+            Rect box=new Rect();View search=root.findViewById(id(activity,"main_suggested_destinations_search_box"));
+            if(beside<0||search==null||!search.isShown()||!search.getGlobalVisibleRect(box)||box.top<sceneBounds.top||box.bottom>sceneBounds.bottom)box.setEmpty();
+            int settingsX=(beside>=0?beside:ClusterButtonPlacement.settingsLeft(visible.left,visible.right,anchor.left,anchor.right,sceneBounds.left,sceneBounds.right))-origin[0];
+            int top=(beside>=0?ClusterButtonPlacement.besideTop(anchor.top,box.top,box.bottom,anchor.height()):anchor.top)-origin[1];
             if(right.width!=anchor.width()||right.height!=anchor.height()||right.leftMargin!=settingsX||right.topMargin!=top){right.width=anchor.width();right.height=anchor.height();right.gravity=Gravity.TOP|Gravity.LEFT;right.leftMargin=settingsX;right.rightMargin=0;right.topMargin=top;settingsSlot.setLayoutParams(right);}
             FrameLayout.LayoutParams sb=(FrameLayout.LayoutParams)settings.getLayoutParams();if(sb.width!=anchor.width()||sb.height!=anchor.height()){sb.width=anchor.width();sb.height=anchor.height();settings.setLayoutParams(sb);}
             settingsSlot.setVisibility(View.VISIBLE);
@@ -119,14 +123,13 @@ final class ClusterButtons {
             return new RippleDrawable(ripple,circle,mask);
         }
         void updateState(){
-            int mode=GeminiLaunch.mode();if(voiceMode!=mode){voiceMode=mode;voiceIcon.conversation=mode==1;voiceIcon.invalidateSelf();String name=mode==1?"Talk to Gemini Live":"Speak to Gemini";voice.setContentDescription(name);voice.setTooltipText(name);}
             boolean on=ClusterSettings.state().mapEnabled;
             if(wasOn!=on){map.setSelected(on);map.setActivated(on);mapIcon.on=on;mapIcon.colour=on?lastActive:lastColour;mapIcon.invalidateSelf();String text=(on?"Hide":"Show")+" map on instrument cluster";map.setContentDescription(text);map.setTooltipText(text);wasOn=on;}
         }
     }
     /** Dashboard toggle and instrument settings, at the same optical size as the native gear. */
     private static final class Icon extends Drawable {
-        final boolean map,voice;boolean on,conversation=true;int colour=0xff303134;final Paint paint=new Paint(3);
+        final boolean map,voice;boolean on;int colour=0xff303134;final Paint paint=new Paint(3);
         Icon(boolean m){this(m,false);}Icon(boolean m,boolean v){map=m;voice=v;}
         public void draw(Canvas canvas){
             Rect b=getBounds();canvas.save();canvas.translate(b.left,b.top);canvas.scale(b.width()/48f,b.height()/48f);
@@ -134,14 +137,9 @@ final class ClusterButtons {
             Path p=new Path();
             if(voice){
                 paint.setColor(0xff8ab4f8);paint.setStrokeWidth(2.6f);
-                if(conversation){
-                    // Own waveform glyph: no launcher tile or square bitmap background.
-                    float[] height={8,17,25,17,8};
-                    for(int i=0;i<height.length;i++){float x=14+i*5;canvas.drawLine(x,24-height[i]/2,x,24+height[i]/2,paint);}
-                }else{
-                    canvas.drawRoundRect(20,12,28,27,4,4,paint);
-                    canvas.drawArc(16,17,32,33,0,180,false,paint);canvas.drawLine(24,33,24,37,paint);canvas.drawLine(20,37,28,37,paint);
-                }
+                // Own Gemini Live waveform glyph.
+                float[] height={8,17,25,17,8};
+                for(int i=0;i<height.length;i++){float x=14+i*5;canvas.drawLine(x,24-height[i]/2,x,24+height[i]/2,paint);}
             }else if(map){
                 canvas.drawRoundRect(12,16,36,32,4,4,paint);
                 canvas.drawArc(15,20,23,28,185,170,false,paint);canvas.drawArc(25,20,33,28,185,170,false,paint);

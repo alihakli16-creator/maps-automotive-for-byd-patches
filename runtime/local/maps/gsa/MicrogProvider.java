@@ -98,8 +98,10 @@ public final class MicrogProvider {
         Runtime.getRuntime().exit(0);
     }
     public static void install(Application app){
-        Log.i(TAG,"bootstrap=GSA-LAB.08 process="+Application.getProcessName());
+        Log.i(TAG,"bootstrap=GSA-LAB.20 process="+Application.getProcessName());
         if(installed)return;installed=true;attach(app);
+        CarLivePanel.install(app);
+        CarVoiceStrip.install(app);
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks(){
             public void onActivityResumed(Activity a){if(!a.getPackageName().equals("com.google.android.googlequicksearchbox"))return;
                 new Handler(Looper.getMainLooper()).postDelayed(()->{if(a.isFinishing()||a.isDestroyed())return;ProviderPolicy.State s=state(a,true);if(s==ProviderPolicy.State.READY){offered.remove(a);return;}if(offered.get(a)!=s){offered.put(a,s);show(a);}},800);

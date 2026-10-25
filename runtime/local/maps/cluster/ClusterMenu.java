@@ -204,8 +204,7 @@ final class ClusterMenu {
     }
     private void gemini(){
         start("gemini","Gemini voice assistant");
-        toggle("Show Gemini button","Voice mode icon below the cluster-map toggle in the side column",GeminiLaunch.BUTTON_KEY,prefs.getBoolean(GeminiLaunch.BUTTON_KEY,true));
-        action("Launch mode",GeminiLaunch.modeName(),()->choices("Gemini launch mode",GeminiLaunch.MODE_KEY,new String[]{"Conversation (Gemini Live)","Microphone"},new int[]{1,0},null));
+        toggle("Show Gemini button","Gemini Live button below the cluster-map toggle in the side column",GeminiLaunch.BUTTON_KEY,prefs.getBoolean(GeminiLaunch.BUTTON_KEY,true));
         toggle("Steering-wheel Gemini button","Open Gemini with the assigned wheel button",GeminiLaunch.WHEEL_KEY,prefs.getBoolean(GeminiLaunch.WHEEL_KEY,false));
         LinearLayout voiceKey=action("Gemini button",WheelServiceSetup.describe(WheelServiceSetup.geminiBinding())+" · tap, then press the wheel button",()->{
             if(!WheelServiceSetup.startLearning(4))Toast.makeText(activity,WheelServiceSetup.learningStatus(),Toast.LENGTH_LONG).show();});
@@ -223,7 +222,7 @@ final class ClusterMenu {
         recoveryRow.setBackground(ripple(0));recoveryRow.setOnClickListener(v->{if(recovery.isEnabled())recovery.performClick();});rule();
         note(GeminiRecovery.status());
         action("Digital assistant",GeminiLaunch.googleAssistant(activity)?"Google · compact mode available":"Choose Google for compact mode",()->GeminiLaunch.assistantSettings(activity));
-        action("Open Gemini",GeminiLaunch.available(activity)?GeminiLaunch.modeName():"Install Gemini and finish sign-in first",()->GeminiLaunch.open(activity));
+        action("Open Gemini",GeminiLaunch.available(activity)?"Gemini Live":"Install Gemini and finish sign-in first",()->GeminiLaunch.open(activity));
         action("Wheel key service",WheelServiceSetup.connected()?"Connected": "Open steering-wheel setup to enable the key service",this::wheel);
         note("By default the Gemini button is the Tang DiLink 5.0 long press on the microphone key; the short press keeps the BYD assistant and the custom star keeps cluster zoom. On other firmware, tap Gemini button and press the wheel button you want within 10 seconds; that press is not passed to the car. Press the Gemini button again to close compact Gemini. A zoom button cannot also open Gemini. Recent keys shows what this head unit sends to Android. The map and cluster do not need an active route. Keys pass through during phone calls.");
         final long expected=pageGeneration;
@@ -234,7 +233,7 @@ final class ClusterMenu {
             summary(voiceLearning,WheelServiceSetup.learningStatus());summary(voiceReceived,WheelKeyService.recentKeys());readerMain.postDelayed(this,500);
         }},500);
         note("Automatic compact recovery is optional. Approve the Maps ADB key once on this head unit, using Always allow. After a BYD reset, tapping the Maps voice button or holding the wheel microphone restores Google and opens the selected voice mode. A computer is not needed. Another selected digital assistant is kept. No recovery runs while Maps is in the background or without a voice-button tap.");
-        note("Uses the existing wheel key service enabled in Steering-wheel zoom. Keep that service enabled. Compact mode uses the Android assistant over Maps while Maps is on screen. Select Google as the default digital assistant once. Otherwise, or outside Maps, the full Gemini app opens. One tap starts the selected Microphone or Conversation mode. This requires the updated patched Google app with Maps voice modes. Google app and Gemini must already be set up with MicroG-RE. Allow Contacts and Location for MicroG-RE, and Microphone for Google.");
+        note("Uses the existing wheel key service enabled in Steering-wheel zoom. Keep that service enabled. Compact mode uses the Android assistant over Maps while Maps is on screen. Select Google as the default digital assistant once. Otherwise, or outside Maps, the full Gemini app opens. One tap starts Gemini Live. This requires the updated patched Google app. Google app and Gemini must already be set up with MicroG-RE. Allow Contacts and Location for MicroG-RE, and Microphone for Google.");
     }
     private void interfaceSize(){
         start("interface_size","Interface size");int selected=MainUiScale.selected(prefs);

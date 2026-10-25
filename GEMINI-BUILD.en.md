@@ -1,6 +1,6 @@
 # Build Maps + optional Google app for Gemini
 
-Preview 6 contains **two independent Morphe patches in one `.mpp`**. Apply only the patch for the app you are building. Maps works without the optional Google/Gemini setup.
+Preview 8 contains **two independent Morphe patches in one `.mpp`**. Apply only the patch for the app you are building. Maps works without the optional Google/Gemini setup.
 
 | Input | Exact supported file | Patch | Result |
 | --- | --- | --- | --- |
@@ -36,7 +36,7 @@ From the downloaded project source, replace the paths with your own:
 ```sh
 python3 tools/prepare-google-splits.py \
   --input /path/to/original-google.apkm \
-  --bundle /path/to/maps-automotive-for-byd-morphe-preview.7.mpp \
+  --bundle /path/to/maps-automotive-for-byd-morphe-preview.8.mpp \
   --cli /path/to/morphe-desktop-1.18.1-all.jar \
   --sdk /path/to/android-sdk \
   --keystore /path/to/your-existing-maps.keystore \
@@ -62,7 +62,7 @@ Morphe's [official Expert-mode guide](https://github.com/MorpheApp/morphe-manage
 
 **Manager 2.0.0, fresh API 32 ARM64 emulator:** Local import of the combined bundle, selection of the untouched whole Google APKM, merging all 10 splits, patching, Save/export and installation through Manager’s Install button and Android’s installer passed. Use embedded VM ON, architecture optimization OFF and the same key as Maps. Google opens to its privacy screen and ART verification passes. An independent check found the same classes, method bodies, resource values and native-library payloads as the Desktop result; DEX splitting and resource file paths differ.
 
-**Verification limit:** this new merged installation passed account setup and a Gemini chat request; compact / route tests were deferred by the owner, and it has not run on the car. The Tang results belong to the preserved 10-split layout above; use that computer path to reproduce it. Do not relabel a manually merged unsigned file as an original APK or bypass signature/fingerprint checks.
+**Current Tang check:** the owner built/installed Google20 as a single merged APK through Morphe. Its actual revision/SHA was verified, the compact Live capsule reached LISTENING and closed normally. Spotify attenuation failed in two tests. New Live route, call and reboot checks are not claimed. Earlier split-layout results belong to Google08; the helper remains available for that layout. Do not relabel a manually merged unsigned file as an original APK or bypass signature/fingerprint checks.
 
 In Manager 2.0.0 enable Settings → Expert mode; keep Settings → Patcher → Optimize for device architecture OFF. To avoid broad All files access, use Settings → Files → Custom file picker OFF and Android’s normal per-file picker. If Downloads looks empty after a manual file transfer, browse Internal storage → Download. Select only our Google patch (other sources 0 selected), then Patch → Save. Decide Android’s install-source permission yourself before Install. The app card can say Installed for a saved output before installation: finish the system installer and open the actual app. Back up Settings → Backup → Signing key → Export privately; this exact export was checked against both output certificates.
 
@@ -70,7 +70,7 @@ The Desktop merge command, for those explicitly testing the merged path, is:
 
 ```sh
 java -Xmx6g -jar morphe-desktop.jar patch --unsigned --exclusive \
-  -p maps-automotive-for-byd-morphe-preview.7.mpp \
+  -p maps-automotive-for-byd-morphe-preview.8.mpp \
   -e "Google app for BYD (MicroG-RE TEST)" \
   -o google-merged-unsigned.apk -r google-result.json -t google-scratch original-google.apkm
 ```
