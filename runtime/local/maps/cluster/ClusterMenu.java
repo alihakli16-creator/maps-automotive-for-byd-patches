@@ -156,6 +156,7 @@ final class ClusterMenu {
         if(DiLink51Setup.supported()){DiLink51Setup.init(activity.getApplication(),null);action("BYD instrument theme","DiLink 5.1 · full and side map layers",this::oemLayout);}
         action("Steering-wheel zoom",WheelServiceSetup.enabled()?"On · instrument cluster only":"Off",this::wheel);
         action("Gemini voice assistant",GeminiLaunch.wheelEnabled()?"Long-press microphone enabled":"Map button and steering wheel",this::gemini);
+        action("Send to car",SendToCarSetup.summary(activity),this::sendToCar);
         if(DiLink3Projection.isCandidate())action("DiLink 3 cluster test",DiLink3Projection.enabled()?"Experimental projection enabled":"Off",this::diLink3);
         action("Route card",s.visible?s.size+"% · "+(s.side==0?"Left":"Right"):"Off",this::card);
         toggle("Picture-in-picture","Picture-in-picture when leaving Maps","picture_in_picture",s.pictureInPicture);
@@ -201,6 +202,22 @@ final class ClusterMenu {
         note("Also keep Show cluster map enabled. This test creates the known DiLink 3 projection display and sends the native Google cluster screen there. It does not enable the BYD battery reader and does not claim HUD support.");
         note("127.0.0.1:5555 is this head unit. Keep it unchanged. Send the exact status, firmware version and whether a map is physically visible. No uninstall or account reset is needed.");
         note("Restore pauses this session. Turn the test option off after testing to keep it off on the next Maps launch.");
+    }
+    private void sendToCar(){
+        start("sendtocar","Send to car");
+        LinearLayout keepRow=row("Keep phone routes arriving","Exempt MicroG-RE from battery optimization; uses local ADB");
+        MapsSwitch keep=new MapsSwitch(context);keep.setChecked(SendToCarSetup.exempt(activity));keep.setContentDescription("Keep phone routes arriving");
+        LinearLayout.LayoutParams keepLp=new LinearLayout.LayoutParams(dp(64),dp(48));keepLp.leftMargin=dp(12);keepRow.addView(keep,keepLp);
+        Runnable refresh=()->{if(dialog.isShowing()&&"sendtocar".equals(page))sendToCar();};
+        keep.setOnCheckedChangeListener((button,on)->{
+            if(!keep.isEnabled())return;keep.setEnabled(false);
+            SendToCarSetup.configure(activity,on,refresh);
+        });
+        keepRow.setBackground(ripple(0));keepRow.setOnClickListener(v->{if(keep.isEnabled())keep.performClick();});rule();
+        String status=SendToCarSetup.status();if(!status.isEmpty())note(status);
+        action("Reconnect now","Ask MicroG-RE to reconnect push",()->SendToCarSetup.reconnect(activity,refresh));
+        note("In Google Maps on your phone, choose Send to car and select this car. The route opens here with Start.");
+        note("After the car starts, Android 12 does not let MicroG-RE restart its push connection in the background. Turn on Keep phone routes arriving once: Maps uses its local ADB key to exempt MicroG-RE from battery optimization. Approve the Maps ADB key with Always allow if asked. Turning it off removes the exemption.");
     }
     private void gemini(){
         start("gemini","Gemini voice assistant");

@@ -1,4 +1,4 @@
-# Build the Morphe TEST preview 8 bundle
+# Build the Morphe TEST preview 9 bundle
 
 The self-contained source tree has **17 patch Java files** (13 Maps +4 Google) and **98 owned runtime Java files** (89 Maps +9 Google). It builds one `.mpp` containing two app-specific patches without an original APK, account, signing key or device. It neither installs anything nor contacts a server.
 
@@ -11,10 +11,10 @@ python3 build.py \
   --out /path/to/new-output-directory
 ```
 
-The output directory must not exist. Outputs include `maps-automotive-for-byd-morphe-preview.8.mpp`, SHA256SUMS, BUILD.json and a build log. The builder runs the 71 recovery,25 stalled-recovery,301 Google provider/routing,17 Live-state,21 voice-state and86 focus-lifecycle checks before packaging. The bundle includes their test source, patch/runtime Java source and GPL/upstream notices. `extensions/aaos.mpe` uses minAPI29; the independent `extensions/gsa.mpe` uses minAPI32. These runtime modules are byte-identical to the tested Maps54T and Google20 modules when built with the verified toolchain. ZIP metadata and member order are fixed; exact reproduction needs the same JDK/build tools.
+The output directory must not exist. Outputs include `maps-automotive-for-byd-morphe-preview.9.mpp`, SHA256SUMS, BUILD.json and a build log. The builder runs the 71 recovery,25 stalled-recovery,301 Google provider/routing,17 Live-state,21 voice-state,86 focus-lifecycle,45 short-link and 27 Send to car checks before packaging. The bundle includes their test source, patch/runtime Java source and GPL/upstream notices. `extensions/aaos.mpe` uses minAPI29; the independent `extensions/gsa.mpe` uses minAPI32. These runtime modules are byte-identical to the tested Maps55E and Google20 modules when built with the verified toolchain. ZIP metadata and member order are fixed; exact reproduction needs the same JDK/build tools.
 
 The bundle carries only our implementation. No Google APK, Google implementation classes, keys or account material are supplied. The app targets and input hashes are in [GEMINI-BUILD.en.md](GEMINI-BUILD.en.md). Apply only the patch for the selected app; retain original-input/version/signature checks. Sign resulting apps with your own consistent **same key**, separately from this bundle build.
 
 `known_bev` stays OFF by default. Enable it only for a confirmed battery electric vehicle/CCS2 test setup; it does not choose capacity, enable the reader or invent charge/range. PHEV profiles do not enable a combined fuel/energy model.
 
-Maps preserves `patch-lab.54-maps2610`; Google preserves `GSA-LAB.20` metadata for traceability. The public release identifier is preview 8; these internal markers do not imply a newer app version or enable diagnostics uploads/legacy APK OTA. [BYD/Gemini setup](GEMINI-SETUP.en.md).
+Maps preserves `patch-lab.54-maps2610`; Google preserves `GSA-LAB.20` metadata for traceability. The public release identifier is preview 9; these internal markers do not imply a newer app version or enable diagnostics uploads/legacy APK OTA. [BYD/Gemini setup](GEMINI-SETUP.en.md).

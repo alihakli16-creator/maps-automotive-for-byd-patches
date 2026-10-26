@@ -29,6 +29,8 @@ public final class MicrogProvider {
     private static final Map<Activity,AlertDialog> dialogs=new WeakHashMap<>();
     private static byte[] hex(String s){byte[] b=new byte[s.length()/2];for(int i=0;i<b.length;i++)b[i]=(byte)Integer.parseInt(s.substring(i*2,i*2+2),16);return b;}
     public static void attach(Context context){Context app=context.getApplicationContext();base=app==null?context:app;}
+    /** Application context captured in attachBaseContext; null before that. */
+    static Context context(){return base;}
     private static boolean exported(ComponentInfo c){return c!=null&&c.enabled&&c.exported&&c.applicationInfo!=null&&c.applicationInfo.enabled&&PACKAGE.equals(c.packageName);}
     private static boolean supports(PackageManager pm,String action){ResolveInfo r=pm.resolveService(new Intent(action).setPackage(PACKAGE),0);return r!=null&&exported(r.serviceInfo);}
     public static synchronized ProviderPolicy.State state(Context context,boolean refresh){

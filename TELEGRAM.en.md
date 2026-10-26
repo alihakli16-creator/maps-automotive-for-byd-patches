@@ -1,13 +1,14 @@
-✨ Maps Automotive for BYD — Morphe preview 8 (TEST)
+✨ Maps Automotive for BYD — Morphe preview 9 (TEST)
 
-Gemini Live now has a small capsule above Maps with pause/resume and close. Open Live from the map or your assigned wheel button. Cluster settings are now beside Search.
+Send to car now works: pick a route in Google Maps on your phone → Send to car → your car (byd). The route opens on the head unit with Start within a few seconds. Use the same Google account on the phone and in Maps.
 
-One bundle, two patches: update Maps AND Google app, keeping the same personal signing key. Gemini needs API32+ and MicroG-RE7.2.2+. BYD General → Apps → Disable Self-Start → Google = OFF (allows self-start). Keep Automatic compact recovery ON.
+After updating Maps, open the cluster settings → Send to car and turn on “Keep phone routes arriving” once. Approve the Maps ADB key if asked. Without it, routes stop arriving after the car is switched on.
 
-🎵 Please test music: play → open Live → close Live. Does it get quieter or pause, then return? Tell us your car/DiLink and player. On our Tang, Spotify stays loud — music attenuation is experimental. Live-to-Maps directions are not verified.
+Update Maps only: the Google/Gemini patch is unchanged. Needs MicroG-RE 7.2.2+.
+
+Tested on one BYD Tang (DiLink 5.0) with MicroG-RE 7.2.2. The photo shows the phone sending a route to that car. Not yet tested in DiLink 3 or DiLink 5.1 cars.
 
 Patch:
-https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.8/maps-automotive-for-byd-morphe-preview.8.mpp
-
-Setup:
-https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/GEMINI-SETUP.en.md
+https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/releases/download/morphe-preview.9/maps-automotive-for-byd-morphe-preview.9.mpp
+Setup guide:
+https://github.com/romanchukg-cloud/maps-automotive-for-byd-patches/blob/main/START-HERE.en.md

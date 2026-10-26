@@ -1,6 +1,6 @@
 # Maps from scratch, then optional Gemini
 
-**TEST preview 8 guide.** Refresh the Remote source and check it shows preview 8 before following the Gemini steps. If you also have a Local or older source, turn the others off: all previews use the same patch name. You can also import the release `.mpp` as a Local source. The two tutorial videos are planned and have not been recorded yet.
+**TEST preview 9 guide.** Refresh the Remote source and check it shows preview 9 before following the Gemini steps. If you also have a Local or older source, turn the others off: all previews use the same patch name. You can also import the release `.mpp` as a Local source. The two tutorial videos are planned and have not been recorded yet.
 
 **Two independent parts:** Part 1 gets Maps working from a fresh Morphe installation. Part 2 adds Gemini to working Maps. Ordinary map use does not require Gemini, the companion Google app, or the optional BYD data reader.
 
@@ -72,11 +72,21 @@ Basic Maps and the Gemini button do not require enabling battery reading. To use
 
 **End of Part 1:** Maps opens, the map and Search work, and the signing-key backup is saved. Update later by refreshing the patch source, repatching the supported original and installing with the same key; refreshing the source alone does not update Maps.
 
+### 9. Send to car from your phone (optional)
+
+Use the same Google account in Maps on the head unit and in Google Maps on your phone. After the patched Maps has started and synced once, the phone shows the car in its **Send to car** list as **byd (xxxx)**; the four-character code differs per car.
+
+1. In Maps on the head unit open the cluster settings (the button beside Search) → **Send to car** and turn on **Keep phone routes arriving**. Maps uses its local ADB key once to exempt MicroG-RE from battery optimization; approve **Always allow** if Android asks. Without this, Android 12 stops MicroG-RE from restarting its push connection after the car is switched on, and routes do not arrive until it reconnects. **Reconnect now** forces a reconnect.
+2. On the phone: Google Maps → choose a destination → **Directions** → **Send to car** → select the car.
+3. The route opens in Maps on the head unit as a route preview with **Start**, usually within a few seconds.
+
+Tested on one BYD Tang with DiLink 5.0 and MicroG-RE 7.2.2. Not yet tested in DiLink 3 or DiLink 5.1 cars.
+
 ## Part 2 — add Gemini to working Maps
 
 ### 1. Check the baseline
 
-Keep the working Maps installation and signing key. This Google/Gemini build requires **Android API 32+** and **MicroG-RE 7.2.2+**; 7.2.2 is the tested provider. Android 10/DiLink 3 support for Maps does not extend to this Gemini package. For an older Maps preview, repatch with the current preview 8 and your same key first.
+Keep the working Maps installation and signing key. This Google/Gemini build requires **Android API 32+** and **MicroG-RE 7.2.2+**; 7.2.2 is the tested provider. Android 10/DiLink 3 support for Maps does not extend to this Gemini package. For an older Maps preview, repatch with the current preview 9 and your same key first.
 
 ### 2. Build the companion Google app
 
@@ -104,7 +114,7 @@ Open Gemini and finish its setup/consents yourself. Confirm it answers a simple 
 
 Open Maps → **Instrument cluster → Gemini voice assistant**:
 
-- Live is always selected in preview8; there is no Launch mode selector or **Microphone**.
+- Live is always selected since preview 8; there is no Launch mode selector or **Microphone**.
 - **Compact assistant → ON**.
 - **Automatic compact recovery → ON**.
 

@@ -93,6 +93,18 @@ final class ClusterHooks {
   exitWithThis(ctx,"Ligr;",m,C+"ClusterHost;->registerViewportCandidate(Ljava/lang/Object;)V");
   m=method(ctx,"Lwhf;","<init>","(Ljava/util/concurrent/Executor;)V");oneReturn(m,"invoke-static {p0}, "+C+"BydGuidance;->registerSource(Ljava/lang/Object;)V");
   m=method(ctx,"Liio;","<init>","(Ladpa;Lamgu;Lqhn;Lfuc;Lteu;)V");oneReturn(m,"invoke-static/range {p0 .. p0}, "+C+"ReportButtonRecovery;->register(Ljava/lang/Object;)V");
+  // GnpSdk/Chime registration and device-info requests take the package name from Context.getPackageName();
+  // use the sign-in identity instead, or Google rejects the car (INVALID_ARGUMENT). 7 pinned reads.
+  {int sites=0;for(String[] site:new String[][]{{"Lzdd;","h","(Lyuy;Z)Lajsv;","1"},{"Lzdd;","d","(Lyuy;)Lajqf;","2"},{"Lzdd;","f","(Lyuy;Laodp;)Ljava/lang/Object;","1"},{"Lzdd;","g","(Lyuy;Laodp;)Ljava/lang/Object;","2"},{"Lyyz;","a","(Lyyq;)Lytt;","1"}}){
+   m=method(ctx,site[0],site[1],site[2]);var list=m.getImplementation().getInstructions();int here=0;
+   for(int i=list.size()-2;i>=0;i--){if(!ref(list.get(i)).equals("Landroid/content/Context;->getPackageName()Ljava/lang/String;"))continue;var next=list.get(i+1);
+    if(next.getOpcode()!=Opcode.MOVE_RESULT_OBJECT)throw new IllegalStateException("GnpSdk package read changed: "+m);int r=((OneRegisterInstruction)next).getRegisterA();
+    ASM.addInstructions(m,i+2,"invoke-static/range {v"+r+" .. v"+r+"}, "+C+"ChimeIdentity;->chimePackage(Ljava/lang/String;)Ljava/lang/String;\nmove-result-object v"+r);here++;}
+   if(here!=Integer.parseInt(site[3]))throw new IllegalStateException("Expected "+site[3]+" GnpSdk package reads in "+m+", found "+here);sites+=here;}
+   if(sites!=7)throw new IllegalStateException("Expected seven GnpSdk package reads");}
+  // "Send to car" trips arrive as maps.app.goo.gl links; ShortLinks expands them instead of MicroG-RE Dynamic Links.
+  m=method(ctx,"Lhyk;","b","(Landroid/content/Intent;Landroid/net/Uri;)Z");registers(m,27);
+  branchBlock(m,0,"invoke-static/range {p1 .. p1}, "+C+"ShortLinks;->intercept(Landroid/content/Intent;)Z\nmove-result v0\nif-eqz v0, :stock\nconst/4 v0, 0x1\nreturn v0\n:stock\nnop");
   m=method(ctx,"Lmd;","onUserLeaveHint","()V");ASM.addInstruction(m,0,"invoke-static {p0}, "+C+"ClusterSettings;->leavingMaps(Landroid/app/Activity;)V");
   m=method(ctx,NATIVE,"kW","()Landroid/content/Context;");int count=0;
   for(int i=m.getImplementation().getInstructions().size()-1;i>=0;i--){var ins=m.getImplementation().getInstructions().get(i);if(ins.getOpcode()!=Opcode.RETURN_OBJECT)continue;int r=((OneRegisterInstruction)ins).getRegisterA();ASM.addInstructions(m,i,"invoke-static {v"+r+"}, "+C+"ClusterHost;->clusterContext(Landroid/content/Context;)Landroid/content/Context;\nmove-result-object v"+r);count++;}

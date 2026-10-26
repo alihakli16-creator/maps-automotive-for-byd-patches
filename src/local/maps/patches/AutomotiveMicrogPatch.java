@@ -52,6 +52,24 @@ public final class AutomotiveMicrogPatch {
    if(tag.equals("application"))e.setAttribute("android:label","Maps Automotive");
   }
  }
+ /** Send to car: the push receiver and its permissions under MicroG-RE's names (the code side is ProtocolRoutes).
+  * Only c2dm permission/action names are rewritten; the receiver component and other filters stay. */
+ private static void routePush(Document doc){
+  int changed=0;NodeList nodes=doc.getElementsByTagName("*");
+  for(int i=0;i<nodes.getLength();i++){
+   Element e=(Element)nodes.item(i);String tag=e.getTagName();
+   for(String name:List.of("android:name","android:permission")){
+    if(!e.hasAttribute(name))continue;
+    boolean target=name.equals("android:permission")?tag.equals("receiver"):tag.equals("uses-permission")||tag.equals("action");
+    String value=e.getAttribute(name);
+    if(!target||!value.startsWith("com.google.android.c2dm."))continue;
+    String routed=ProtocolRoutes.route(value);
+    if(!routed.equals(value)){e.setAttribute(name,routed);changed++;}
+   }
+  }
+  // uses-permission RECEIVE, receiver permission SEND and its RECEIVE action in the pinned 26.10 manifest.
+  if(changed!=3)throw new IllegalStateException("Unexpected push manifest shape: "+changed);
+ }
  private static void requireInput(PackageMetadata metadata){
   if(!"com.google.android.apps.maps".equals(metadata.getPackageName())||!"1068833407".equals(metadata.getVersionCode())||!"26.10.120001.E".equals(metadata.getVersionName()))throw new IllegalStateException("Exact original AAOS 26.10 input required");
   try{
@@ -132,6 +150,7 @@ public final class AutomotiveMicrogPatch {
    try{WheelResources.apply(context);}catch(Exception e){throw new IllegalStateException("Wheel key metadata resources failed",e);}
    try(var doc=context.document("AndroidManifest.xml")){
     isolateIdentity(doc);
+    routePush(doc);
     Element app=(Element)doc.getElementsByTagName("application").item(0);
     Element queries=(Element)doc.getElementsByTagName("queries").item(0);
     if(queries==null){queries=doc.createElement("queries");doc.getDocumentElement().appendChild(queries);}

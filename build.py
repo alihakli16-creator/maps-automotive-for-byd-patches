@@ -12,8 +12,8 @@ import sys
 import zipfile
 
 CLI_SHA256 = "1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b"
-ARTIFACT = "maps-automotive-for-byd-morphe-preview.8.mpp"
-VERSION = "0.1.0-preview.8"
+ARTIFACT = "maps-automotive-for-byd-morphe-preview.9.mpp"
+VERSION = "0.1.0-preview.9"
 PATCH_NAME = "Maps Automotive for BYD (MicroG-RE TEST)"
 ROOT = Path(__file__).resolve().parent
 
@@ -48,8 +48,8 @@ def main():
     require(match and int(match.group(1)) >= 17, "JDK17 or newer is required on PATH.")
     patch_sources = sorted((ROOT / "src").rglob("*.java"))
     runtime_sources = sorted((ROOT / "runtime").rglob("*.java"))
-    require(len(patch_sources) == 17 and len(runtime_sources) == 98,
-            "The complete 17-file patch and 98-file staged runtime source trees are required.")
+    require(len(patch_sources) == 17 and len(runtime_sources) == 101,
+            "The complete 17-file patch and 101-file staged runtime source trees are required.")
     for name in ("LICENSE", "UPSTREAM-NOTICE", "NOTICE"):
         require((ROOT / name).is_file(), "Missing required notice: " + name)
     # A fresh directory gives every build an immutable output location.
@@ -103,11 +103,20 @@ def main():
         *sorted((ROOT / "tests/audiofocus-stubs").rglob("*.java")),
         *sorted((ROOT / "tests/audiofocus").rglob("*.java")))
     run("java", "-cp", focus_classes, "local.maps.gsa.LiveAudioFocusTest")
+    # Send to car: maps.app.goo.gl expansion and the MicroG-RE battery-exemption switch.
+    for name, sources, test in (("shortlinks", ["runtime/local/maps/cluster/ShortLinks.java"], "ShortLinksTest"),
+                                ("sendtocar", ["runtime/local/maps/cluster/ChimeIdentity.java",
+                                               "runtime/local/maps/cluster/SendToCarSetup.java"], "SendToCarTest")):
+        test_out = out / (name + "-test-classes")
+        run("javac", "--release", "17", "-nowarn", "-d", test_out, *[ROOT / path for path in sources],
+            *sorted((ROOT / "tests" / (name + "-stubs")).rglob("*.java")),
+            *sorted((ROOT / "tests" / name).rglob("*.java")))
+        run("java", "-cp", test_out, "local.maps.cluster." + test)
 
     manifest = (
         "Manifest-Version: 1.0\r\n"
         "Name: Maps Automotive for BYD + Gemini (TEST)\r\n"
-        "Description: TEST Maps54T and optional Google20 Gemini support for MicroG-RE\r\n"
+        "Description: TEST Maps55E (Send to car) and optional Google20 Gemini support for MicroG-RE\r\n"
         "Version: " + VERSION + "\r\n"
         "Author: romanchukg-cloud\r\n"
         "License: GPL-3.0-only\r\n"
@@ -136,9 +145,9 @@ def main():
     source_hashes = {path.relative_to(ROOT).as_posix(): sha256(path)
                      for path in patch_sources + runtime_sources}
     record = {
-        "agent": "ChatGPT",
+        "agent": "Claude",
         "status": "prepared_not_published",
-        "maps_functional_revision": "54T",
+        "maps_functional_revision": "55E",
         "google_functional_revision": "20",
         "google_input": "17.62.11.ve.arm64/301813762/API32+",
         "patch_names": [PATCH_NAME, "Google app for BYD (MicroG-RE TEST)"],
@@ -164,7 +173,7 @@ def main():
         "runtime_provider_guard": True,
         "diagnostics_uploads_disabled": True,
         "Morphe_Manager_tested": False,
-        "host_tests": {"recovery_protocol": 71, "stalled_recovery": 25, "google_provider_routes": 301, "live_state": 17, "voice_state": 21, "focus_lifecycle": 86, "total": 521, "result": "PASS"},
+        "host_tests": {"recovery_protocol": 71, "stalled_recovery": 25, "google_provider_routes": 301, "live_state": 17, "voice_state": 21, "focus_lifecycle": 86, "short_links": 45, "send_to_car": 27, "total": 593, "result": "PASS"},
     }
     (out / "BUILD.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     (out / "SHA256SUMS").write_text(record["sha256"] + "  " + ARTIFACT + "\n", encoding="utf-8")
