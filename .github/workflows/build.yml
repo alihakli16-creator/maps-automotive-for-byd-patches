@@ -37,6 +37,10 @@ jobs:
           curl -L -o morphe-desktop-1.18.1-all.jar "https://github.com/MorpheApp/morphe-desktop/releases/download/v1.18.1/morphe-desktop-1.18.1-all.jar"
           echo "1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b  morphe-desktop-1.18.1-all.jar" | sha256sum -c
 
+      - name: Strip BOM from Java sources
+        run: |
+          python3 -c "import pathlib; [p.write_bytes(p.read_bytes().removeprefix(b'\xef\xbb\xbf')) for p in pathlib.Path('.').rglob('*.java')]"
+
       - name: Build Turkish .mpp Bundle
         run: |
           python3 build.py \
