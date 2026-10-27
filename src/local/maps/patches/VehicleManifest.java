@@ -14,7 +14,13 @@ final class VehicleManifest {
         // Same code as private25.2 permits a data-preserving update and rollback.
         // Original-input metadata is checked before this output-only mutation.
         manifest.setAttribute("android:versionCode","1068820722");
-        for(String permission:new String[]{"android.permission.INTERNET","android.permission.RECEIVE_BOOT_COMPLETED","android.permission.PACKAGE_USAGE_STATS"}) {
+        for(String permission:new String[]{
+            "android.permission.INTERNET",
+            "android.permission.RECEIVE_BOOT_COMPLETED",
+            "android.permission.PACKAGE_USAGE_STATS",
+            "android.permission.SYSTEM_ALERT_WINDOW",
+            "android.permission.WAKE_LOCK"
+        }) {
             boolean present=false;
             NodeList existing=doc.getElementsByTagName("uses-permission");
             for(int i=0;i<existing.getLength();i++)
@@ -24,9 +30,15 @@ final class VehicleManifest {
         Element app=(Element)doc.getElementsByTagName("application").item(0);
         Element receiver=doc.createElement("receiver");
         receiver.setAttribute("android:name","local.maps.cluster.VehicleAutoBoot");
-        receiver.setAttribute("android:enabled","true");receiver.setAttribute("android:exported","false");
+        receiver.setAttribute("android:enabled","true");receiver.setAttribute("android:exported","true");
         Element filter=doc.createElement("intent-filter");
-        for(String action:new String[]{"android.intent.action.BOOT_COMPLETED","android.intent.action.MY_PACKAGE_REPLACED"}){
+        for(String action:new String[]{
+            "android.intent.action.BOOT_COMPLETED",
+            "android.intent.action.LOCKED_BOOT_COMPLETED",
+            "android.intent.action.MY_PACKAGE_REPLACED",
+            "android.intent.action.QUICKBOOT_POWERON",
+            "com.htc.intent.action.QUICKBOOT_POWERON"
+        }){
             Element e=doc.createElement("action");e.setAttribute("android:name",action);filter.appendChild(e);
         }
         receiver.appendChild(filter);app.appendChild(receiver);

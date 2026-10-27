@@ -1,4 +1,4 @@
-﻿package local.maps.cluster;
+package local.maps.cluster;
 
 import android.app.*;
 import android.content.*;

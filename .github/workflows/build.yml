@@ -25,22 +25,28 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Android SDK Platform 35 and Build Tools 36.0.0
+      - name: Install Android Platform 35 and Build Tools 36.0.0
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;36.0.0"
+          SDKMANAGER="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses || true
+          yes | "$SDKMANAGER" "platforms;android-35" "build-tools;36.0.0"
+          chmod +x /usr/local/lib/android/sdk/build-tools/36.0.0/d8 || true
 
       - name: Download Pinned Morphe Desktop CLI
         run: |
           curl -L -o morphe-desktop-1.18.1-all.jar "https://github.com/MorpheApp/morphe-desktop/releases/download/v1.18.1/morphe-desktop-1.18.1-all.jar"
           echo "1b506ab5f03d16a2f65026d5e0e1910d01fc1e2152f21eaeb44ed2f30856597b  morphe-desktop-1.18.1-all.jar" | sha256sum -c
 
+      - name: Strip BOM from Java sources
+        run: |
+          python3 -c "import pathlib; [p.write_bytes(p.read_bytes().removeprefix(b'\xef\xbb\xbf')) for p in pathlib.Path('.').rglob('*.java')]"
+
       - name: Build Turkish .mpp Bundle
         run: |
           python3 build.py \
-            --sdk "$ANDROID_HOME" \
+            --sdk "/usr/local/lib/android/sdk" \
             --cli morphe-desktop-1.18.1-all.jar \
-            --out build-out
+            --out build-out || (echo "=== BUILD LOG ===" && cat build-out/BUILD.log 2>/dev/null && exit 1)
 
       - name: Upload .mpp as Artifact
         uses: actions/upload-artifact@v4
@@ -56,4 +62,9 @@ jobs:
           tag_name: turkish-preview.9
           name: "Maps Automotive for BYD - Türkçe Preview 9"
           body: "Türkçe yerelleştirilmiş Morphe yama paketi (.mpp). Morphe Desktop veya Morphe Manager içerisine Local Source olarak ekleyebilirsiniz."
-          files: build-out/*.mpp
+          files: |
+            build-out/*.mpp
+            build-out/SHA256SUMS
+            build-out/BUILD.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

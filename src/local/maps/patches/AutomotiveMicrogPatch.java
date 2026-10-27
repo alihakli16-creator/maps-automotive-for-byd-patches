@@ -49,7 +49,10 @@ public final class AutomotiveMicrogPatch {
      if(value.startsWith("."))a.setValue(old+value);else if(!value.contains("."))a.setValue(old+"."+value);
     }
    }
-   if(tag.equals("application"))e.setAttribute("android:label","Maps Automotive");
+   if(tag.equals("application"))e.setAttribute("android:label","Navigasyon");
+   if(tag.equals("activity")||tag.equals("activity-alias")){
+    if(e.hasAttribute("android:label"))e.setAttribute("android:label","Navigasyon");
+   }
   }
  }
  /** Send to car: the push receiver and its permissions under MicroG-RE's names (the code side is ProtocolRoutes).

@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 import android.app.Activity;import android.content.pm.PackageManager;import android.os.*;import java.util.concurrent.TimeUnit;
 /** Host checks for 55E: ChimeIdentity package substitution and SendToCarSetup local ADB commands. */

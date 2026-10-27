@@ -1,4 +1,4 @@
-﻿package local.maps.cluster;
+package local.maps.cluster;
 
 import android.app.*;
 import android.content.*;
@@ -149,6 +149,7 @@ final class ClusterMenu {
         start("main","Gösterge paneli");ClusterSettings.State s=ClusterSettings.state();
         toggle("Gösterge haritasını göster","Haritayı gösterge panelinde göster","map_enabled",s.mapEnabled);
         if(!DiLink51Setup.supported()&&!DiLink3Projection.isCandidate())toggle("Haritayı açmadan gösterge haritasını başlat","Harita arka planda başladığında gösterge haritasını göster",ClusterBackgroundStart.KEY,s.backgroundStart);
+        toggle("Başlangıçta otomatik başlat","Araç çalıştığında veya ekran açıldığında Haritalar'ı otomatik aç","auto_boot_enabled",prefs.getBoolean("auto_boot_enabled",false));
         toggle("Dönüş yönlendirmesi","Dönüş yönlendirmesini göstergeye ve HUD'a gönder","vehicle_guidance",s.vehicleGuidance);
         action("Harita renkleri",theme(s.clusterTheme),()->choices("Harita renkleri","cluster_theme",new String[]{"Otomatik","Ekranla eşle","Açık","Koyu"},new int[]{3,2,1,0},"Otomatik modu gün doğumu ve gün batımını takip eder. Ekranla eşle multimedya temasını izler. Navigasyon sırasında Haritalar kendi renklerini belirler. "+ClusterHost.themeDescription()));
         toggle("Uydu haritası","Gösterge panelinde uydu haritası","cluster_satellite",s.satellite);
