@@ -1,4 +1,4 @@
-package local.maps.cluster;
+﻿package local.maps.cluster;
 
 import android.app.*;
 import android.content.*;
@@ -62,8 +62,8 @@ public final class ClusterHost implements DisplayManager.DisplayListener {
     private volatile String themeReason = "starting";
     static String themeDescription() {
         ClusterHost host = instance;
-        if (host == null || host.appliedNight < 0) return "Cluster map: not shown yet.";
-        return "Cluster map now: " + (host.appliedNight == Configuration.UI_MODE_NIGHT_NO ? "light" : "dark") + " (" + host.themeReason + ").";
+        if (host == null || host.appliedNight < 0) return "Gösterge haritası: henüz gösterilmedi.";
+        return "Mevcut gösterge haritası: " + (host.appliedNight == Configuration.UI_MODE_NIGHT_NO ? "açık" : "koyu") + " (" + host.themeReason + ").";
     }
     private int clusterNight() {
         ClusterSettings.State s = ClusterSettings.state();

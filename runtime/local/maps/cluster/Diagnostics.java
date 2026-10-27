@@ -1,4 +1,4 @@
-package local.maps.cluster;
+﻿package local.maps.cluster;
 
 import android.app.*;
 import android.content.*;
@@ -63,7 +63,7 @@ final class Diagnostics {
         if(!alive(a)||noticeVisible)return;
         noticeVisible=true;Context c=theme(a);LinearLayout p=panel(c);p.addView(text(c,NOTICE));
         CheckBox check=new CheckBox(c);check.setText("Automatically send diagnostics");check.setChecked(false);p.addView(check);
-        AlertDialog dialog=new AlertDialog.Builder(c).setTitle("Diagnostics").setView(p).setPositiveButton("Continue",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(c).setTitle("Tanılama").setView(p).setPositiveButton("Devam et",null).create();
         dialog.setOnDismissListener(d->noticeVisible=false);dialog.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
             boolean enabled=check.isChecked();dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
@@ -78,16 +78,16 @@ final class Diagnostics {
                 if(!alive(a))return;
                 Context c=theme(a);LinearLayout p=panel(c);p.addView(text(c,NOTICE));
                 Switch toggle=new Switch(c);toggle.setText("Automatically send diagnostics");toggle.setChecked(informed&&automatic);toggle.setEnabled(informed);p.addView(toggle);
-                if(!informed){Button review=button(c,"Review diagnostics choice");review.setOnClickListener(v->showNotice(a));p.addView(review);}
+                if(!informed){Button review=button(c,"Tanılama tercihini incele");review.setOnClickListener(v->showNotice(a));p.addView(review);}
                 TextView status=text(c,summary);p.addView(status);
                 p.addView(text(c,clusterStats()));
                 toggle.setOnCheckedChangeListener((v,on)->{
                     work.post(()->{if(on){if(!queue.choice(true))toast(a,"Could not save your choice.");}else if(!queue.stopAutomatic())toast(a,"Could not save your choice.");});
                 });
-                Button send=button(c,"Send diagnostics");send.setOnClickListener(v->selectProblem(a));p.addView(send);
-                Button export=button(c,"Export diagnostics");export.setOnClickListener(v->work.post(()->{JSONObject report=report("manual","other","unknown","unknown","unknown");main.post(()->share(a,report));}));p.addView(export);
-                Button refresh=button(c,"Refresh report status");refresh.setOnClickListener(v->work.post(()->{queue.tick(System.currentTimeMillis());String value=queue.summary();main.post(()->status.setText(value));}));p.addView(refresh);
-                if(!issue.isEmpty()) {Button open=button(c,"Open GitHub issue");open.setOnClickListener(v->{try{a.startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(issue)));}catch(Exception e){toast(a,"No browser is available.");}});p.addView(open);}
+                Button send=button(c,"Tanılama raporu gönder");send.setOnClickListener(v->selectProblem(a));p.addView(send);
+                Button export=button(c,"Tanılamayı dışa aktar");export.setOnClickListener(v->work.post(()->{JSONObject report=report("manual","other","unknown","unknown","unknown");main.post(()->share(a,report));}));p.addView(export);
+                Button refresh=button(c,"Rapor durumunu yenile");refresh.setOnClickListener(v->work.post(()->{queue.tick(System.currentTimeMillis());String value=queue.summary();main.post(()->status.setText(value));}));p.addView(refresh);
+                if(!issue.isEmpty()) {Button open=button(c,"GitHub sorunu aç");open.setOnClickListener(v->{try{a.startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(issue)));}catch(Exception e){toast(a,"No browser is available.");}});p.addView(open);}
                 for(int i=0;i<pending.length();i++) {
                     JSONObject e=pending.optJSONObject(i);String key=e.optString("key");
                     Button cancel=button(c,(e.optBoolean("automatic")?"Automatic":"Manual")+" report: "+e.optString("status")+" — Cancel / remove");
@@ -95,7 +95,7 @@ final class Diagnostics {
                 }
                 p.addView(text(c,"Pending reports survive restarts. Retries run while Maps is running. Open Support again to see updated status."));
                 ScrollView scroll=new ScrollView(c);scroll.addView(p);
-                new AlertDialog.Builder(c).setTitle("Support").setView(scroll).setPositiveButton("Done",null).show();
+                new AlertDialog.Builder(c).setTitle("Destek ve Tanılama").setView(scroll).setPositiveButton("Tamam",null).show();
             });
         });
     }
@@ -105,13 +105,13 @@ final class Diagnostics {
     private static void selectProblem(Activity a) {
         Context c=theme(a);LinearLayout p=panel(c);
         String[] categories={"hud","cluster_map","wheel_buttons","navigation","other"};
-        p.addView(text(c,"Problem"));Spinner category=spinner(c,new String[]{"HUD","Instrument cluster map","Wheel buttons","Navigation","Other"});p.addView(category);
+        p.addView(text(c,"Sorun"));Spinner category=spinner(c,new String[]{"HUD","Gösterge paneli haritası","Direksiyon butonları","Navigasyon","Diğer"});p.addView(category);
         String[] answers={"unknown","yes","no"};
-        p.addView(text(c,"Turn guidance visible on instrument cluster?"));Spinner cluster=spinner(c,answers);p.addView(cluster);
+        p.addView(text(c,"Dönüş yönlendirmesi gösterge panelinde görünüyor mu?"));Spinner cluster=spinner(c,answers);p.addView(cluster);
         p.addView(text(c,"Turn guidance visible on HUD?"));Spinner hud=spinner(c,answers);p.addView(hud);
         p.addView(text(c,"Stock navigation displays guidance on HUD?"));Spinner stock=spinner(c,answers);p.addView(stock);
         ScrollView scroll=new ScrollView(c);scroll.addView(p);
-        new AlertDialog.Builder(c).setTitle("Send diagnostics").setView(scroll).setNegativeButton("Cancel",null).setPositiveButton("Preview",(d,w)->{
+        new AlertDialog.Builder(c).setTitle("Tanılama gönder").setView(scroll).setNegativeButton("İptal",null).setPositiveButton("Önizleme",(d,w)->{
             String cat=categories[category.getSelectedItemPosition()],cl=answers[cluster.getSelectedItemPosition()],hu=answers[hud.getSelectedItemPosition()],st=answers[stock.getSelectedItemPosition()];
             work.post(()->{JSONObject report=report("manual",cat,cl,hu,st);main.post(()->preview(a,report));});
         }).show();
@@ -120,7 +120,7 @@ final class Diagnostics {
         if(!alive(a))return;
         Context c=theme(a);LinearLayout p=panel(c);p.addView(text(c,"Sending creates a public GitHub Issue. Review the exact technical report below. No GitHub account is required."));
         TextView body=text(c,pretty(report));body.setTextSize(12);body.setTextIsSelectable(true);p.addView(body);ScrollView scroll=new ScrollView(c);scroll.addView(p);
-        AlertDialog d=new AlertDialog.Builder(c).setTitle("Public report preview").setView(scroll).setNegativeButton("Cancel",null).setNeutralButton("Export",(dialog,w)->share(a,report)).setPositiveButton("Send",null).create();d.show();
+        AlertDialog d=new AlertDialog.Builder(c).setTitle("Genel rapor önizlemesi").setView(scroll).setNegativeButton("İptal",null).setNeutralButton("Dışa aktar",(dialog,w)->share(a,report)).setPositiveButton("Gönder",null).create();d.show();
         d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{d.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);work.post(()->{
             boolean ok=queue.enqueue(report,false,System.currentTimeMillis());
             main.post(()->{if(!alive(a))return;if(ok){d.dismiss();toast(a,"Report saved. Open Support to check delivery.");}else{d.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);toast(a,"Report could not be saved. Remove a pending report or export it.");}});

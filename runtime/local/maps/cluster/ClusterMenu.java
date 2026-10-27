@@ -1,4 +1,4 @@
-package local.maps.cluster;
+﻿package local.maps.cluster;
 
 import android.app.*;
 import android.content.*;
@@ -60,7 +60,7 @@ final class ClusterMenu {
         panel.setBackground(round(surface,18));panel.setClipToOutline(true);panel.setElevation(dp(8));
         header=new LinearLayout(context);header.setGravity(Gravity.CENTER_VERTICAL);
         header.addView(headerButton(false),new LinearLayout.LayoutParams(dp(72),-1));
-        title=text("Instrument cluster",30,ink);title.setSingleLine(true);title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        title=text("Gösterge paneli",30,ink);title.setSingleLine(true);title.setEllipsize(android.text.TextUtils.TruncateAt.END);
         header.addView(title,new LinearLayout.LayoutParams(0,-1,1));
         header.addView(headerButton(true),new LinearLayout.LayoutParams(dp(72),-1));panel.addView(header,new LinearLayout.LayoutParams(-1,dp(72)));
         View line=new View(context);line.setBackgroundColor(divider);panel.addView(line,new LinearLayout.LayoutParams(-1,dp(2)));
@@ -90,7 +90,7 @@ final class ClusterMenu {
     private TextView text(String value,int size,int colour){TextView v=new TextView(context);v.setText(value);v.setTextSize(TypedValue.COMPLEX_UNIT_DIP,size>=30?28:size);v.setIncludeFontPadding(false);v.setTextColor(colour);v.setGravity(Gravity.CENTER_VERTICAL);v.setFontFeatureSettings("kern");return v;}
     private ImageButton headerButton(boolean close){
         ImageButton b=new ImageButton(context);b.setImageDrawable(new Mark(close?1:0,ink));b.setBackground(ripple(40));b.setPadding(dp(16),dp(16),dp(16),dp(16));
-        b.setContentDescription(close?"Close instrument cluster settings":"Back");b.setTooltipText(close?"Close":"Back");b.setOnClickListener(v->{if(close)dialog.dismiss();else back();});return b;
+        b.setContentDescription(close?"Gösterge paneli ayarlarını kapat":"Geri");b.setTooltipText(close?"Kapat":"Geri");b.setOnClickListener(v->{if(close)dialog.dismiss();else back();});return b;
     }
     private void display(){
         dialog.show();Window window=dialog.getWindow();window.setBackgroundDrawableResource(android.R.color.transparent);window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
@@ -144,68 +144,68 @@ final class ClusterMenu {
             public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}
         });labels.addView(seek,new LinearLayout.LayoutParams(-1,dp(64)));body.addView(labels);rule();
     }
-    private String theme(int n){return n==ClusterSettings.THEME_AUTO?"Auto":n==ClusterSettings.THEME_SYSTEM?"Match screen":n==ClusterSettings.THEME_LIGHT?"Light":"Dark";}
+    private String theme(int n){return n==ClusterSettings.THEME_AUTO?"Otomatik":n==ClusterSettings.THEME_SYSTEM?"Ekranla eşle":n==ClusterSettings.THEME_LIGHT?"Açık":"Koyu";}
     private void main(){
-        start("main","Instrument cluster");ClusterSettings.State s=ClusterSettings.state();
-        toggle("Show cluster map","Show map on instrument cluster","map_enabled",s.mapEnabled);
-        if(!DiLink51Setup.supported()&&!DiLink3Projection.isCandidate())toggle("Start cluster map without opening Maps","Show the cluster map when Maps starts in the background",ClusterBackgroundStart.KEY,s.backgroundStart);
-        toggle("Turn guidance","Send turn guidance to cluster and HUD","vehicle_guidance",s.vehicleGuidance);
-        action("Map colours",theme(s.clusterTheme),()->choices("Map colours","cluster_theme",new String[]{"Auto","Match screen","Light","Dark"},new int[]{3,2,1,0},"Auto follows sunrise and sunset at the car's position. Match screen follows the head unit. During navigation, Maps chooses its own colours. "+ClusterHost.themeDescription()));
-        toggle("Satellite map","Satellite map on instrument cluster","cluster_satellite",s.satellite);
-        action("Map layout",null,this::layout);
-        if(DiLink51Setup.supported()){DiLink51Setup.init(activity.getApplication(),null);action("BYD instrument theme","DiLink 5.1 · full and side map layers",this::oemLayout);}
-        action("Steering-wheel zoom",WheelServiceSetup.enabled()?"On · instrument cluster only":"Off",this::wheel);
-        action("Gemini voice assistant",GeminiLaunch.wheelEnabled()?"Long-press microphone enabled":"Map button and steering wheel",this::gemini);
-        action("Send to car",SendToCarSetup.summary(activity),this::sendToCar);
-        if(DiLink3Projection.isCandidate())action("DiLink 3 cluster test",DiLink3Projection.enabled()?"Experimental projection enabled":"Off",this::diLink3);
-        action("Route card",s.visible?s.size+"% · "+(s.side==0?"Left":"Right"):"Off",this::card);
-        toggle("Picture-in-picture","Picture-in-picture when leaving Maps","picture_in_picture",s.pictureInPicture);
-        if(BydGuidance.untestedHudAvailable())action("HUD output",null,this::hud);
-        action("Google account",SignInAccess.description().replace("Google sign-in: ",""),()->{
+        start("main","Gösterge paneli");ClusterSettings.State s=ClusterSettings.state();
+        toggle("Gösterge haritasını göster","Haritayı gösterge panelinde göster","map_enabled",s.mapEnabled);
+        if(!DiLink51Setup.supported()&&!DiLink3Projection.isCandidate())toggle("Haritayı açmadan gösterge haritasını başlat","Harita arka planda başladığında gösterge haritasını göster",ClusterBackgroundStart.KEY,s.backgroundStart);
+        toggle("Dönüş yönlendirmesi","Dönüş yönlendirmesini göstergeye ve HUD'a gönder","vehicle_guidance",s.vehicleGuidance);
+        action("Harita renkleri",theme(s.clusterTheme),()->choices("Harita renkleri","cluster_theme",new String[]{"Otomatik","Ekranla eşle","Açık","Koyu"},new int[]{3,2,1,0},"Otomatik modu gün doğumu ve gün batımını takip eder. Ekranla eşle multimedya temasını izler. Navigasyon sırasında Haritalar kendi renklerini belirler. "+ClusterHost.themeDescription()));
+        toggle("Uydu haritası","Gösterge panelinde uydu haritası","cluster_satellite",s.satellite);
+        action("Harita düzeni",null,this::layout);
+        if(DiLink51Setup.supported()){DiLink51Setup.init(activity.getApplication(),null);action("BYD gösterge teması","DiLink 5.1 · tam ve yan harita katmanları",this::oemLayout);}
+        action("Direksiyondan yakınlaştırma",WheelServiceSetup.enabled()?"Açık · yalnızca gösterge paneli":"Kapalı",this::wheel);
+        action("Gemini sesli asistanı",GeminiLaunch.wheelEnabled()?"Mikrofona uzun basma etkin":"Harita butonu ve direksiyon",this::gemini);
+        action("Araca gönder",SendToCarSetup.summary(activity),this::sendToCar);
+        if(DiLink3Projection.isCandidate())action("DiLink 3 gösterge testi",DiLink3Projection.enabled()?"Deneysel yansıtma açık":"Kapalı",this::diLink3);
+        action("Rota kartı",s.visible?"%"+s.size+" · "+(s.side==0?"Sol":"Sağ"):"Kapalı",this::card);
+        toggle("Pencere içinde pencere (PiP)","Haritalar'dan çıkarken pencere içinde pencere modu","picture_in_picture",s.pictureInPicture);
+        if(BydGuidance.untestedHudAvailable())action("HUD (Hayalet ekran) çıkışı",null,this::hud);
+        action("Google hesabı",SignInAccess.description().replace("Google sign-in: ",""),()->{
             if(AccountAccess.restartNeeded(activity))AccountAccess.restart(activity);
             else if(AccountAccess.microg(activity)&&!AccountAccess.granted(activity))AccountAccess.request(activity);
             else SignInAccess.show(activity);
         });
-        action("Interface size",MainUiScale.selected(prefs)+"% · main Maps screen",this::interfaceSize);
-        toggle("Rounded app corners","Rounded outer corners on central Maps screens",AppCorners.KEY,AppCorners.enabled(prefs));
-        action("Updates",BuildInfo.VERSION,()->AppUpdater.show(activity));
-        action("Support",null,()->Diagnostics.show(activity));
-        action("BYD vehicle data","ADB battery and electric range",this::vehicle);
-        if(EvTest.available())action("Test EV data","Synthetic values",()->EvTest.show(activity));
-        note("Changes are saved automatically.");
+        action("Arayüz boyutu","%"+MainUiScale.selected(prefs)+" · ana Haritalar ekranı",this::interfaceSize);
+        toggle("Yuvarlatılmış uygulama köşeleri","Merkezi Haritalar ekranlarında yuvarlatılmış dış köşeler",AppCorners.KEY,AppCorners.enabled(prefs));
+        action("Güncellemeler",BuildInfo.VERSION,()->AppUpdater.show(activity));
+        action("Destek ve tanılama",null,()->Diagnostics.show(activity));
+        action("BYD araç verileri","ADB batarya ve elektrik menzili",this::vehicle);
+        if(EvTest.available())action("EV verilerini test et","Yapay test değerleri",()->EvTest.show(activity));
+        note("Değişiklikler otomatik olarak kaydedilir.");
     }
     private void diLink3(){
-        start("dilink3","DiLink 3 cluster test");
+        start("dilink3","DiLink 3 gösterge testi");
         DiLink3Projection.init(activity.getApplication(),null);
-        LinearLayout enabledRow=row("Enable DiLink 3 map projection","Experimental · Android 10 / DiLink 3 only");
+        LinearLayout enabledRow=row("DiLink 3 harita yansıtmasını etkinleştir","Deneysel · yalnızca Android 10 / DiLink 3");
         MapsSwitch control=new MapsSwitch(context);control.setChecked(DiLink3Projection.enabled());
-        control.setContentDescription("Enable DiLink 3 map projection");
+        control.setContentDescription("DiLink 3 harita yansıtmasını etkinleştir");
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);enabledRow.addView(control,lp);
         control.setOnCheckedChangeListener((button,on)->{
             if(!control.isEnabled())return;control.setEnabled(false);
             Runnable done=()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();};
-            if(on)new AlertDialog.Builder(activity).setTitle("Test DiLink 3 instrument-cluster map?")
+            if(on)new AlertDialog.Builder(activity).setTitle("DiLink 3 gösterge haritası test edilsin mi?")
                 .setMessage("Use only on a parked DiLink 3 head unit running Android 10. Maps will use local ADB to switch the instrument cluster into projection mode. Its map area can be blank for several seconds while the display is prepared.\n\nKeep ADB enabled and approve the Maps key if prompted. This is an unverified car test. Turn this option off or use Restore stock cluster if the result is not usable. A forced stop can leave projection active until Maps is opened again for recovery.")
-                .setNegativeButton("Cancel",(d,w)->done.run()).setOnCancelListener(d->done.run())
-                .setPositiveButton("Start test",(d,w)->DiLink3Projection.configure(activity,true,true,done)).show();
+                .setNegativeButton("İptal",(d,w)->done.run()).setOnCancelListener(d->done.run())
+                .setPositiveButton("Testi başlat",(d,w)->DiLink3Projection.configure(activity,true,true,done)).show();
             else DiLink3Projection.configure(activity,false,false,done);
         });
         enabledRow.setBackground(ripple(0));enabledRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
-        LinearLayout state=row("Projection status",DiLink3Projection.status());rule();
+        LinearLayout state=row("Yansıtma durumu",DiLink3Projection.status());rule();
         final long generation=pageGeneration;
         Runnable status=new Runnable(){public void run(){
             if(!dialog.isShowing()||!"dilink3".equals(page)||pageGeneration!=generation)return;
             summary(state,DiLink3Projection.status());readerMain.postDelayed(this,1000);
         }};readerMain.postDelayed(status,1000);
-        action("Authorize or retry","Approve this head unit's local ADB connection",()->DiLink3Projection.retry(activity,true,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
-        action("Restore stock cluster","Pause projection and return to the stock instrument layout",()->DiLink3Projection.restore(activity,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
+        action("Yetkilendir veya tekrar dene","Bu multimedyanın yerel ADB bağlantısını onaylayın",()->DiLink3Projection.retry(activity,true,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
+        action("Orijinal göstergeyi geri yükle","Yansıtmayı duraklat ve orijinal gösterge düzenine dön",()->DiLink3Projection.restore(activity,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
         note("Also keep Show cluster map enabled. This test creates the known DiLink 3 projection display and sends the native Google cluster screen there. It does not enable the BYD battery reader and does not claim HUD support.");
         note("127.0.0.1:5555 is this head unit. Keep it unchanged. Send the exact status, firmware version and whether a map is physically visible. No uninstall or account reset is needed.");
         note("Restore pauses this session. Turn the test option off after testing to keep it off on the next Maps launch.");
     }
     private void sendToCar(){
-        start("sendtocar","Send to car");
-        LinearLayout keepRow=row("Keep phone routes arriving","Exempt MicroG-RE from battery optimization; uses local ADB");
+        start("sendtocar","Araca gönder");
+        LinearLayout keepRow=row("Telefon rotalarının gelmesini sağla","MicroG-RE'yi pil optimizasyonundan muaf tutar; yerel ADB kullanır");
         MapsSwitch keep=new MapsSwitch(context);keep.setChecked(SendToCarSetup.exempt(activity));keep.setContentDescription("Keep phone routes arriving");
         LinearLayout.LayoutParams keepLp=new LinearLayout.LayoutParams(dp(64),dp(48));keepLp.leftMargin=dp(12);keepRow.addView(keep,keepLp);
         Runnable refresh=()->{if(dialog.isShowing()&&"sendtocar".equals(page))sendToCar();};
@@ -215,21 +215,21 @@ final class ClusterMenu {
         });
         keepRow.setBackground(ripple(0));keepRow.setOnClickListener(v->{if(keep.isEnabled())keep.performClick();});rule();
         String status=SendToCarSetup.status();if(!status.isEmpty())note(status);
-        action("Reconnect now","Ask MicroG-RE to reconnect push",()->SendToCarSetup.reconnect(activity,refresh));
+        action("Şimdi yeniden bağlan","MicroG-RE'den anlık bildirimleri yeniden bağlamasını iste",()->SendToCarSetup.reconnect(activity,refresh));
         note("In Google Maps on your phone, choose Send to car and select this car. The route opens here with Start.");
         note("After the car starts, Android 12 does not let MicroG-RE restart its push connection in the background. Turn on Keep phone routes arriving once: Maps uses its local ADB key to exempt MicroG-RE from battery optimization. Approve the Maps ADB key with Always allow if asked. Turning it off removes the exemption.");
     }
     private void gemini(){
-        start("gemini","Gemini voice assistant");
-        toggle("Show Gemini button","Gemini Live button below the cluster-map toggle in the side column",GeminiLaunch.BUTTON_KEY,prefs.getBoolean(GeminiLaunch.BUTTON_KEY,true));
-        toggle("Steering-wheel Gemini button","Open Gemini with the assigned wheel button",GeminiLaunch.WHEEL_KEY,prefs.getBoolean(GeminiLaunch.WHEEL_KEY,false));
-        LinearLayout voiceKey=action("Gemini button",WheelServiceSetup.describe(WheelServiceSetup.geminiBinding())+" · tap, then press the wheel button",()->{
+        start("gemini","Gemini sesli asistanı");
+        toggle("Gemini butonunu göster","Yan sütundaki gösterge haritası düğmesinin altında Gemini Live butonu",GeminiLaunch.BUTTON_KEY,prefs.getBoolean(GeminiLaunch.BUTTON_KEY,true));
+        toggle("Direksiyondan Gemini butonu","Atanan direksiyon butonuyla Gemini'yi açın",GeminiLaunch.WHEEL_KEY,prefs.getBoolean(GeminiLaunch.WHEEL_KEY,false));
+        LinearLayout voiceKey=action("Gemini butonu",WheelServiceSetup.describe(WheelServiceSetup.geminiBinding())+" · dokunun, ardından direksiyon butonuna basın",()->{
             if(!WheelServiceSetup.startLearning(4))Toast.makeText(activity,WheelServiceSetup.learningStatus(),Toast.LENGTH_LONG).show();});
-        LinearLayout voiceLearning=row("Button assignment",WheelServiceSetup.learningStatus());rule();
-        action("Restore Tang microphone button","Long press, key 312/312",WheelServiceSetup::restoreTangGemini);
-        LinearLayout voiceReceived=row("Recent keys",WheelKeyService.recentKeys());rule();
-        toggle("Compact assistant","Show Gemini over Maps when Google is the default digital assistant",GeminiLaunch.COMPACT_KEY,prefs.getBoolean(GeminiLaunch.COMPACT_KEY,true));
-        LinearLayout recoveryRow=row("Automatic compact recovery","Restore Google after BYD clears the assistant; requires local ADB");
+        LinearLayout voiceLearning=row("Buton ataması",WheelServiceSetup.learningStatus());rule();
+        action("Tang mikrofon butonunu geri yükle","Uzun basma, tuş 312/312",WheelServiceSetup::restoreTangGemini);
+        LinearLayout voiceReceived=row("Son tuşlar",WheelKeyService.recentKeys());rule();
+        toggle("Kompakt asistan","Google varsayılan dijital asistan olduğunda Haritalar üzerinde Gemini'yi göster",GeminiLaunch.COMPACT_KEY,prefs.getBoolean(GeminiLaunch.COMPACT_KEY,true));
+        LinearLayout recoveryRow=row("Otomatik kompakt kurtarma","BYD asistanı sıfırladığında Google'ı geri yükle; yerel ADB gerektirir");
         MapsSwitch recovery=new MapsSwitch(context);recovery.setChecked(GeminiRecovery.enabled());recovery.setContentDescription("Automatic compact recovery");
         LinearLayout.LayoutParams recoveryLp=new LinearLayout.LayoutParams(dp(64),dp(48));recoveryLp.leftMargin=dp(12);recoveryRow.addView(recovery,recoveryLp);
         recovery.setOnCheckedChangeListener((button,on)->{
@@ -238,9 +238,9 @@ final class ClusterMenu {
         });
         recoveryRow.setBackground(ripple(0));recoveryRow.setOnClickListener(v->{if(recovery.isEnabled())recovery.performClick();});rule();
         note(GeminiRecovery.status());
-        action("Digital assistant",GeminiLaunch.googleAssistant(activity)?"Google · compact mode available":"Choose Google for compact mode",()->GeminiLaunch.assistantSettings(activity));
-        action("Open Gemini",GeminiLaunch.available(activity)?"Gemini Live":"Install Gemini and finish sign-in first",()->GeminiLaunch.open(activity));
-        action("Wheel key service",WheelServiceSetup.connected()?"Connected": "Open steering-wheel setup to enable the key service",this::wheel);
+        action("Dijital asistan",GeminiLaunch.googleAssistant(activity)?"Google · kompakt mod kullanılabilir":"Kompakt mod için Google'ı seçin",()->GeminiLaunch.assistantSettings(activity));
+        action("Gemini'yi Aç",GeminiLaunch.available(activity)?"Gemini Live":"Önce Gemini'yi yükleyip oturum açmayı tamamlayın",()->GeminiLaunch.open(activity));
+        action("Direksiyon tuş servisi",WheelServiceSetup.connected()?"Bağlı":"Tuş servisini etkinleştirmek için direksiyon kurulumunu açın",this::wheel);
         note("By default the Gemini button is the Tang DiLink 5.0 long press on the microphone key; the short press keeps the BYD assistant and the custom star keeps cluster zoom. On other firmware, tap Gemini button and press the wheel button you want within 10 seconds; that press is not passed to the car. Press the Gemini button again to close compact Gemini. A zoom button cannot also open Gemini. Recent keys shows what this head unit sends to Android. The map and cluster do not need an active route. Keys pass through during phone calls.");
         final long expected=pageGeneration;
         readerMain.postDelayed(new Runnable(){public void run(){
@@ -253,8 +253,8 @@ final class ClusterMenu {
         note("Uses the existing wheel key service enabled in Steering-wheel zoom. Keep that service enabled. Compact mode uses the Android assistant over Maps while Maps is on screen. Select Google as the default digital assistant once. Otherwise, or outside Maps, the full Gemini app opens. One tap starts Gemini Live. This requires the updated patched Google app. Google app and Gemini must already be set up with MicroG-RE. Allow Contacts and Location for MicroG-RE, and Microphone for Google.");
     }
     private void interfaceSize(){
-        start("interface_size","Interface size");int selected=MainUiScale.selected(prefs);
-        int[] values={100,90,80};String[] names={"100% · Standard","90% · Compact","80% · Smaller"};
+        start("interface_size","Arayüz boyutu");int selected=MainUiScale.selected(prefs);
+        int[] values={100,90,80};String[] names={"%100 · Standart","%90 · Kompakt","%80 · Daha küçük"};
         for(int i=0;i<values.length;i++){
             final int value=values[i];LinearLayout r=row(names[i],null);
             ImageView radio=new ImageView(context);radio.setImageDrawable(new Mark(value==selected?4:3,value==selected?accent:ink));
@@ -267,27 +267,27 @@ final class ClusterMenu {
         note("Local experiment. Choose 100% to restore standard Maps size.");
     }
     private void layout(){
-        start("layout","Map layout");ClusterSettings.State s=ClusterSettings.state();
-        action("Google Maps logo",s.logoPosition==0?"Bottom left":"Top right",()->choices("Google Maps logo","logo_position",new String[]{"Bottom left","Top right"},new int[]{0,1},null));
-        slider("Pointer vertical offset","pointer_vertical",-25,25,s.pointerVertical);note("Negative moves the pointer up; positive moves it down.");
-        slider("Pointer horizontal offset","pointer_horizontal",-25,25,s.pointerHorizontal);note("Negative moves the pointer left; positive moves it right. 0 keeps the standard centre.");
-        action("Reset pointer position","Vertical 10%, horizontal 0%",()->{prefs.edit().putInt("pointer_vertical",10).putInt("pointer_horizontal",0).apply();layout();});
+        start("layout","Harita düzeni");ClusterSettings.State s=ClusterSettings.state();
+        action("Google Haritalar logosu",s.logoPosition==0?"Sol alt":"Sağ üst",()->choices("Google Haritalar logosu","logo_position",new String[]{"Sol alt","Sağ üst"},new int[]{0,1},null));
+        slider("İmleç dikey ofseti","pointer_vertical",-25,25,s.pointerVertical);note("Negatif değer imleci yukarı taşır; pozitif değer aşağı taşır.");
+        slider("İmleç yatay ofseti","pointer_horizontal",-25,25,s.pointerHorizontal);note("Negatif değer imleci sola taşır; pozitif değer sağa taşır. 0 standart merkezi korur.");
+        action("İmleç konumunu sıfırla","Dikey %10, yatay %0",()->{prefs.edit().putInt("pointer_vertical",10).putInt("pointer_horizontal",0).apply();layout();});
     }
     private void oemLayout(){
         if(!DiLink51Setup.supported()){main();return;}
         DiLink51Setup.init(activity.getApplication(),null);DiLink51Setup.refreshStatus();
-        start("oem_layout","BYD instrument theme");final boolean loaded=DiLink51Setup.loaded();
-        LinearLayout autoRow=row("Follow instrument theme","Use stock BYD activity visibility to follow the full map and side card");
+        start("oem_layout","BYD gösterge teması");final boolean loaded=DiLink51Setup.loaded();
+        LinearLayout autoRow=row("Gösterge temasını takip et","Tam harita ve yan kartı takip etmek için orijinal BYD etkinlik görünürlüğünü kullanın");
         MapsSwitch control=new MapsSwitch(context);control.setChecked(DiLink51Setup.automatic());control.setEnabled(loaded);control.setContentDescription("Follow instrument theme");
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);autoRow.addView(control,lp);
         control.setOnCheckedChangeListener((button,on)->{if(control.isEnabled()){DiLink51Setup.setAutomatic(on);oemLayout();}});
         autoRow.setBackground(ripple(0));autoRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
         LinearLayout status=row("Usage Access",DiLink51Setup.status());rule();
-        action("Allow Usage Access · ADB","One-time setup for Maps only; review the consent dialog",()->DiLink51Setup.prepareUsageAccess(activity,true,()->{if(dialog.isShowing()&&"oem_layout".equals(page))oemLayout();}));
-        note("Manual layout");
+        action("Kullanım Erişimine İzin Ver · ADB","Yalnızca Haritalar için tek seferlik kurulum; onay penceresini inceleyin",()->DiLink51Setup.prepareUsageAccess(activity,true,()->{if(dialog.isShowing()&&"oem_layout".equals(page))oemLayout();}));
+        note("Manuel düzen");
         DiLink51Profile.Theme selected=DiLink51Setup.manualTheme();
         DiLink51Profile.Theme[] values={DiLink51Profile.Theme.MAP,DiLink51Profile.Theme.SCENARIO,DiLink51Profile.Theme.SIMPLE};
-        String[] names={"Map · full-width map","Scenario · right-side map","Simple · right-side map"};
+        String[] names={"Harita · tam genişlikte harita","Senaryo · sağ taraf haritası","Basit · sağ taraf haritası"};
         for(int i=0;i<values.length;i++){
             final DiLink51Profile.Theme value=values[i];LinearLayout choice=row(names[i],null);
             ImageView radio=new ImageView(context);radio.setImageDrawable(new Mark(value==selected?4:3,value==selected?accent:ink));LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(dp(28),dp(36));rp.leftMargin=dp(12);choice.addView(radio,rp);
@@ -305,9 +305,9 @@ final class ClusterMenu {
         }},500);
     }
     private void wheel(){
-        start("wheel","Steering-wheel zoom");
+        start("wheel","Direksiyondan yakınlaştırma");
         ClusterZoom.prepare();
-        LinearLayout enabledRow=row("Enable steering-wheel zoom","Use the assigned buttons for the instrument cluster map");
+        LinearLayout enabledRow=row("Direksiyondan yakınlaştırmayı etkinleştir","Gösterge paneli haritası için atanan butonları kullanın");
         MapsSwitch control=new MapsSwitch(context);control.setChecked(WheelServiceSetup.enabled());
         control.setContentDescription("Enable steering-wheel zoom");
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);enabledRow.addView(control,lp);
@@ -317,22 +317,22 @@ final class ClusterMenu {
             WheelServiceSetup.configure(activity,on,on,()->{if(dialog.isShowing()&&"wheel".equals(page))wheel();});
         });
         enabledRow.setBackground(ripple(0));enabledRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
-        LinearLayout service=row("Service",WheelServiceSetup.status());rule();
-        LinearLayout camera=row("Map controls",ClusterZoom.description());rule();
-        LinearLayout key=row("Last control key",WheelKeyService.lastKey());rule();
+        LinearLayout service=row("Servis",WheelServiceSetup.status());rule();
+        LinearLayout camera=row("Harita kontrolleri",ClusterZoom.description());rule();
+        LinearLayout key=row("Son kontrol tuşu",WheelKeyService.lastKey());rule();
         WheelKeyPolicy.Bindings assigned=WheelServiceSetup.bindings();
         LinearLayout[] buttons=new LinearLayout[3];
         for(int role=1;role<=3;role++){final int which=role;WheelKeyPolicy.Binding b=which==1?assigned.mode:which==2?assigned.in:assigned.out;
-            buttons[which-1]=action(WheelServiceSetup.roleName(which)+" button",WheelServiceSetup.describe(b)+" · tap, then press the wheel button",()->{
+            buttons[which-1]=action(WheelServiceSetup.roleName(which)+" butonu",WheelServiceSetup.describe(b)+" · dokunun, ardından direksiyon butonuna basın",()->{
                 if(!WheelServiceSetup.startLearning(which))Toast.makeText(activity,WheelServiceSetup.learningStatus(),Toast.LENGTH_LONG).show();});}
-        LinearLayout learning=row("Button assignment",WheelServiceSetup.learningStatus());rule();
-        action("Restore BYD Tang buttons","Custom 305, volume + 291, volume − 292",WheelServiceSetup::restoreTangButtons);
-        LinearLayout received=row("Recent keys",WheelKeyService.recentKeys());rule();
-        if(WheelServiceSetup.enabled())action("Authorize or retry","Allow the Maps ADB key on this head unit",()->
+        LinearLayout learning=row("Buton ataması",WheelServiceSetup.learningStatus());rule();
+        action("BYD Tang butonlarını geri yükle","Özel 305, ses + 291, ses − 292",WheelServiceSetup::restoreTangButtons);
+        LinearLayout received=row("Son tuşlar",WheelKeyService.recentKeys());rule();
+        if(WheelServiceSetup.enabled())action("Yetkilendir veya tekrar dene","Bu multimedyada Haritalar ADB anahtarına izin verin",()->
             WheelServiceSetup.configure(activity,true,true,()->{if(dialog.isShowing()&&"wheel".equals(page))wheel();}));
-        action("Zoom in","Instrument cluster map only",()->clusterZoom(1));
-        action("Zoom out","Instrument cluster map only",()->clusterZoom(-1));
-        action("Reset cluster zoom","Return to automatic map zoom",()->{ClusterZoom.reset();wheel();});
+        action("Yakınlaştır","Yalnızca gösterge paneli haritası",()->clusterZoom(1));
+        action("Uzaklaştır","Yalnızca gösterge paneli haritası",()->clusterZoom(-1));
+        action("Gösterge yakınlaştırmasını sıfırla","Otomatik harita yakınlaştırmasına dön",()->{ClusterZoom.reset();wheel();});
         note("Press the custom steering wheel button to turn cluster zoom controls on, then use volume + or − to zoom the instrument cluster map. Press the custom button again to restore volume controls. A call, unavailable cluster map or turning this feature off ends the control mode; press the custom button again afterwards.");
         note("The chosen map zoom stays until Reset cluster zoom or the cluster map is recreated. The central map keeps its own scale. Outside the control mode, the volume buttons work normally.");
         note("Default buttons are for BYD Tang (DiLink 5.0). The console volume control may send the same events and zoom too. On other firmware, tap a button above and press the wheel button you want within 10 seconds; that press is not passed to the car. Recent keys lists what this head unit sends to Android and whether Maps kept it. If a wheel button never appears there, the head unit handles it itself and it cannot zoom the map.");
@@ -350,7 +350,7 @@ final class ClusterMenu {
         }},500);
     }
     private void clusterZoom(int direction){
-        if(!ClusterZoom.manualStep(direction))Toast.makeText(activity,"Wait for the instrument cluster map to be ready.",Toast.LENGTH_SHORT).show();
+        if(!ClusterZoom.manualStep(direction))Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
     }
     private static void summary(LinearLayout row,String value){
         View labels=row.getChildAt(0);
@@ -359,15 +359,15 @@ final class ClusterMenu {
         }
     }
     private void card(){
-        start("card","Route card");ClusterSettings.State s=ClusterSettings.state();
-        toggle("Show route card","Route card, arrival time and distance","visible",s.visible);
-        action("Card size",s.size+"%",()->choices("Card size","size",new String[]{"50%","75%","100%"},new int[]{50,75,100},null));
-        action("Position",s.side==0?"Left":"Right",()->choices("Position","side",new String[]{"Left","Right"},new int[]{0,1},null));
-        slider("Edge margin","margin",0,20,s.margin);slider("Card vertical offset","vertical",-25,25,s.vertical);
-        note("Negative moves the card up; positive moves it down.");
+        start("card","Rota kartı");ClusterSettings.State s=ClusterSettings.state();
+        toggle("Rota kartını göster","Rota kartı, varış zamanı ve mesafe","visible",s.visible);
+        action("Kart boyutu","%"+s.size,()->choices("Kart boyutu","size",new String[]{"%50","%75","%100"},new int[]{50,75,100},null));
+        action("Konum",s.side==0?"Sol":"Sağ",()->choices("Konum","side",new String[]{"Sol","Sağ"},new int[]{0,1},null));
+        slider("Kenar boşluğu","margin",0,20,s.margin);slider("Kart dikey ofseti","vertical",-25,25,s.vertical);
+        note("Negatif değer kartı yukarı taşır; pozitif değer aşağı taşır.");
     }
     private void vehicleDataToggle(){
-        LinearLayout r=row("Use BYD vehicle data","Read-only battery and electric range via ADB");
+        LinearLayout r=row("BYD araç verilerini kullan","ADB üzerinden salt okunur batarya ve elektrik menzili");
         MapsSwitch control=new MapsSwitch(context);control.setChecked(VehicleDataStore.enabled(activity));
         control.setContentDescription("Use BYD vehicle data");
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);r.addView(control,lp);
@@ -376,21 +376,21 @@ final class ClusterMenu {
         r.setBackground(ripple(0));r.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
     }
     private void autoReader(){
-        start("autoreader","Automatic reader");
+        start("autoreader","Otomatik okuyucu");
         note("Start the BYD reader on this head unit after restart or wake, without a computer. BYD vehicle data must also be on. ADB must remain enabled on this head unit.");
         note("Maps creates a private key for this installation. Approve the standard ADB prompt once and select Always allow. No computer key or extra app is used.");
-        row("Status",VehicleAutoReader.description());rule();
+        row("Durum",VehicleAutoReader.description());rule();
         boolean on=VehicleAutoReader.enabled();
-        action(on?"Disable automatic reader":"Enable automatic reader",on?"Stop automatic startup and its own reader":"Set up local ADB and automatic startup",()->VehicleAutoReader.configure(activity,!on,true,()->{if(dialog.isShowing()&&"autoreader".equals(page))autoReader();}));
-        if(on)action("Authorize or retry", "Approve the Maps ADB key on this head unit",()->VehicleAutoReader.configure(activity,true,true,()->{if(dialog.isShowing()&&"autoreader".equals(page))autoReader();}));
+        action(on?"Otomatik okuyucuyu kapat":"Otomatik okuyucuyu aç",on?"Otomatik başlatmayı ve kendi okuyucusunu durdur":"Yerel ADB ve otomatik başlatmayı ayarla",()->VehicleAutoReader.configure(activity,!on,true,()->{if(dialog.isShowing()&&"autoreader".equals(page))autoReader();}));
+        if(on)action("Yetkilendir veya tekrar dene", "Bu multimedyada Haritalar ADB anahtarını onaylayın",()->VehicleAutoReader.configure(activity,true,true,()->{if(dialog.isShowing()&&"autoreader".equals(page))autoReader();}));
         note("Uses only 127.0.0.1:5555. If the head unit blocks boot startup, allow Maps Automotive in its app startup settings. Force-stop requires opening Maps again.");
     }
     private boolean readerPageAlive(long generation){return generation==pageGeneration&&"readercompat".equals(page)&&dialog.isShowing()&&body.isAttachedToWindow()&&!activity.isFinishing()&&!activity.isDestroyed();}
     private static boolean candidateLive(VehicleDataStore.Access access,long epoch,String identity,long deadline){return access.enabled&&access.readerActive&&access.epoch==epoch&&access.sourceKnown&&identity!=null&&!identity.isEmpty()&&identity.equals(access.sourceIdentity)&&deadline>0&&SystemClock.elapsedRealtime()<=deadline;}
     private void changeReaderMode(String mode,boolean redetect,String confirmed){
-        start("readercompat","Reader compatibility");note("Updating reader settings…");final long generation=pageGeneration;
+        start("readercompat","Okuyucu uyumluluğu");note("Updating reader settings…");final long generation=pageGeneration;
         try{VehicleReaderSettings.configure(activity,mode,redetect,confirmed,()->{if(readerPageAlive(generation))readerCompatibility();});}
-        catch(IllegalArgumentException invalid){Toast.makeText(activity,"Reader selection changed. Detect again before confirming.",Toast.LENGTH_LONG).show();if(readerPageAlive(generation))readerCompatibility();}
+        catch(IllegalArgumentException invalid){Toast.makeText(activity,"Okuyucu seçimi değişti. Onaylamadan önce tekrar algılayın.",Toast.LENGTH_LONG).show();if(readerPageAlive(generation))readerCompatibility();}
     }
     private void selectReaderMode(String mode){
         if(!"legacy".equals(mode)){changeReaderMode(mode,false,"");return;}
@@ -404,7 +404,7 @@ final class ClusterMenu {
         r.setBackground(ripple(0));r.setFocusable(true);r.setContentDescription(name+(checked?", selected":""));r.setOnClickListener(v->{if(!checked)selectReaderMode(mode);});rule();
     }
     private void readerCompatibility(){
-        start("readercompat","Reader compatibility");note("Loading reader mode and current source…");final long generation=pageGeneration;Context app=activity.getApplicationContext();final Context application=app==null?activity:app;
+        start("readercompat","Okuyucu uyumluluğu");note("Loading reader mode and current source…");final long generation=pageGeneration;Context app=activity.getApplicationContext();final Context application=app==null?activity:app;
         final VehicleDataStore.Access access=VehicleDataStore.access(application);final long requestedEpoch=access.epoch;
         readerWorker.execute(()->{
             String mode="auto",error=null,candidateText=null,selection=null,identity=null;long deadline=0;boolean candidate=false;
@@ -417,40 +417,40 @@ final class ClusterMenu {
             final String selected=mode,problem=error,readings=candidateText,chosen=selection,sourceIdentity=identity;final long validUntil=deadline;final boolean offerConfirmation=candidate;
             readerMain.post(()->{
                 if(!readerPageAlive(generation))return;if(access.epoch!=requestedEpoch){readerCompatibility();return;}body.removeAllViews();
-                readerModeRow("Automatic CAN/CANFD","Recommended. Uses protocol-specific documented addresses; unknown protocol stays unsupported.","auto",selected);
-                readerModeRow("Firmware detection (advanced)","Opt in to firmware-defined addresses and conservative fallback discovery.","legacy",selected);
-                action("Detect again","Discard cached addresses and previous confirmation",()->changeReaderMode(selected,true,""));
+                readerModeRow("Otomatik CAN/CANFD","Önerilen. Protokole özgü belgelenmiş adresleri kullanır; bilinmeyen protokol desteklenmez.","auto",selected);
+                readerModeRow("Yazılım algılama (gelişmiş)","Yazılım tanımlı adresleri ve dikkatli yedek keşfini etkinleştirin.","legacy",selected);
+                action("Tekrar algıla","Önbelleğe alınan adresleri ve önceki onayı sil",()->changeReaderMode(selected,true,""));
                 note("Only reader addresses are cached. No battery readings are kept in this compatibility cache. Changing mode or detecting again withdraws old EV data and starts a new reader session.");
                 if(problem!=null)note(problem);
                 if(offerConfirmation&&candidateLive(access,requestedEpoch,sourceIdentity,validUntil)){
-                    TextView candidateView=text("Unconfirmed readings\n"+readings,24,ink);candidateView.setPadding(dp(18),dp(12),dp(18),dp(18));body.addView(candidateView);
-                    LinearLayout confirm=action("Confirm readings","First check that charge and range match the instrument cluster",()->{
-                        if(!readerPageAlive(generation)||!candidateLive(access,requestedEpoch,sourceIdentity,validUntil)){Toast.makeText(activity,"These readings are no longer current. Refresh and check again.",Toast.LENGTH_LONG).show();if(readerPageAlive(generation))readerCompatibility();return;}
+                    TextView candidateView=text("Doğrulanmamış veriler\n"+readings,24,ink);candidateView.setPadding(dp(18),dp(12),dp(18),dp(18));body.addView(candidateView);
+                    LinearLayout confirm=action("Verileri onayla","Önce şarj ve menzilin gösterge paneliyle eşleştiğini kontrol edin",()->{
+                        if(!readerPageAlive(generation)||!candidateLive(access,requestedEpoch,sourceIdentity,validUntil)){Toast.makeText(activity,"Bu veriler artık güncel değil. Yenileyip tekrar kontrol edin.",Toast.LENGTH_LONG).show();if(readerPageAlive(generation))readerCompatibility();return;}
                         changeReaderMode(selected,false,chosen);
                     });
-                    Runnable expire=()->{if(readerPageAlive(generation)&&!candidateLive(access,requestedEpoch,sourceIdentity,validUntil)){confirm.setEnabled(false);candidateView.setText("Candidate readings are no longer current. Refresh to check a new sample.");}};
+                    Runnable expire=()->{if(readerPageAlive(generation)&&!candidateLive(access,requestedEpoch,sourceIdentity,validUntil)){confirm.setEnabled(false);candidateView.setText("Aday veriler artık güncel değil. Yeni bir örneği kontrol etmek için yenileyin.");}};
                     candidateView.getViewTreeObserver().addOnPreDrawListener(()->{if(readerPageAlive(generation)&&!candidateLive(access,requestedEpoch,sourceIdentity,validUntil)&&confirm.isEnabled()){expire.run();return false;}return true;});
                     readerMain.postDelayed(expire,Math.max(1,validUntil-SystemClock.elapsedRealtime()+1));
                 }else if("legacy".equals(selected))note("Fallback charge and range are unconfirmed until a fresh sample is checked here. They are not used for EV routes before confirmation.");
                 note("The reader samples once per minute. Values older than 90 seconds are hidden. This mode only reads vehicle data; it does not change the car.");
-                action("Refresh",null,this::readerCompatibility);
+                action("Yenile",null,this::readerCompatibility);
             });
         });
     }
     private static String powertrainLabel(VehiclePowertrain type){
         switch(type){
-            case BEV:return "BEV — battery electric";
-            case PHEV:return "PHEV — plug-in petrol hybrid";
-            case HEV:return "HEV — non-plug-in petrol hybrid";
-            default:return "Unknown / leave vehicle type unchanged";
+            case BEV:return "BEV — Tam elektrikli";
+            case PHEV:return "PHEV — Şarj edilebilir hibrit";
+            case HEV:return "HEV — Şarj edilmeyen hibrit";
+            default:return "Bilinmiyor / araç tipini değiştirmeden bırak";
         }
     }
     private static String powertrainDetail(VehiclePowertrain type){
         switch(type){
-            case BEV:return "Electric only. Live battery route data is optional.";
-            case PHEV:return "Petrol and electric, with an external charging port. Does not enable our battery-only forecasts.";
-            case HEV:return "No external charging port. Charging stops and our battery route model stay off; native HEV eco-routing is not configured here.";
-            default:return "No owner vehicle identity is supplied to Maps.";
+            case BEV:return "Yalnızca elektrik. Canlı batarya rota verisi isteğe bağlıdır.";
+            case PHEV:return "Benzin ve elektrik, harici şarj portu bulunur. Yalnızca batarya tahminlerimizi etkinleştirmez.";
+            case HEV:return "Harici şarj portu yoktur. Şarj durakları ve batarya rota modelimiz kapalı kalır.";
+            default:return "Haritalar'a araç kimliği sağlanmaz.";
         }
     }
     private static String connectionDetail(VehicleEvConnection connection){
@@ -461,15 +461,15 @@ final class ClusterMenu {
         return "Select only plugs usable by your car; an adapter is never assumed. AC station matching still needs a road test.";
     }
     private void evProfile(){
-        start("evprofile","Vehicle profile");
+        start("evprofile","Araç profili");
         final VehicleEvProfile.Profile profile=VehicleEvProfile.current();
         note("Enter the actual vehicle type and charging connection. The reader does not identify usable battery capacity or all compatible plugs. Save confirms your selection; no automatic type detection is performed in Maps.");
         LinearLayout entry=new LinearLayout(context);entry.setOrientation(LinearLayout.VERTICAL);entry.setPadding(dp(18),dp(12),dp(18),dp(12));
-        entry.addView(text("Vehicle name (optional)",28,ink));
-        EditText model=new EditText(context);model.setTextColor(ink);model.setTextSize(28);model.setSingleLine(true);model.setHint("Your vehicle name");model.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(80)});
+        entry.addView(text("Araç adı (isteğe bağlı)",28,ink));
+        EditText model=new EditText(context);model.setTextColor(ink);model.setTextSize(28);model.setSingleLine(true);model.setHint("Araç adınız");model.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(80)});
         if(profile!=null)model.setText(profile.model);model.setContentDescription("Optional owner entered vehicle name");entry.addView(model);
         note("This name is shared with Google Maps Connected cars when Maps next syncs vehicle information. An empty name keeps the standard name. The registration code stays the same.");
-        TextView capacityLabel=text("Usable battery capacity (kWh)",28,ink);entry.addView(capacityLabel);
+        TextView capacityLabel=text("Kullanılabilir batarya kapasitesi (kWh)",28,ink);entry.addView(capacityLabel);
         EditText capacity=new EditText(context);capacity.setTextColor(ink);capacity.setTextSize(28);capacity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         if(profile!=null&&profile.capacityWh>0)capacity.setText(java.math.BigDecimal.valueOf(profile.capacityWh,3).stripTrailingZeros().toPlainString());capacity.setContentDescription("Owner entered usable battery capacity in kWh");entry.addView(capacity);body.addView(entry);rule();
         final VehiclePowertrain[] selectedType={profile!=null&&profile.typeConfirmed?profile.powertrain:VehiclePowertrain.UNKNOWN};
@@ -481,7 +481,7 @@ final class ClusterMenu {
             ImageView radio=new ImageView(context);typeRadios[i]=radio;LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(28),dp(36));lp.leftMargin=dp(12);r.addView(radio,lp);
             r.setBackground(ripple(0));r.setFocusable(true);rule();
         }
-        LinearLayout routeRow=row("Use live battery data for BEV routes","BEV only. Requires fresh trusted charge and electric range.");
+        LinearLayout routeRow=row("BEV rotaları için canlı batarya verilerini kullan","Yalnızca BEV. Güncel güvenilir şarj ve elektrik menzili gerektirir.");
         MapsSwitch routing=new MapsSwitch(context);routing.setChecked(profile!=null&&profile.enabled);routing.setContentDescription("Use live battery data for BEV routes");
         LinearLayout.LayoutParams routeLp=new LinearLayout.LayoutParams(dp(64),dp(48));routeLp.leftMargin=dp(12);routeRow.addView(routing,routeLp);routeRow.setBackground(ripple(0));routeRow.setOnClickListener(v->{if(routing.isEnabled())routing.performClick();});rule();
         java.util.LinkedHashSet<VehicleEvConnection> allConnections=new java.util.LinkedHashSet<>();
@@ -522,7 +522,7 @@ final class ClusterMenu {
         }
         update.run();
         note("PHEV: Maps receives a petrol + electric vehicle identity and the selected compatible plugs. Battery capacity is stored for your profile; our combined fuel/battery forecast and automatic charging-stop model are not implemented. AC station matching and hybrid routing still need testing. The BYD charge and electric-range display remains available.");
-        action("Save vehicle profile","Confirm the type and connection selected above",()->{
+        action("Araç profilini kaydet","Yukarıda seçilen tipi ve bağlantıyı onaylayın",()->{
             try{
                 final String name=VehicleEvProfile.validModel(model.getText().toString());final VehiclePowertrain type=selectedType[0];final boolean confirmed=type!=VehiclePowertrain.UNKNOWN;
                 final int wh=VehicleEvProfile.capacityWh(capacity.getText().toString(),type==VehiclePowertrain.BEV);
@@ -533,31 +533,31 @@ final class ClusterMenu {
                 VehicleEvBridge.configure(activity,name,wh,mode,type,confirmed,enabled,()->{
                     VehicleEvProfile.Profile saved=VehicleEvProfile.current();
                     if(identityChanged&&saved!=null&&saved.model.equals(name)&&saved.capacityWh==wh&&saved.powertrain==type&&saved.connector.equals(mode))
-                        Toast.makeText(activity,"Profile saved. Force stop Maps, then reopen it to apply vehicle type or connector changes.",Toast.LENGTH_LONG).show();
+                        Toast.makeText(activity,"Profil kaydedildi. Değişiklikleri uygulamak için Haritalar'ı zorla durdurup tekrar açın.",Toast.LENGTH_LONG).show();
                     if(dialog.isShowing()&&"evprofile".equals(page))evProfile();
                 });
             }catch(IllegalArgumentException invalid){Toast.makeText(activity,invalid.getMessage(),Toast.LENGTH_LONG).show();}
         });
-        if(profile!=null&&profile.enabled)action("Disable BEV route data",null,()->VehicleEvBridge.configure(activity,profile.model,profile.capacityWh,profile.connector,profile.powertrain,profile.typeConfirmed,false,()->{if(dialog.isShowing()&&"evprofile".equals(page))evProfile();}));
+        if(profile!=null&&profile.enabled)action("BEV rota verilerini devre dışı bırak",null,()->VehicleEvBridge.configure(activity,profile.model,profile.capacityWh,profile.connector,profile.powertrain,profile.typeConfirmed,false,()->{if(dialog.isShowing()&&"evprofile".equals(page))evProfile();}));
         note("A change of vehicle type or charging connection requires force stop in Android app settings, then reopen Maps. Home and reopen is not a full restart. No restart is performed automatically. Changing the name, capacity or live-data switch alone does not change the vehicle identity.");
         note(VehicleEvBridge.description());
     }
     private void vehicle(){
-        start("vehicle","BYD vehicle data");
+        start("vehicle","BYD araç verileri");
         note("Read battery charge and electric range with the optional local ADB reader. Enable Automatic reader for startup and recovery without a computer.");
         vehicleDataToggle();
-        action("Vehicle profile",VehicleEvBridge.profileSummary(),this::evProfile);
-        action("Automatic reader",VehicleAutoReader.description(),this::autoReader);
-        action("Reader compatibility",VehicleReaderSettings.summary(),this::readerCompatibility);
-        TextView status=text("Checking ADB reader…",24,ink);status.setPadding(dp(18),dp(12),dp(18),dp(18));body.addView(status);
-        action("Refresh",null,this::vehicle);
+        action("Araç profili",VehicleEvBridge.profileSummary(),this::evProfile);
+        action("Otomatik okuyucu",VehicleAutoReader.description(),this::autoReader);
+        action("Okuyucu uyumluluğu",VehicleReaderSettings.summary(),this::readerCompatibility);
+        TextView status=text("ADB okuyucu kontrol ediliyor…",24,ink);status.setPadding(dp(18),dp(12),dp(18),dp(18));body.addView(status);
+        action("Yenile",null,this::vehicle);
         note("Use BYD vehicle data and Automatic reader are separate opt-ins. Sampling is once per minute; values expire after 90 seconds. For a confirmed BEV with live route data enabled, fresh trusted readings are sent to Maps. PHEV and HEV do not use our battery-only forecast. Advanced fallback readings require confirmation against the instrument cluster first. Unknown CAN protocol stays unsupported in Automatic mode. Battery capacity is entered by the owner; remaining energy and distance consumption used by Maps are estimates. The raw remaining-energy signal has no verified unit. Charging power is unknown. Stale data withdraws the battery prediction.");
         VehicleDataPage.bind(activity,status);
     }
     private void hud(){
-        start("hud","HUD output");toggle("Standalone HUD","Try standalone HUD on this firmware (experimental)","hud_untested_firmware",ClusterSettings.untestedHud());
+        start("hud","HUD çıkışı");toggle("Bağımsız HUD","Bu yazılımda bağımsız HUD'u deneyin (deneysel)","hud_untested_firmware",ClusterSettings.untestedHud());
         note("Experimental on this firmware. First turn off HUD output in OpenBYD or any other HUD app. Restart Maps to apply.");
-        note(BydGuidance.outputDescription());action("Restart Maps",null,()->ClusterSettings.restartMaps(activity));
+        note(BydGuidance.outputDescription());action("Haritalar'ı Yeniden Başlat",null,()->ClusterSettings.restartMaps(activity));
     }
     /** Native car-style toggle, with the full row as a touch target and standard switch accessibility. */
     private final class MapsSwitch extends CompoundButton {

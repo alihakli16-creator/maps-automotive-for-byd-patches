@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.app.Activity;
@@ -37,7 +37,7 @@ final class GeminiLaunch {
  static void paused(Activity a){if(resumed.get()==a){pauses++;resumed.clear();if(SystemClock.uptimeMillis()-requestedAt<COVER_WINDOW_MS)covered=new java.lang.ref.WeakReference<>(a);}}
  static void stopped(Activity a){if(covered.get()==a)covered=new java.lang.ref.WeakReference<>(null);}
  static boolean googleAssistant(Context c){try{String s=android.provider.Settings.Secure.getString(c.getContentResolver(),"voice_interaction_service");ComponentName n=s==null?null:ComponentName.unflattenFromString(s);return n!=null&&GOOGLE.equals(n.getPackageName());}catch(RuntimeException e){return false;}}
- static void assistantSettings(Activity a){try{a.startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS));}catch(RuntimeException e){Toast.makeText(a,"Open Android default apps and select Google as the digital assistant.",Toast.LENGTH_LONG).show();}}
+ static void assistantSettings(Activity a){try{a.startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS));}catch(RuntimeException e){Toast.makeText(a,"Android varsayılan uygulamalarını açın ve dijital asistan olarak Google'ı seçin.",Toast.LENGTH_LONG).show();}}
  static boolean available(Context c){try{return c.getPackageManager().getLaunchIntentForPackage(PACKAGE)!=null;}catch(RuntimeException e){return false;}}
  private static boolean prepare(Context c,String mode){
   try{
@@ -55,7 +55,7 @@ final class GeminiLaunch {
   if(under!=null&&resumed.get()==null&&!under.isFinishing()&&!under.isDestroyed()&&WheelKeyService.back()){
    covered=new java.lang.ref.WeakReference<>(null);android.util.Log.i("MapsGemini","second press closed compact Gemini");return true;
   }
-  if(!available(context)){Toast.makeText(context,"Install Gemini and finish its Google sign-in first.",Toast.LENGTH_LONG).show();return false;}
+  if(!available(context)){Toast.makeText(context,"Önce Gemini'yi yükleyin ve Google oturum açmayı tamamlayın.",Toast.LENGTH_LONG).show();return false;}
   if(!opening.compareAndSet(false,true))return true;
   Context app=context.getApplicationContext();Activity requested=resumed.get();
   final String selected="conversation";
@@ -107,7 +107,7 @@ final class GeminiLaunch {
      if(intent==null){if(armed)cancel(app);return;}
      intent.setPackage(PACKAGE);if(!(context instanceof Activity))intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
      context.startActivity(intent);
-    }catch(RuntimeException e){if(armed)cancel(app);Toast.makeText(context,"Could not open Gemini. Open it from the launcher and finish setup.",Toast.LENGTH_LONG).show();}
+    }catch(RuntimeException e){if(armed)cancel(app);Toast.makeText(context,"Gemini açılamadı. Başlatıcıdan açıp kurulumu tamamlayın.",Toast.LENGTH_LONG).show();}
     finally{if(!waiting)opening.set(false);}
  }
 }

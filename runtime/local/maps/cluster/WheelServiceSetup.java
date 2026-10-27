@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.app.Activity;
@@ -42,7 +42,7 @@ public final class WheelServiceSetup {
         synchronized(WheelServiceSetup.class){
             if(context!=null)return;context=application;final long epoch=generation.get();
             worker.execute(()->{
-                try{WheelZoomSettings saved=WheelZoomSettings.read(context);if(generation.get()==epoch){settings=saved;loaded=true;state=saved.enabled?(connected?"Connected. Press the custom key to toggle cluster zoom controls.":"Waiting for the wheel key service."):"Steering-wheel zoom is off.";}}
+                try{WheelZoomSettings saved=WheelZoomSettings.read(context);if(generation.get()==epoch){settings=saved;loaded=true;state=saved.enabled?(connected?"Bağlandı. Gösterge yakınlaştırma kontrolleri için özel tuşa basın.":"Direksiyon tuş servisi bekleniyor."):"Steering-wheel zoom is off.";}}
                 catch(IOException unavailable){if(generation.get()==epoch){settings=WheelZoomSettings.defaults();loaded=true;state="Could not load wheel settings; steering-wheel zoom is off.";}}
                 burstStarted=SystemClock.uptimeMillis();attempt(false,false);
                 worker.schedule(()->autoRebind(epoch),autoRebindDelayMs,TimeUnit.MILLISECONDS);
@@ -65,18 +65,18 @@ public final class WheelServiceSetup {
     static WheelKeyPolicy.Binding geminiBinding(){return settings.gemini;}
     static final WheelKeyPolicy.Learning learning=new WheelKeyPolicy.Learning();
     private static volatile long learnGeneration;
-    private static volatile String learnResult="Tap a button above to assign it.";
-    static String roleName(int role){return role==1?"Custom button":role==2?"Zoom in":role==3?"Zoom out":"Gemini";}
-    static String describe(WheelKeyPolicy.Binding b){return "key "+b.code+"/"+b.scan+" · "+b.device;}
+    private static volatile String learnResult="Atamak için yukarıdaki bir butona dokunun.";
+    static String roleName(int role){return role==1?"Özel buton":role==2?"Yakınlaştır":role==3?"Uzaklaştır":"Gemini";}
+    static String describe(WheelKeyPolicy.Binding b){return "tuş "+b.code+"/"+b.scan+" · "+b.device;}
     /** UI thread. The key service takes the next press; nothing is saved until one arrives. */
     static boolean startLearning(int role){
         if(!enabled()||!connected){learnResult="Turn on the wheel key service in Steering-wheel zoom and wait until it is connected.";return false;}
-        learnGeneration=generation.get();learnResult="Tap a button above to assign it.";learning.start(role,SystemClock.uptimeMillis());return true;
+        learnGeneration=generation.get();learnResult="Atamak için yukarıdaki bir butona dokunun.";learning.start(role,SystemClock.uptimeMillis());return true;
     }
     static void cancelLearning(){learning.cancel();}
     static String learningStatus(){
         long left=learning.remaining(SystemClock.uptimeMillis());int role=learning.role(SystemClock.uptimeMillis());
-        return role!=0?"Press the steering-wheel button for "+roleName(role)+" now ("+((left+999)/1000)+" s)…":learnResult;
+        return role!=0?"Şimdi "+roleName(role)+" için direksiyon butonuna basın ("+((left+999)/1000)+" sn)…":learnResult;
     }
     /** Key callback: only queues the save. Preference I/O stays on the worker; a newer setup drops it. */
     static void learned(int role,WheelKeyPolicy.Binding binding){
@@ -86,11 +86,11 @@ public final class WheelServiceSetup {
             WheelZoomSettings before=settings;
             // Zoom and Gemini never share a key: the service would give it to Gemini first.
             int zoomUser=WheelKeyPolicy.zoomRole(before.bindings,binding);
-            if(role==4&&zoomUser!=0){learnResult="That button is the "+roleName(zoomUser)+" button. Choose another one, or assign a different zoom button first.";return;}
-            if(role!=4&&before.gemini.same(binding)){learnResult="That button opens Gemini. Choose another one, or assign a different Gemini button first.";return;}
+            if(role==4&&zoomUser!=0){learnResult="Bu buton "+roleName(zoomUser)+" butonu. Başka bir buton seçin veya önce farklı bir buton atayın.";return;}
+            if(role!=4&&before.gemini.same(binding)){learnResult="Bu buton Gemini'yi açar. Başka bir buton seçin veya önce farklı bir Gemini butonu atayın.";return;}
             try{WheelZoomSettings next=role==4?new WheelZoomSettings(before.enabled,before.bindings,binding):new WheelZoomSettings(before.enabled,WheelKeyPolicy.assign(before.bindings,role,binding),before.gemini);
-                next.save(context);settings=next;learnResult=roleName(role)+" saved: "+describe(binding)+".";}
-            catch(IOException|IllegalArgumentException failure){learnResult="Could not save the "+roleName(role)+" button; the previous buttons are kept.";}
+                next.save(context);settings=next;learnResult=roleName(role)+" kaydedildi: "+describe(binding)+".";}
+            catch(IOException|IllegalArgumentException failure){learnResult="Buton kaydedilemedi; önceki butonlar korundu.";}
         });
     }
     /** Restores the measured BYD Tang (DiLink 5.0) zoom buttons, or the Gemini long-press microphone. */
@@ -104,14 +104,14 @@ public final class WheelServiceSetup {
             WheelKeyPolicy.Bindings zoom=gemini?before.bindings:WheelKeyPolicy.Bindings.tang();
             WheelKeyPolicy.Binding voice=gemini||WheelKeyPolicy.zoomRole(zoom,before.gemini)!=0?WheelKeyPolicy.Bindings.tangGemini():before.gemini;
             if(WheelKeyPolicy.zoomRole(zoom,voice)!=0){learnResult="A zoom button uses the Tang microphone key; assign a different zoom button first.";return;}
-            try{WheelZoomSettings next=new WheelZoomSettings(before.enabled,zoom,voice);next.save(context);settings=next;learnResult=gemini?"Tang Gemini button restored.":"BYD Tang buttons restored.";}
+            try{WheelZoomSettings next=new WheelZoomSettings(before.enabled,zoom,voice);next.save(context);settings=next;learnResult=gemini?"Tang Gemini butonu geri yüklendi.":"BYD Tang butonları geri yüklendi.";}
             catch(IOException failure){learnResult="Could not restore the buttons; the previous buttons are kept.";}
         });
     }
     static void serviceConnected(boolean value){
         connected=value;
-        if(value)state=enabled()?"Connected. Press the custom key to toggle cluster zoom controls.":"Steering-wheel zoom is off; keys pass through.";
-        else if(enabled())state="Waiting for the wheel key service.";
+        if(value)state=enabled()?"Bağlandı. Gösterge yakınlaştırma kontrolleri için özel tuşa basın.":"Direksiyondan yakınlaştırma kapalı; tuşlar doğrudan geçer.";
+        else if(enabled())state="Direksiyon tuş servisi bekleniyor.";
     }
 
     /** allowKey=true is reserved for the explicit Enable ADB button, never a background retry. */
@@ -119,7 +119,7 @@ public final class WheelServiceSetup {
         if(activity==null){if(finished!=null)ui.post(finished);return;}
         init(activity.getApplication());learning.cancel();boolean repair=on&&enabled()&&!connected;long epoch=generation.incrementAndGet();
         WheelZoomSettings desired=settings.enabled(on);settings=desired;loaded=true;
-        state=on?"Preparing the wheel key service…":"Steering-wheel zoom is off; removing only its service entry…";
+        state=on?"Direksiyon tuş servisi hazırlanıyor…":"Steering-wheel zoom is off; removing only its service entry…";
         WheelKeyService.endMode();VehicleLocalAdb old=connection;if(old!=null)old.close();
         if(!on)resetIfOff(epoch);
         worker.execute(()->{
@@ -233,7 +233,7 @@ public final class WheelServiceSetup {
                 if(!"1".equals(enabled)){if(!"0".equals(enabled)&&!"null".equals(enabled))throw new IOException("Accessibility state unavailable");check(epoch,on);put(adb,targetUser,"accessibility_enabled","1");}
                 if(!"1".equals(get(adb,targetUser,"accessibility_enabled")))throw new IOException("Accessibility did not enable");
             }
-            if(allowed(epoch,on))state=on?(connected?"Connected. Press the custom key to toggle cluster zoom controls.":"Service listed in Android; waiting for connection. Press Enable again to repair if it stays disconnected."):"Steering-wheel zoom is off. Other accessibility services were kept.";
+            if(allowed(epoch,on))state=on?(connected?"Bağlandı. Gösterge yakınlaştırma kontrolleri için özel tuşa basın.":"Service listed in Android; waiting for connection. Press Enable again to repair if it stays disconnected."):"Direksiyondan yakınlaştırma kapalı. Diğer erişilebilirlik servisleri korundu.";
         }finally{connection=null;}
     }
     private static void failState(Exception error,boolean on){

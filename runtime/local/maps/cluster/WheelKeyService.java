@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.accessibilityservice.AccessibilityService;
@@ -97,8 +97,8 @@ public final class WheelKeyService extends AccessibilityService {
         final boolean trace=enabled&&ClusterZoomTrace.candidate(event.getAction(),event.getKeyCode(),event.getRepeatCount());
         final int traceCode=event.getKeyCode(),traceScan=event.getScanCode();final boolean matched=bindings.role(key)!=0;
         WheelKeyPolicy.Result result=policy.handle(key,enabled,cameraReady,safe,now);modeEndsAt=policy.deadline();if(before!=result.mode)modeGeneration++;
-        if(result.mode&&!before)ui.post(()->{if(alive&&WheelServiceSetup.enabled())Toast.makeText(this,"Cluster zoom on",Toast.LENGTH_SHORT).show();});
-        else if(before&&!result.mode&&result.consume&&bindings.role(key)==1&&event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0)ui.post(()->{if(alive)Toast.makeText(this,"Volume controls restored",Toast.LENGTH_SHORT).show();});
+        if(result.mode&&!before)ui.post(()->{if(alive&&WheelServiceSetup.enabled())Toast.makeText(this,"Gösterge yakınlaştırma açık",Toast.LENGTH_SHORT).show();});
+        else if(before&&!result.mode&&result.consume&&bindings.role(key)==1&&event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0)ui.post(()->{if(alive)Toast.makeText(this,"Ses kontrolleri geri yüklendi",Toast.LENGTH_SHORT).show();});
         if(result.delta!=0){final int delta=result.delta;final long activation=modeGeneration;ui.post(()->{
             long at=SystemClock.uptimeMillis();
             boolean stepAllowed=alive&&modeEndsAt!=0&&modeGeneration==activation&&WheelServiceSetup.enabled()&&audioSafe&&audioAt>0&&at>=audioAt&&at-audioAt<1500&&ClusterZoom.ready();

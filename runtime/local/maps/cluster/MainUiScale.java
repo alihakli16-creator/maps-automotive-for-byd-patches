@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.app.Activity;
@@ -87,7 +87,7 @@ public final class MainUiScale {
         try{wanted=selected(activity.getSharedPreferences("local_cluster_settings",Context.MODE_PRIVATE));}
         catch(RuntimeException unavailable){
             pending=false;explained=false;
-            Toast.makeText(activity,"Could not read the saved size. Select it again to retry.",Toast.LENGTH_LONG).show();
+            Toast.makeText(activity,"Kaydedilen boyut okunamadı. Tekrar deneyin.",Toast.LENGTH_LONG).show();
             return;
         }
         if(wanted==activePercent){pending=false;explained=false;return;}
@@ -97,7 +97,7 @@ public final class MainUiScale {
         if(!BydGuidance.updatePromptSafe()){
             if(!explained){
                 explained=true;
-                Toast.makeText(activity,"Size saved. It will apply automatically when navigation is inactive and Maps is on screen.",Toast.LENGTH_LONG).show();
+                Toast.makeText(activity,"Boyut kaydedildi. Navigasyon aktif olmadığında otomatik uygulanacaktır.",Toast.LENGTH_LONG).show();
             }
             schedule(1000);return;
         }
@@ -110,7 +110,7 @@ public final class MainUiScale {
         }catch(RuntimeException failure){
             activePercent=previous;recreating.clear();
             Log.w("MapsUiScale","automatic redraw failed after "+failure.getClass().getSimpleName());
-            Toast.makeText(activity,"Size saved, but Maps could not redraw. Select it again to retry.",Toast.LENGTH_LONG).show();
+            Toast.makeText(activity,"Boyut kaydedildi, ancak Haritalar yeniden çizilemedi. Tekrar seçin.",Toast.LENGTH_LONG).show();
         }
     }
     private MainUiScale(){}

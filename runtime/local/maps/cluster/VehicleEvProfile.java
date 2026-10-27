@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.content.Context;
@@ -31,15 +31,15 @@ final class VehicleEvProfile {
         }
         boolean hasIdentity(){VehicleEvConnection connection=VehicleEvConnection.get(connector);return typeConfirmed&&connection!=null&&connection.supportsIdentity(powertrain);}
         String summary(){
-            String name=model.isEmpty()?"Vehicle":model;
-            if(!typeConfirmed)return name+" · Vehicle type not confirmed · battery route data off";
-            if(powertrain!=VehiclePowertrain.BEV)return name+" · "+powertrain.name()+" · "+(capacityWh==0?"Battery capacity not set":String.format(java.util.Locale.US,"%.1f kWh",capacityWh/1000.0))+" · "+VehicleEvConnection.get(connector).label+" · EV energy routing off";
+            String name=model.isEmpty()?"Araç":model;
+            if(!typeConfirmed)return name+" · Araç tipi onaylanmadı · batarya rota verisi kapalı";
+            if(powertrain!=VehiclePowertrain.BEV)return name+" · "+powertrain.name()+" · "+(capacityWh==0?"Batarya kapasitesi ayarlanmadı":String.format(java.util.Locale.US,"%.1f kWh",capacityWh/1000.0))+" · "+VehicleEvConnection.get(connector).label+" · EV enerji rotalama kapalı";
             return name+" · "+String.format(java.util.Locale.US,"%.1f kWh",capacityWh/1000.0)+" · "+VehicleEvConnection.get(connector).label;
         }
     }
     static String validModel(String value){
-        if(value==null||value.length()>80)throw new IllegalArgumentException("Vehicle name must be at most 80 characters");
-        for(int i=0;i<value.length();i++)if(Character.isISOControl(value.charAt(i)))throw new IllegalArgumentException("Vehicle name cannot contain control characters");
+        if(value==null||value.length()>80)throw new IllegalArgumentException("Araç adı en fazla 80 karakter olmalıdır");
+        for(int i=0;i<value.length();i++)if(Character.isISOControl(value.charAt(i)))throw new IllegalArgumentException("Araç adı kontrol karakterleri içeremez");
         return value.trim();
     }
     /** Bounds are checked before conversion, so very large inputs cannot wrap into a valid Wh. */

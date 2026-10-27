@@ -1,4 +1,4 @@
-package local.maps.cluster;
+﻿package local.maps.cluster;
 
 import android.app.*;
 import android.content.*;
@@ -58,7 +58,7 @@ public final class EvTest {
     }
     private static void stop(){active=false;restore();if(saved.isEmpty())result="Test is off. Original Maps EV source restored.";refreshBadge();}
     static void show(Activity activity){
-        if(VehicleDataStore.enabled(activity)){Toast.makeText(activity,"Turn off BYD vehicle data before using synthetic EV data.",Toast.LENGTH_LONG).show();return;}
+        if(VehicleDataStore.enabled(activity)){Toast.makeText(activity,"Yapay EV verilerini kullanmadan önce BYD araç verilerini kapatın.",Toast.LENGTH_LONG).show();return;}
         Context c=new ContextThemeWrapper(activity,android.R.style.Theme_DeviceDefault_Dialog_Alert);
         LinearLayout panel=new LinearLayout(c);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(32,16,32,16);
         TextView note=new TextView(c);note.setText("Synthetic data for testing Maps only. No readings or writes to the BYD vehicle. The test switches off when Maps restarts.");note.setTextSize(17);panel.addView(note);
@@ -72,6 +72,6 @@ public final class EvTest {
         Switch enabled=new Switch(c);
         Button low=new Button(c);low.setText("Apply low battery: 10%, 40 km");low.setAllCaps(false);low.setOnClickListener(v->{percent=10;fullRangeKm=400;level.setProgress(percent);distance.setProgress(300);soc.setText("Battery: 10%");range.setText("Range at 100%: 400 km");if(enabled.isChecked()){active=true;apply();}else enabled.setChecked(true);status.setText(result);});panel.addView(low);
         enabled.setText("Feed synthetic EV data to Maps");enabled.setChecked(active);enabled.setOnCheckedChangeListener((v,on)->{if(on){active=true;apply();if(!active)enabled.setChecked(false);}else stop();status.setText(result);});panel.addView(enabled);
-        ScrollView scroll=new ScrollView(c);scroll.addView(panel);new AlertDialog.Builder(c).setTitle("TEST EV — synthetic vehicle data").setView(scroll).setPositiveButton("Done",null).show();
+        ScrollView scroll=new ScrollView(c);scroll.addView(panel);new AlertDialog.Builder(c).setTitle("TEST EV — synthetic vehicle data").setView(scroll).setPositiveButton("Tamam",null).show();
     }
 }

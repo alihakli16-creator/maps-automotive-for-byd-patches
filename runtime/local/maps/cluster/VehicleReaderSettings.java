@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.content.Context;
@@ -17,7 +17,7 @@ final class VehicleReaderSettings {
     private static volatile State installed;
     private static final class State {
         final Object io=new Object();
-        volatile String mode="auto",message="Reader mode: automatic";
+        volatile String mode="auto",message="Okuyucu modu: otomatik";
         volatile boolean loaded,pending,loading;
         volatile long serial;
         boolean restoreEnabled;
@@ -31,11 +31,11 @@ final class VehicleReaderSettings {
     static void install(Context input){
         Context app=input.getApplicationContext();final Context c=app==null?input:app;final State s=state(c);installed=s;
         synchronized(s){if(s.loaded||s.loading||s.pending)return;s.loading=true;final long serial=s.serial;
-            worker.execute(()->{try{synchronized(s.io){JSONObject value=read(c);synchronized(s){s.loading=false;if(s.serial==serial)publish(s,value);}}}catch(Exception e){synchronized(s){s.loading=false;if(s.serial==serial){s.loaded=true;s.message="Reader settings unavailable; automatic mode is the default.";}}}});
+            worker.execute(()->{try{synchronized(s.io){JSONObject value=read(c);synchronized(s){s.loading=false;if(s.serial==serial)publish(s,value);}}}catch(Exception e){synchronized(s){s.loading=false;if(s.serial==serial){s.loaded=true;s.message="Okuyucu ayarları kullanılamıyor; otomatik mod varsayılandır.";}}}});
         }
     }
     static String mode(){State value=installed;return value==null?"auto":value.mode;}
-    static String summary(){State value=installed;return value==null?"Reader mode: automatic":value.message;}
+    static String summary(){State value=installed;return value==null?"Okuyucu modu: otomatik":value.message;}
     private static SharedPreferences preferences(Context c){return c.getSharedPreferences("local_vehicle_reader",Context.MODE_PRIVATE);}
     private static JSONObject defaults()throws JSONException{return new JSONObject().put("mode","auto").put("generation",0).put("confirmed_selection","").put("cache",new JSONObject());}
     private static String mode(JSONObject value)throws JSONException{Object mode=value.get("mode");if(!(mode instanceof String)||!Arrays.asList("auto","legacy").contains(mode))throw new IllegalArgumentException("Invalid reader selection mode");return (String)mode;}
@@ -71,7 +71,7 @@ final class VehicleReaderSettings {
     private static void write(Context c,JSONObject value)throws Exception{
         String text=settings(value).toString();VehicleSampleCodec.object(text);if(!preferences(c).edit().putString("settings",text).commit())throw new IOException("Reader settings were not saved");
     }
-    private static void publish(State state,JSONObject value)throws JSONException{state.mode=value.getString("mode");state.loaded=true;state.message="Reader mode: "+("legacy".equals(state.mode)?"legacy (manual confirmation)":"automatic");}
+    private static void publish(State state,JSONObject value)throws JSONException{state.mode=value.getString("mode");state.loaded=true;state.message="Okuyucu modu: "+("legacy".equals(state.mode)?"yazılım algılama (manuel onay)":"otomatik");}
     /** Worker or guarded provider threads only. Returns a detached validated object. */
     static JSONObject view(Context c)throws Exception{State s=state(c);synchronized(s.io){JSONObject value=read(c);if(!s.pending)publish(s,value);return value;}}
     private static long requireSession(Context c,String session)throws Exception{
@@ -100,16 +100,16 @@ final class VehicleReaderSettings {
     static void configure(Context input,String mode,boolean redetect,String confirmedSelection,Runnable finished){
         if(!Arrays.asList("auto","legacy").contains(mode)||confirmedSelection==null||!confirmedSelection.matches("|[a-f0-9]{64}")||!confirmedSelection.isEmpty()&&(!"legacy".equals(mode)||redetect))throw new IllegalArgumentException("Invalid reader setting");
         Context app=input.getApplicationContext();final Context c=app==null?input:app;final State s=state(c);installed=s;final long serial,storeEpoch;final boolean restore;
-        synchronized(s){restore=s.pending?s.restoreEnabled:VehicleDataStore.enabled(c);s.restoreEnabled=restore;s.pending=true;serial=++s.serial;storeEpoch=VehicleDataStore.requestEnabled(c);s.message="Updating reader settings…";}
+        synchronized(s){restore=s.pending?s.restoreEnabled:VehicleDataStore.enabled(c);s.restoreEnabled=restore;s.pending=true;serial=++s.serial;storeEpoch=VehicleDataStore.requestEnabled(c);s.message="Okuyucu ayarları güncelleniyor…";}
         worker.execute(()->{
             try{synchronized(s.io){if(s.serial!=serial)return;JSONObject value=read(c);String oldMode=value.getString("mode");boolean reset=redetect||!mode.equals(oldMode);
                 JSONObject cache=value.getJSONObject("cache");if(!confirmedSelection.isEmpty()&&(cache.length()==0||!mode.equals(cache.getString("mode"))||!confirmedSelection.equals(cache.getString("selection"))))throw new IllegalStateException("Choose a detected reader source before confirming");
                 long generation=value.getLong("generation");if(generation==Long.MAX_VALUE)throw new IllegalStateException("Reader generation exhausted");value.put("mode",mode).put("generation",generation+1);
                 if(reset)value.put("cache",new JSONObject()).put("confirmed_selection","");if(!confirmedSelection.isEmpty())value.put("confirmed_selection",confirmedSelection);
                 if(s.serial!=serial)return;write(c,value);if(s.serial!=serial)return;
-                if(!VehicleDataStore.finishEnabled(c,restore,storeEpoch)){synchronized(s){if(s.serial==serial){s.pending=false;s.message="Vehicle data changed while saving reader settings.";}}return;}
+                if(!VehicleDataStore.finishEnabled(c,restore,storeEpoch)){synchronized(s){if(s.serial==serial){s.pending=false;s.message="Okuyucu ayarları kaydedilirken araç verileri değişti.";}}return;}
                 synchronized(s){if(s.serial==serial){publish(s,value);s.pending=false;}}
-            }}catch(Exception e){synchronized(s){if(s.serial==serial){s.loaded=true;s.pending=false;s.message="Reader setting was not saved. Vehicle data remains off.";}}}
+            }}catch(Exception e){synchronized(s){if(s.serial==serial){s.loaded=true;s.pending=false;s.message="Okuyucu ayarı kaydedilemedi. Araç verileri kapalı kalır.";}}}
             finally{if(finished!=null&&s.serial==serial)new Handler(Looper.getMainLooper()).post(()->{if(s.serial==serial)finished.run();});}
         });
     }

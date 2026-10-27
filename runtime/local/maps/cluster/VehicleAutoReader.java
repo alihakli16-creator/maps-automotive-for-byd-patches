@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.app.*;
@@ -21,7 +21,7 @@ public final class VehicleAutoReader {
     private static final AtomicLong generation=new AtomicLong();
     private static volatile Context context;
     private static volatile boolean enabled,loaded;
-    private static volatile String state="Automatic reader is loading.";
+    private static volatile String state="Otomatik okuyucu yükleniyor.";
     private static volatile VehicleLocalAdb connection;
     private static boolean registered;
     private VehicleAutoReader(){}
@@ -35,7 +35,7 @@ public final class VehicleAutoReader {
                 boolean saved=false;
                 try{saved=context.getSharedPreferences("local_vehicle_auto",0).getBoolean("enabled",false);}catch(RuntimeException ignored){}
                 if(generation.get()==loadingEpoch)enabled=saved;loaded=true;
-                state=enabled?"Waiting for the vehicle reader.":"Automatic reader is off.";
+                state=enabled?"Araç okuyucusu bekleniyor.":"Otomatik okuyucu kapalı.";
             // This receiver only queues bounded work; it never holds a wake lock through car sleep.
             IntentFilter filter=new IntentFilter(Intent.ACTION_SCREEN_ON);filter.addAction(Intent.ACTION_USER_PRESENT);
             BroadcastReceiver wake=new BroadcastReceiver(){public void onReceive(Context c,Intent i){trigger(c,false);}};
@@ -61,7 +61,7 @@ public final class VehicleAutoReader {
     static boolean loaded(){return loaded;}
     static String description(){return state;}
     static void configure(Context c,boolean on,boolean authorize,Runnable finished){
-        install(c);long epoch=generation.incrementAndGet();enabled=on;state=on?"Preparing local ADB authorization…":"Automatic reader is off.";
+        install(c);long epoch=generation.incrementAndGet();enabled=on;state=on?"Yerel ADB yetkilendirmesi hazırlanıyor…":"Otomatik okuyucu kapalı.";
         VehicleLocalAdb old=connection;if(old!=null)old.close();
         worker.execute(()->{
             try{
@@ -70,7 +70,7 @@ public final class VehicleAutoReader {
                 if(!context.getSharedPreferences("local_vehicle_auto",0).edit().putBoolean("enabled",on).commit())throw new IOException();
                 loaded=true;
                 if(on)attempt(authorize);else{VehicleAutoJob.cancel(context);endOwnLease();}
-            }catch(Exception e){if(generation.get()==epoch){enabled=false;state="Could not save automatic-reader setting.";VehicleAutoJob.cancel(context);endOwnLease();}}
+            }catch(Exception e){if(generation.get()==epoch){enabled=false;state="Otomatik okuyucu ayarı kaydedilemedi.";VehicleAutoJob.cancel(context);endOwnLease();}}
             finally{if(finished!=null)new Handler(Looper.getMainLooper()).post(finished);}
         });
     }
@@ -123,13 +123,13 @@ public final class VehicleAutoReader {
     private static void attempt(boolean authorize){
         Context c=context;if(c==null||!loaded)return;
         if(!enabled){VehicleAutoJob.cancel(c);return;}
-        if(!VehicleDataStore.access(c).loaded){state="Waiting for BYD-data settings.";worker.schedule(()->attempt(false),1000,TimeUnit.MILLISECONDS);return;}
-        if(!VehicleDataStore.enabled(c)){state="Automatic reader is paused: turn on BYD vehicle data.";VehicleAutoJob.cancel(c);endOwnLease();return;}
+        if(!VehicleDataStore.access(c).loaded){state="BYD veri ayarları bekleniyor.";worker.schedule(()->attempt(false),1000,TimeUnit.MILLISECONDS);return;}
+        if(!VehicleDataStore.enabled(c)){state="Otomatik okuyucu duraklatıldı: BYD araç verilerini açın.";VehicleAutoJob.cancel(c);endOwnLease();return;}
         long epoch=generation.get();JSONObject record=null;String stage="cache";
         try{
             check(epoch);JSONObject status=VehicleDataStore.status(c);record=loadOwn();
             boolean live=VehicleDataStore.access(c).readerActive;String sid=status.optString("session");int boot=boot();if(boot<0)throw new IOException();
-            if(live&&(record==null||record.getInt("boot")!=boot||!record.getString("session").equals(sid))){state="A manually started reader is active.";VehicleAutoJob.schedule(c,30000);return;}
+            if(live&&(record==null||record.getInt("boot")!=boot||!record.getString("session").equals(sid))){state="Manuel olarak başlatılan okuyucu aktif.";VehicleAutoJob.schedule(c,30000);return;}
             String apk=c.getApplicationInfo().sourceDir;if(!source(apk))throw new IOException();
             stage="connect";
             try(VehicleLocalAdb adb=VehicleLocalAdb.open(c.getNoBackupFilesDir(),authorize,()->allowed(epoch))){
@@ -141,7 +141,7 @@ public final class VehicleAutoReader {
                     else{
                         String identity=process(adb,record);check(epoch);
                         boolean stalled=!status.optBoolean("fresh")&&((status.optLong("sample_age_ms",-1)>VehicleReadingRules.MAX_AGE_MS)||(status.optLong("sample_age_ms",-1)<0&&SystemClock.elapsedRealtime()-record.optLong("created_elapsed",0)>VehicleReadingRules.MAX_AGE_MS));
-                        if("own".equals(identity)&&live&&!stalled&&apk.equals(record.getString("apk"))){state=status.optBoolean("fresh")?"Automatic reader connected.":"Automatic reader running; waiting for fresh data.";VehicleAutoJob.schedule(c,60000);return;}
+                        if("own".equals(identity)&&live&&!stalled&&apk.equals(record.getString("apk"))){state=status.optBoolean("fresh")?"Otomatik okuyucu bağlandı.":"Otomatik okuyucu çalışıyor; güncel veriler bekleniyor.";VehicleAutoJob.schedule(c,60000);return;}
                         if(!"own".equals(identity)&&!"gone".equals(identity)){state="Previous reader identity cannot be verified; waiting.";VehicleAutoJob.schedule(c,30000);return;}
                         if(record.getString("session").equals(sid))VehicleDataStore.end(c,new JSONObject().put("session",record.getString("session")).toString());
                         if("own".equals(identity)){
@@ -157,10 +157,10 @@ public final class VehicleAutoReader {
                 String cmd="umask 077; CLASSPATH="+quote(apk)+" nohup app_process /system/bin --nice-name="+quote(nice(record))+" "+SAMPLER+" "+record.getString("session")+" --continuous > /dev/null 2>&1 < /dev/null & maps_vehicle_pid=$!; printf '%s\\n' \"$maps_vehicle_pid\" > "+quote(m)+"; printf '%s\\n' \"$maps_vehicle_pid\"";
                 stage="launch";check(epoch);String p=adb.execute(cmd).trim();check(epoch);if(p.matches("[0-9]{1,10}")){long pid=Long.parseLong(p);if(pid>1&&pid<Integer.MAX_VALUE){record.put("pid",pid);saveOwn(record);}}
                 stage="verify";String identity="unknown";for(int i=0;i<8;i++){check(epoch);identity=process(adb,record);if("own".equals(identity))break;Thread.sleep(250);}
-                if(!"own".equals(identity))throw new IOException();record.put("phase","running");saveOwn(record);state="Automatic reader connected.";android.util.Log.i("MapsVehicleAuto","reader launched and verified");VehicleAutoJob.schedule(c,60000);
+                if(!"own".equals(identity))throw new IOException();record.put("phase","running");saveOwn(record);state="Otomatik okuyucu bağlandı.";android.util.Log.i("MapsVehicleAuto","reader launched and verified");VehicleAutoJob.schedule(c,60000);
             }
-        }catch(VehicleLocalAdb.ApprovalRequiredException approval){state="Allow the Maps ADB key on this head unit, then retry. Select Always allow for automatic startup.";if(enabled)VehicleAutoJob.schedule(c,30000);}
+        }catch(VehicleLocalAdb.ApprovalRequiredException approval){state="Bu multimedyada Haritalar ADB anahtarına izin verin ve tekrar deneyin. Otomatik başlatma için Her zaman izin ver'i seçin.";if(enabled)VehicleAutoJob.schedule(c,30000);}
         catch(Exception unavailable){String reason=unavailable.getMessage();boolean safe=reason!=null&&reason.contains("ADB ")&&reason.matches("[A-Za-z0-9 :()./-]{1,120}");android.util.Log.w("MapsVehicleAuto",VehicleReaderFailure.stage(stage)+": "+VehicleReaderFailure.type(unavailable)+(safe?" / "+reason:""));if(enabled)state=VehicleReaderFailure.message(stage,unavailable);if(enabled)VehicleAutoJob.schedule(c,30000);}
-        finally{connection=null;if(!allowed(epoch)){endOwnLease();if(!enabled||!VehicleDataStore.enabled(c))VehicleAutoJob.cancel(c);if(!enabled)state="Automatic reader is off.";}}
+        finally{connection=null;if(!allowed(epoch)){endOwnLease();if(!enabled||!VehicleDataStore.enabled(c))VehicleAutoJob.cancel(c);if(!enabled)state="Otomatik okuyucu kapalı.";}}
     }
 }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 
 import android.app.Activity;
@@ -41,7 +41,7 @@ final class VehicleDataPage {
                 CompoundButton current=target.get();
                 if(current!=null&&current.isAttachedToWindow()&&access.epoch==token){
                     current.setChecked(access.enabled);current.setEnabled(true);
-                    if(!ok)Toast.makeText(context,"Could not save BYD vehicle data setting. Try again.",Toast.LENGTH_LONG).show();
+                    if(!ok)Toast.makeText(context,"BYD araç verisi ayarı kaydedilemedi. Tekrar deneyin.",Toast.LENGTH_LONG).show();
                 }
             });
         });
