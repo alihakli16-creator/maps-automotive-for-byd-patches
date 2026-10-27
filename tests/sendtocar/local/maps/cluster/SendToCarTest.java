@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.cluster;
 import android.app.Activity;import android.content.pm.PackageManager;import android.os.*;import java.util.concurrent.TimeUnit;
 /** Host checks for 55E: ChimeIdentity package substitution and SendToCarSetup local ADB commands. */
@@ -20,27 +20,27 @@ public class SendToCarTest{
   Activity act=new Activity();
   check(SendToCarSetup.ALLOW.equals("dumpsys deviceidle whitelist +"+MICROG)&&SendToCarSetup.REMOVE.equals("dumpsys deviceidle whitelist -"+MICROG),"exemption commands");
   check(SendToCarSetup.RECONNECT.equals("am broadcast -n "+MICROG+"/org.microg.gms.gcm.TriggerReceiver -a org.microg.gms.gcm.FORCE_TRY_RECONNECT"),"reconnect command");
-  check(SendToCarSetup.summary(act).equals("MicroG-RE is not installed"),"summary not installed");
-  SendToCarSetup.configure(act,true,null);check(VehicleLocalAdb.commands.isEmpty()&&SendToCarSetup.status().equals("MicroG-RE is not installed."),"no ADB without MicroG-RE");
+  check(SendToCarSetup.summary(act).equals("MicroG-RE yüklü değil"),"summary not installed");
+  SendToCarSetup.configure(act,true,null);check(VehicleLocalAdb.commands.isEmpty()&&SendToCarSetup.status().equals("MicroG-RE yüklü değil."),"no ADB without MicroG-RE");
   Handler.posted.clear();
   PackageManager.installed.add(MICROG);
-  check(SendToCarSetup.summary(act).startsWith("Turn on"),"summary off");
+  check(SendToCarSetup.summary(act).startsWith("Araç çalıştıktan"),"summary off");
   SendToCarSetup.configure(act,true,()->{});await();
   check(VehicleLocalAdb.commands.equals(java.util.List.of(SendToCarSetup.ALLOW,SendToCarSetup.RECONNECT)),"on: exempt then reconnect "+VehicleLocalAdb.commands);
   check(VehicleLocalAdb.allowKey,"explicit tap may request key approval");
-  check(SendToCarSetup.exempt(act)&&SendToCarSetup.status().startsWith("On."),"on status "+SendToCarSetup.status());
-  check(SendToCarSetup.summary(act).startsWith("Routes keep arriving"),"summary on");
+  check(SendToCarSetup.exempt(act)&&SendToCarSetup.status().startsWith("Açık."),"on status "+SendToCarSetup.status());
+  check(SendToCarSetup.summary(act).startsWith("Araç çalıştıktan"),"summary on");
   VehicleLocalAdb.commands.clear();SendToCarSetup.reconnect(act,()->{});await();
-  check(VehicleLocalAdb.commands.equals(java.util.List.of(SendToCarSetup.RECONNECT))&&SendToCarSetup.status().equals("MicroG-RE was asked to reconnect."),"reconnect only "+VehicleLocalAdb.commands);
+  check(VehicleLocalAdb.commands.equals(java.util.List.of(SendToCarSetup.RECONNECT))&&SendToCarSetup.status().equals("MicroG-RE'ye yeniden bağlanma isteği gönderildi."),"reconnect only "+VehicleLocalAdb.commands);
   VehicleLocalAdb.commands.clear();SendToCarSetup.configure(act,false,()->{});await();
-  check(VehicleLocalAdb.commands.equals(java.util.List.of(SendToCarSetup.REMOVE))&&!SendToCarSetup.exempt(act)&&SendToCarSetup.status().startsWith("Off."),"off: remove only "+VehicleLocalAdb.commands);
+  check(VehicleLocalAdb.commands.equals(java.util.List.of(SendToCarSetup.REMOVE))&&!SendToCarSetup.exempt(act)&&SendToCarSetup.status().startsWith("Kapalı."),"off: remove only "+VehicleLocalAdb.commands);
   VehicleLocalAdb.mode="ignored";SendToCarSetup.configure(act,true,()->{});await();
-  check(SendToCarSetup.status().startsWith("Android did not apply"),"change not applied reported");
+  check(SendToCarSetup.status().startsWith("Android değişikliği"),"change not applied reported");
   VehicleLocalAdb.mode="approval";SendToCarSetup.configure(act,true,()->{});await();
-  check(SendToCarSetup.status().startsWith("Approve the Maps ADB key"),"approval message");
+  check(SendToCarSetup.status().startsWith("Bu multimedyada"),"approval message");
   VehicleLocalAdb.mode="down";SendToCarSetup.configure(act,true,()->{});await();
-  check(SendToCarSetup.status().startsWith("Local ADB is not available"),"ADB unavailable message");
-  check(SendToCarSetup.result(true,true).startsWith("On.")&&SendToCarSetup.result(false,false).startsWith("Off.")&&SendToCarSetup.result(true,false).startsWith("Android did not")&&SendToCarSetup.result(false,true).startsWith("Android did not"),"result mapping");
+  check(SendToCarSetup.status().startsWith("Yerel ADB"),"ADB unavailable message");
+  check(SendToCarSetup.result(true,true).startsWith("Açık.")&&SendToCarSetup.result(false,false).startsWith("Kapalı.")&&SendToCarSetup.result(true,false).startsWith("Android değişikliği")&&SendToCarSetup.result(false,true).startsWith("Android değişikliği"),"result mapping");
   System.out.println((fail==0?"PASS":"FAIL")+" sendtocar: "+pass+" passed, "+fail+" failed");System.exit(fail==0?0:1);
  }
 }
