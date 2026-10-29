@@ -8,7 +8,7 @@ import android.graphics.drawable.*;
 import android.view.*;
 import android.widget.*;
 
-/** Cluster and voice controls anchored to the measured native one-bar column, including its animations. */
+/** Cluster, voice, and DiLink 3 quick-projection controls anchored to the measured native one-bar column. */
 final class ClusterButtons {
     private static final String TAG="local.cluster.buttons";
     static void attach(Activity a) {
@@ -21,7 +21,9 @@ final class ClusterButtons {
     private static int dp(Context c,int n){return Math.round(n*c.getResources().getDisplayMetrics().density);}
     private static final class Controls implements ViewTreeObserver.OnPreDrawListener {
         final Activity activity; final ViewGroup root; final ScrollView column; final LinearLayout buttons;
-        final ImageButton settings,map,voice; final FrameLayout settingsSlot,voiceSlot; final Icon settingsIcon=new Icon(false),mapIcon=new Icon(true),voiceIcon=new Icon(false,true);
+        final ImageButton settings,map,voice,auth,restore;
+        final FrameLayout settingsSlot,voiceSlot,authSlot,restoreSlot;
+        final Icon settingsIcon=new Icon(false),mapIcon=new Icon(true),voiceIcon=new Icon(false,true),authIcon=new Icon(3),restoreIcon=new Icon(4);
         View template,bar,bottom; Drawable nativeBackground; int lastColour,lastSurface,lastActive;
         boolean styled,wasOn; int tx,ty,tw,th;
         Controls(Activity a,ViewGroup r) {
@@ -31,10 +33,23 @@ final class ClusterButtons {
             settings=button(settingsIcon,"Instrument cluster settings");map=button(mapIcon,"Hide map on instrument cluster");
             settingsSlot=(FrameLayout)settings.getParent();buttons.removeView(settingsSlot);
             voice=button(voiceIcon,"Talk to Gemini Live");voiceSlot=(FrameLayout)voice.getParent();
+            auth=button(authIcon,"Yetkilendir veya tekrar dene");authSlot=(FrameLayout)auth.getParent();
+            restore=button(restoreIcon,"Orijinal göstergeyi geri yükle");restoreSlot=(FrameLayout)restore.getParent();
             settings.setTag("local.cluster.settings.button");map.setTag("local.cluster.map.button");voice.setTag("local.cluster.gemini.button");
+            auth.setTag("local.cluster.dilink3.auth.button");restore.setTag("local.cluster.dilink3.restore.button");
             GeminiLaunch.init(a);voice.setOnClickListener(v->GeminiLaunch.open(a));
             settings.setOnClickListener(v->ClusterSettings.show(a));
             map.setOnClickListener(v->{ClusterSettings.toggleMap();updateState();});
+            auth.setOnClickListener(v->{
+                Toast.makeText(activity,"ADB yetkilendirme ve gösterge yansıtma başlatılıyor…",Toast.LENGTH_SHORT).show();
+                DiLink3Projection.init(activity.getApplication(),null);
+                DiLink3Projection.retry(activity,true,null);
+            });
+            restore.setOnClickListener(v->{
+                Toast.makeText(activity,"Orijinal gösterge düzenine dönüldü",Toast.LENGTH_SHORT).show();
+                DiLink3Projection.init(activity.getApplication(),null);
+                DiLink3Projection.restore(activity,null);
+            });
             column.addView(buttons);column.setVisibility(View.INVISIBLE);
             root.addView(column,new FrameLayout.LayoutParams(1,1,Gravity.TOP|Gravity.LEFT));
             settingsSlot.setVisibility(View.INVISIBLE);root.addView(settingsSlot,new FrameLayout.LayoutParams(1,1,Gravity.TOP|Gravity.LEFT));
@@ -58,7 +73,10 @@ final class ClusterButtons {
                 bar=root.findViewById(id(activity,"one_bar_ellipsizing_container"));
                 bottom=root.findViewById(id(activity,"one_bar_bottom_group"));styled=false;
             }
-            if(template==null||bar==null||!bar.isShown()||activity.isInPictureInPictureMode()||template.getWidth()==0){column.setVisibility(View.INVISIBLE);settingsSlot.setVisibility(View.INVISIBLE);voiceSlot.setVisibility(View.INVISIBLE);return true;}
+            if(template==null||bar==null||!bar.isShown()||activity.isInPictureInPictureMode()||template.getWidth()==0){
+                column.setVisibility(View.INVISIBLE);settingsSlot.setVisibility(View.INVISIBLE);voiceSlot.setVisibility(View.INVISIBLE);
+                authSlot.setVisibility(View.INVISIBLE);restoreSlot.setVisibility(View.INVISIBLE);return true;
+            }
             Rect anchor=new Rect(),area=new Rect();template.getGlobalVisibleRect(anchor);bar.getGlobalVisibleRect(area);
             int end=anchor.bottom;int slot=template.getHeight();
             if(bar instanceof ViewGroup){ViewGroup g=(ViewGroup)bar;for(int i=0;i<g.getChildCount();i++){
@@ -67,10 +85,13 @@ final class ClusterButtons {
                     end=Math.max(end,bounds.bottom);if(bounds.top<=anchor.top&&bounds.bottom>=anchor.bottom)slot=bounds.height();
                 }
             }}
-            int gap=Math.max(0,(slot-template.getHeight())/2);
             int limit=area.bottom;Rect obstacle=new Rect();if(bottom!=null&&bottom.isShown()&&bottom.getGlobalVisibleRect(obstacle))limit=Math.min(limit,obstacle.top);
             int rows=GeminiLaunch.buttonEnabled()?2:1;
             voiceSlot.setVisibility(rows==2?View.VISIBLE:View.GONE);
+            boolean showQuick=DiLink3Projection.isCandidate()&&ClusterSettings.quickButtonsEnabled();
+            authSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);
+            restoreSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);
+            if(showQuick)rows+=2;
             int height=ClusterButtonPlacement.columnHeight(slot,rows,limit-end);
             column.setVerticalScrollBarEnabled(height<rows*slot);column.setScrollbarFadingEnabled(false);
             if(rows==1||height>=rows*slot)column.scrollTo(0,0);
@@ -95,7 +116,7 @@ final class ClusterButtons {
             if(tx!=x||ty!=y||tw!=width||th!=height){
                 tx=x;ty=y;tw=width;th=height;FrameLayout.LayoutParams lp=(FrameLayout.LayoutParams)column.getLayoutParams();lp.width=width;lp.height=height;lp.leftMargin=x;lp.topMargin=y;column.setLayoutParams(lp);
             }
-            for(ImageButton b:new ImageButton[]{map,voice}){
+            for(ImageButton b:new ImageButton[]{map,voice,auth,restore}){
                 View slotView=(View)b.getParent();ViewGroup.LayoutParams sp=slotView.getLayoutParams();
                 if(sp.width!=width||sp.height!=slot){sp.width=width;sp.height=slot;slotView.setLayoutParams(sp);}
                 FrameLayout.LayoutParams bp=(FrameLayout.LayoutParams)b.getLayoutParams();
@@ -112,8 +133,8 @@ final class ClusterButtons {
                 if(v.getBackground()!=null&&v.getBackground().getConstantState()!=null){nativeBackground=v.getBackground();break;}
                 if(!(v.getParent() instanceof View))break;v=(View)v.getParent();
             }
-            for(ImageButton b:new ImageButton[]{settings,map,voice}){b.setBackground(background(surface));b.setClipToOutline(true);}
-            float elevation=template.getElevation();for(ImageButton b:new ImageButton[]{settings,map,voice})b.setElevation(Math.max(elevation,dp(activity,2)));
+            for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore}){b.setBackground(background(surface));b.setClipToOutline(true);}
+            float elevation=template.getElevation();for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore})b.setElevation(Math.max(elevation,dp(activity,2)));
             settingsIcon.colour=ink;settingsIcon.invalidateSelf();voiceIcon.colour=ink;voiceIcon.invalidateSelf();styled=true;wasOn=!ClusterSettings.state().mapEnabled;
         }
         Drawable background(int colour){
@@ -129,23 +150,34 @@ final class ClusterButtons {
     }
     /** Dashboard toggle and instrument settings, at the same optical size as the native gear. */
     private static final class Icon extends Drawable {
-        final boolean map,voice;boolean on;int colour=0xff303134;final Paint paint=new Paint(3);
-        Icon(boolean m){this(m,false);}Icon(boolean m,boolean v){map=m;voice=v;}
+        final int kind; // 0: settings, 1: map, 2: voice, 3: auth ('Y'), 4: restore ('O')
+        boolean on;int colour=0xff303134;final Paint paint=new Paint(3);
+        Icon(boolean m){this(m?1:0);}
+        Icon(boolean m,boolean v){this(v?2:(m?1:0));}
+        Icon(int k){kind=k;}
         public void draw(Canvas canvas){
             Rect b=getBounds();canvas.save();canvas.translate(b.left,b.top);canvas.scale(b.width()/48f,b.height()/48f);
             paint.setColor(colour);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.8f);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);
             Path p=new Path();
-            if(voice){
+            if(kind==2){
                 paint.setColor(0xff8ab4f8);paint.setStrokeWidth(2.6f);
                 // Own Gemini Live waveform glyph.
                 float[] height={8,17,25,17,8};
                 for(int i=0;i<height.length;i++){float x=14+i*5;canvas.drawLine(x,24-height[i]/2,x,24+height[i]/2,paint);}
-            }else if(map){
+            }else if(kind==1){
                 canvas.drawRoundRect(12,16,36,32,4,4,paint);
                 canvas.drawArc(15,20,23,28,185,170,false,paint);canvas.drawArc(25,20,33,28,185,170,false,paint);
                 canvas.drawLine(19,25,21,22,paint);canvas.drawLine(29,25,27,22,paint);
                 if(on){paint.setStyle(Paint.Style.FILL);canvas.drawCircle(33,33,4.5f,paint);paint.setStyle(Paint.Style.STROKE);paint.setColor(Color.WHITE);paint.setStrokeWidth(1.4f);p.reset();p.moveTo(30.8f,33);p.lineTo(32.4f,34.5f);p.lineTo(35.4f,31.4f);canvas.drawPath(p,paint);}
                 else{canvas.drawLine(14,14,34,34,paint);}
+            }else if(kind==3){
+                paint.setColor(0xff38b6ff);paint.setStrokeWidth(3.4f);
+                canvas.drawLine(16,14,24,25,paint);
+                canvas.drawLine(32,14,24,25,paint);
+                canvas.drawLine(24,25,24,34,paint);
+            }else if(kind==4){
+                paint.setColor(0xffffa726);paint.setStrokeWidth(3.4f);
+                canvas.drawCircle(24,24,9.5f,paint);
             }else{
                 canvas.drawRoundRect(13,15,35,33,4,4,paint);canvas.drawArc(17,19,31,31,195,150,false,paint);
                 canvas.drawLine(24,27,28,22,paint);canvas.drawLine(20,30,28,30,paint);

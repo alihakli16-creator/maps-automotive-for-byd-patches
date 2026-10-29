@@ -42,7 +42,7 @@ public final class DiLink3Projection {
     private static volatile Runnable changed;
     private static volatile boolean loaded,optedIn,saving,wanted,ready,visible,pending,paused;
     private static volatile boolean quarantined,quarantineDurable;
-    private static volatile String state="DiLink 3 projection is loading.";
+    private static volatile String state="DiLink 3 yansıtması yükleniyor…";
     private static volatile VehicleLocalAdb activeConnection;
     private static volatile long nextAttempt;
     private static volatile int attempts=3;
@@ -77,7 +77,7 @@ public final class DiLink3Projection {
                 catch(RuntimeException unavailable){resume=true;unknown=true;autoOk=false;}
                 autoResumeOk=autoOk;
                 pending=readJournal();quarantined=pending||resume;quarantineDurable=resume&&!unknown;optedIn=saved;loaded=true;
-                state=quarantined?resumeStatus():saved?"DiLink 3 projection is enabled; waiting for the map request.":"DiLink 3 projection is off.";
+                state=quarantined?resumeStatus():saved?"DiLink 3 yansıtması etkin; harita isteği bekleniyor.":"DiLink 3 yansıtması kapalı.";
                 notifyChanged();requestWork(true);
             });
             worker.scheduleWithFixedDelay(()->{
@@ -96,7 +96,7 @@ public final class DiLink3Projection {
         if(activity==null||activity.isFinishing()||activity.isDestroyed()||!isCandidate()){finish(done);return;}
         init(activity.getApplication(),null);if(!loaded){finish(done);return;}
         final long saveEpoch=settingsGeneration.incrementAndGet();optedIn=on;saving=true;paused=false;invalidate();final long projectionEpoch=generation.get();attempts=3;nextAttempt=0;
-        state=on?"Saving the explicit DiLink 3 projection opt-in…":"Turning projection off and restoring any owned stock mode…";notifyChanged();
+        state=on?"DiLink 3 yansıtma tercihi kaydediliyor…":"Yansıtma kapatılıyor ve orijinal gösterge modu geri yükleniyor…";notifyChanged();
         worker.execute(()->{
             try{
                 if(settingsGeneration.get()!=saveEpoch)return;
@@ -104,7 +104,7 @@ public final class DiLink3Projection {
                 try{saved=preferences().edit().putBoolean("enabled",on).commit();}catch(RuntimeException unavailable){saved=false;}
                 if(settingsGeneration.get()!=saveEpoch)return;
                 saving=false;
-                if(!saved){optedIn=false;state="The opt-in was not saved. Projection is off for this session; retry saving.";}
+                if(!saved){optedIn=false;state="Tercih kaydedilemedi. Bu oturum için yansıtma kapalı; tekrar deneyin.";}
                 runLatest(projectionEpoch,on&&allowKey&&saved,true,on&&saved);
             }finally{finish(done);}
         });
@@ -132,7 +132,7 @@ public final class DiLink3Projection {
     /** Android window creation confirmation only; this never claims driver-visible pixels. */
     public static void windowVisible(boolean shown){
         if(!isCandidate()||!loaded)return;
-        if(shown){if(ready()){boolean first=!visible;visible=true;state="Projection commands and Android map window are ready. Confirm the physical cluster.";if(first)confirmHealthyLater();}return;}
+        if(shown){if(ready()){boolean first=!visible;visible=true;state="Yansıtma komutları ve Android harita penceresi hazır. Fiziksel göstergeyi kontrol edin.";if(first)confirmHealthyLater();}return;}
         if(!ready&&!visible)return;
         windowFailed();
     }
@@ -161,7 +161,7 @@ public final class DiLink3Projection {
         return autoResumeOk&&!failedThisProcess&&quarantined&&!pending&&!autoResumeUsed.get()&&projectionAllowedAfterResume(epoch);
     }
     private static boolean projectionAllowedAfterResume(long epoch){return allowed(epoch)&&optedIn&&wanted&&!paused;}
-    private static String resumeStatus(){return pending?"The previous projection session needs stock restoration. New projection is paused. After restoration, press Authorize or retry to resume. You can use Maps without cluster projection.":"Cluster projection requires manual resume after a previous session. Projection is paused; press Authorize or retry to resume. You can use Maps without cluster projection.";}
+    private static String resumeStatus(){return pending?"Önceki yansıtma oturumu orijinal gösterge düzenine dönülmesini gerektiriyor. Yeni yansıtma duraklatıldı. Geri yüklemeden sonra devam etmek için Yetkilendir veya tekrar dene butonuna basın. Haritalar'ı gösterge yansıtması olmadan da kullanabilirsiniz.":"Gösterge yansıtması önceki bir oturumdan sonra manuel devam ettirme gerektiriyor. Yansıtma duraklatıldı; devam etmek için Yetkilendir veya tekrar dene butonuna basın. Haritalar'ı gösterge yansıtması olmadan da kullanabilirsiniz.";}
     /** Worker-only durable latch. Keep the ownership journal pending if this checkpoint fails. */
     private static boolean saveQuarantine(boolean value){
         try{return preferences().edit().putBoolean("resume_required",value).commit();}
@@ -232,23 +232,23 @@ public final class DiLink3Projection {
             }
             if(!quarantined&&projectionWanted(epoch)&&!ready)saveAutoOk(false); // any new projection attempt is unconfirmed until healthy
             if(!projectionWanted(epoch)){
-                if(allowed(epoch))state=quarantined?resumeStatus():paused?"Stock mode is restored. Press Retry to project again.":"DiLink 3 projection is off; the stock view is restored.";
+                if(allowed(epoch))state=quarantined?resumeStatus():paused?"Orijinal gösterge modu geri yüklendi. Yeniden yansıtmak için Yetkilendir / Tekrar Dene butonuna basın.":"DiLink 3 yansıtması kapalı; orijinal gösterge görünümü geri yüklendi.";
                 notifyChanged();return;
             }
             try(VehicleLocalAdb adb=VehicleLocalAdb.open(context.getNoBackupFilesDir(),allowKey,()->projectionWanted(epoch))){
                 activeConnection=adb;String user=preflight(adb);check(epoch);
                 if(!displayPresent()){
-                    state="Creating the missing DiLink 3 projection display…";notifyChanged();
+                    state="Eksik DiLink 3 yansıtma ekranı oluşturuluyor…";notifyChanged();
                     saveJournal(true);check(epoch);send(adb,16,user);grace(epoch,30);send(adb,35,user);grace(epoch,30);
                     // Creation always hands the temporary projection back before a new 16→17 entry.
                     if(!restorePending(false,epoch))throw new Failure("restore");
                     check(epoch);if(!displayPresent())throw new Failure("display");
                 }
-                check(epoch);state="Entering DiLink 3 projection…";notifyChanged();
+                check(epoch);state="DiLink 3 yansıtmasına giriliyor…";notifyChanged();
                 saveJournal(true);check(epoch);send(adb,16,user);grace(epoch,10);send(adb,17,user);check(epoch);
                 if(!displayPresent())throw new Failure("display");
                 projectionGeneration=epoch;ready=true;visible=false;
-                state="Projection commands were accepted; waiting for the Android map window. Physical visibility is unconfirmed.";notifyChanged();
+                state="Yansıtma komutları kabul edildi; Android harita penceresi bekleniyor. Fiziksel görünürlük doğrulanmadı.";notifyChanged();
             }finally{activeConnection=null;}
         }catch(Exception failure){
             ready=false;visible=false;
@@ -256,10 +256,10 @@ public final class DiLink3Projection {
             if(pending)try{cleanupFailed=!restorePending(false,epoch);}catch(Exception unavailable){cleanupFailed=true;}
             if(generation.get()==epoch){
                 nextAttempt=SystemClock.uptimeMillis()+30000;
-                if(cleanupFailed||pending)state="Stock restoration is pending. New projection is blocked; check ADB and press Retry.";
-                else if(failure instanceof VehicleLocalAdb.ApprovalRequiredException)state="Approve the Maps ADB key, then press Retry. Background work never offers a key.";
+                if(cleanupFailed||pending)state="Orijinal göstergeye geri dönülüyor. Yeni yansıtma engellendi; ADB'yi kontrol edip Tekrar Dene'ye basın.";
+                else if(failure instanceof VehicleLocalAdb.ApprovalRequiredException)state="Haritalar ADB anahtarını onaylayın, ardından Tekrar Dene'ye basın. Arka plan işlemleri asla anahtar sunmaz.";
                 else if(failure instanceof Failure)state=failureStatus(((Failure)failure).code);
-                else state="DiLink 3 projection could not finish. Check local ADB and press Retry; no general shell output was retained.";
+                else state="DiLink 3 yansıtması tamamlanamadı. Yerel ADB'yi kontrol edip Tekrar Dene'ye basın; genel kabuk çıktısı saklanmadı.";
                 notifyChanged();
             }
         }
@@ -341,17 +341,17 @@ public final class DiLink3Projection {
     }
     private static final class Failure extends IOException {final String code;Failure(String code){this.code=code;}}
     private static String failureStatus(String code){
-        if("identity".equals(code)||"sdk".equals(code))return "The Android/package identity does not match this DiLink 3 experiment. Projection is blocked.";
-        if("build".equals(code))return "The system build was not identified as DiLink 3. Send a firmware settings screenshot; projection and stock-mode writes are blocked.";
-        if("shell".equals(code))return "Local ADB is not Android shell. Projection is blocked.";
-        if("user".equals(code))return "The current Android user changed or could not be verified. Retry in the Maps user profile.";
-        if("service".equals(code)||"adapter".equals(code))return "The required AutoContainer and DiLink 3 map adapter were not verified. Android 10 alone is insufficient.";
-        if("journal".equals(code))return "Recovery ownership could not be saved reliably. No new projection is permitted; retry setup.";
-        if("resume".equals(code))return "The projection safety pause could not be saved. New output remains blocked; press Authorize or retry.";
-        if("display".equals(code))return "The exact public DiLink 3 projection display is unavailable. Stock restoration was attempted; press Retry.";
-        if("display_ambiguous".equals(code))return "More than one matching DiLink 3 projection display is present. New projection is blocked; press Retry after checking the display setup.";
-        if("parcel".equals(code))return "AutoContainer did not return an accepted Binder reply. Stock restoration was attempted; press Retry.";
-        if("cancelled".equals(code))return "The projection request changed; its owned mode was handed back to the car.";
-        return "DiLink 3 projection is waiting for verified stock restoration. Press Retry after checking ADB.";
+        if("identity".equals(code)||"sdk".equals(code))return "Android/paket kimliği bu DiLink 3 testiyle eşleşmiyor. Yansıtma engellendi.";
+        if("build".equals(code))return "Sistem sürümü DiLink 3 olarak tanımlanamadı. Yansıtma ve orijinal mod yazımları engellendi.";
+        if("shell".equals(code))return "Yerel ADB, Android kabuğu (shell) değil. Yansıtma engellendi.";
+        if("user".equals(code))return "Mevcut Android kullanıcısı değişti veya doğrulanamadı. Haritalar kullanıcı profilinde tekrar deneyin.";
+        if("service".equals(code)||"adapter".equals(code))return "Gerekli AutoContainer ve DiLink 3 harita bağdaştırıcısı doğrulanamadı. Yalnızca Android 10 olması yeterli değildir.";
+        if("journal".equals(code))return "Kurtarma kaydı güvenilir şekilde kaydedilemedi. Yeni yansıtmaya izin verilmiyor; kurulumu tekrarlayın.";
+        if("resume".equals(code))return "Yansıtma güvenlik duraklatması kaydedilemedi. Yeni çıktı engellendi; Yetkilendir veya tekrar dene butonuna basın.";
+        if("display".equals(code))return "Genel DiLink 3 yansıtma ekranı kullanılamıyor. Orijinal göstergeye dönülmeye çalışıldı; Tekrar Dene'ye basın.";
+        if("display_ambiguous".equals(code))return "Birden fazla eşleşen DiLink 3 yansıtma ekranı mevcut. Ekran kurulumunu kontrol edip Tekrar Dene'ye basın.";
+        if("parcel".equals(code))return "AutoContainer kabul edilen bir yanıt döndürmedi. Orijinal göstergeye dönülmeye çalışıldı; Tekrar Dene'ye basın.";
+        if("cancelled".equals(code))return "Yansıtma isteği değişti; mod araca geri devredildi.";
+        return "DiLink 3 yansıtması doğrulanmış orijinal gösterge dönüşünü bekliyor. ADB'yi kontrol edip Tekrar Dene'ye basın.";
     }
 }

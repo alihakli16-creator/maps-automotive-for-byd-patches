@@ -9,7 +9,7 @@ import android.widget.*;
 /** Persistent, live settings for our instrument-cluster route overlay. */
 public final class ClusterSettings {
     static final class State {
-        final boolean visible, mapEnabled, vehicleGuidance, pictureInPicture, satellite, backgroundStart;
+        final boolean visible, mapEnabled, vehicleGuidance, pictureInPicture, satellite, backgroundStart, quickButtons;
         final int size, side, margin, vertical, pointerVertical, pointerHorizontal, clusterTheme, logoPosition;
         State(android.content.SharedPreferences p) {
             mapEnabled=p.getBoolean("map_enabled",true);
@@ -28,6 +28,7 @@ public final class ClusterSettings {
             logoPosition=p.getInt("logo_position",LOGO_BOTTOM_LEFT)==LOGO_TOP_RIGHT?LOGO_TOP_RIGHT:LOGO_BOTTOM_LEFT;
             pictureInPicture=p.getBoolean("picture_in_picture",false);
             backgroundStart=p.getBoolean(ClusterBackgroundStart.KEY,false);
+            quickButtons=p.getBoolean("dilink3_quick_buttons",true);
         }
     }
     static final int THEME_DARK=0, THEME_LIGHT=1, THEME_SYSTEM=2, THEME_AUTO=3, LOGO_BOTTOM_LEFT=0, LOGO_TOP_RIGHT=1;
@@ -63,6 +64,7 @@ public final class ClusterSettings {
         catch(RuntimeException e){android.util.Log.w("MapsClusterTest","AAOS PiP",e);}
     }
     static State state(){return current;}
+    static boolean quickButtonsEnabled(){State s=current;return s==null||s.quickButtons;}
     static void toggleMap(){preferences.edit().putBoolean("map_enabled",!current.mapEnabled).apply();}
     static boolean untestedHud(){return preferences!=null&&preferences.getBoolean("hud_untested_firmware",false);}
     /** Restarts Maps; a killed guidance session is cleared by the next launch. */

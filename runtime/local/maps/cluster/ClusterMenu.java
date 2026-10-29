@@ -186,12 +186,13 @@ final class ClusterMenu {
             if(!control.isEnabled())return;control.setEnabled(false);
             Runnable done=()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();};
             if(on)new AlertDialog.Builder(activity).setTitle("DiLink 3 gösterge haritası test edilsin mi?")
-                .setMessage("Use only on a parked DiLink 3 head unit running Android 10. Maps will use local ADB to switch the instrument cluster into projection mode. Its map area can be blank for several seconds while the display is prepared.\n\nKeep ADB enabled and approve the Maps key if prompted. This is an unverified car test. Turn this option off or use Restore stock cluster if the result is not usable. A forced stop can leave projection active until Maps is opened again for recovery.")
+                .setMessage("Yalnızca park halindeki Android 10 / DiLink 3 araçlarda kullanın. Haritalar, gösterge panelini yansıtma moduna geçirmek için yerel ADB kullanır. Ekran hazırlanırken harita alanı birkaç saniye boş kalabilir.\n\nADB'yi açık tutun ve sorulursa Haritalar anahtarını onaylayın. Sonuç kullanılamazsa bu seçeneği kapatın veya Orijinal göstergeyi geri yükle butonunu kullanın.")
                 .setNegativeButton("İptal",(d,w)->done.run()).setOnCancelListener(d->done.run())
                 .setPositiveButton("Testi başlat",(d,w)->DiLink3Projection.configure(activity,true,true,done)).show();
             else DiLink3Projection.configure(activity,false,false,done);
         });
         enabledRow.setBackground(ripple(0));enabledRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
+        toggle("Hızlı yansıtma butonları (Y / O)","Harita ekranında Yetkilendirme (Y) ve Orijinal Gösterge (O) butonlarını göster","dilink3_quick_buttons",prefs.getBoolean("dilink3_quick_buttons",true));
         LinearLayout state=row("Yansıtma durumu",DiLink3Projection.status());rule();
         final long generation=pageGeneration;
         Runnable status=new Runnable(){public void run(){
@@ -200,9 +201,9 @@ final class ClusterMenu {
         }};readerMain.postDelayed(status,1000);
         action("Yetkilendir veya tekrar dene","Bu multimedyanın yerel ADB bağlantısını onaylayın",()->DiLink3Projection.retry(activity,true,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
         action("Orijinal göstergeyi geri yükle","Yansıtmayı duraklat ve orijinal gösterge düzenine dön",()->DiLink3Projection.restore(activity,()->{if(dialog.isShowing()&&"dilink3".equals(page))diLink3();}));
-        note("Also keep Show cluster map enabled. This test creates the known DiLink 3 projection display and sends the native Google cluster screen there. It does not enable the BYD battery reader and does not claim HUD support.");
-        note("127.0.0.1:5555 is this head unit. Keep it unchanged. Send the exact status, firmware version and whether a map is physically visible. No uninstall or account reset is needed.");
-        note("Restore pauses this session. Turn the test option off after testing to keep it off on the next Maps launch.");
+        note("Ayrıca 'Gösterge haritasını göster' seçeneğini açık tutun. Bu test, bilinen DiLink 3 yansıtma ekranını oluşturur ve orijinal Google gösterge ekranını oraya gönderir. BYD batarya okuyucusunu etkinleştirmez ve HUD desteği sağlamaz.");
+        note("127.0.0.1:5555 bu multimedya ekranıdır. Değiştirmeyin. Haritanın fiziksel olarak görünüp görünmediğini kontrol edin.");
+        note("Orijinal göstergeye dönüldüğünde yansıtma duraklatılır. Testten sonra sonraki açılışta kapalı kalması için testi kapatabilirsiniz.");
     }
     private void sendToCar(){
         start("sendtocar","Araca gönder");
