@@ -192,7 +192,7 @@ final class ClusterMenu {
             else DiLink3Projection.configure(activity,false,false,done);
         });
         enabledRow.setBackground(ripple(0));enabledRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
-        toggle("Hızlı yansıtma butonları (Y / O)","Harita ekranında Yetkilendirme (Y) ve Orijinal Gösterge (O) butonlarını göster","dilink3_quick_buttons",prefs.getBoolean("dilink3_quick_buttons",true));
+        toggle("Hızlı işlem butonları (Y / O / U)","Harita ekranında Yetkilendirme (Y), Orijinal Gösterge (O) ve Uzaklaştırma (U) butonlarını göster","dilink3_quick_buttons",prefs.getBoolean("dilink3_quick_buttons",true));
         LinearLayout state=row("Yansıtma durumu",DiLink3Projection.status());rule();
         final long generation=pageGeneration;
         Runnable status=new Runnable(){public void run(){

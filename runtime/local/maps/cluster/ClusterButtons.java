@@ -21,9 +21,9 @@ final class ClusterButtons {
     private static int dp(Context c,int n){return Math.round(n*c.getResources().getDisplayMetrics().density);}
     private static final class Controls implements ViewTreeObserver.OnPreDrawListener {
         final Activity activity; final ViewGroup root; final ScrollView column; final LinearLayout buttons;
-        final ImageButton settings,map,voice,auth,restore;
-        final FrameLayout settingsSlot,voiceSlot,authSlot,restoreSlot;
-        final Icon settingsIcon=new Icon(false),mapIcon=new Icon(true),voiceIcon=new Icon(false,true),authIcon=new Icon(3),restoreIcon=new Icon(4);
+        final ImageButton settings,map,voice,auth,restore,zoom;
+        final FrameLayout settingsSlot,voiceSlot,authSlot,restoreSlot,zoomSlot;
+        final Icon settingsIcon=new Icon(false),mapIcon=new Icon(true),voiceIcon=new Icon(false,true),authIcon=new Icon(3),restoreIcon=new Icon(4),zoomIcon=new Icon(5);
         View template,bar,bottom; Drawable nativeBackground; int lastColour,lastSurface,lastActive;
         boolean styled,wasOn; int tx,ty,tw,th;
         Controls(Activity a,ViewGroup r) {
@@ -35,8 +35,10 @@ final class ClusterButtons {
             voice=button(voiceIcon,"Talk to Gemini Live");voiceSlot=(FrameLayout)voice.getParent();
             auth=button(authIcon,"Yetkilendir veya tekrar dene");authSlot=(FrameLayout)auth.getParent();
             restore=button(restoreIcon,"Orijinal göstergeyi geri yükle");restoreSlot=(FrameLayout)restore.getParent();
+            zoom=button(zoomIcon,"Gösterge haritasını uzaklaştır (uzun basış: yakınlaştır)");zoomSlot=(FrameLayout)zoom.getParent();
             settings.setTag("local.cluster.settings.button");map.setTag("local.cluster.map.button");voice.setTag("local.cluster.gemini.button");
             auth.setTag("local.cluster.dilink3.auth.button");restore.setTag("local.cluster.dilink3.restore.button");
+            zoom.setTag("local.cluster.dilink3.zoom.button");
             GeminiLaunch.init(a);voice.setOnClickListener(v->GeminiLaunch.open(a));
             settings.setOnClickListener(v->ClusterSettings.show(a));
             map.setOnClickListener(v->{ClusterSettings.toggleMap();updateState();});
@@ -49,6 +51,21 @@ final class ClusterButtons {
                 Toast.makeText(activity,"Orijinal gösterge düzenine dönüldü",Toast.LENGTH_SHORT).show();
                 DiLink3Projection.init(activity.getApplication(),null);
                 DiLink3Projection.restore(activity,null);
+            });
+            zoom.setOnClickListener(v->{
+                if(ClusterZoom.manualStep(-1)){
+                    Toast.makeText(activity,"Gösterge paneli haritası uzaklaştırıldı",Toast.LENGTH_SHORT).show();
+                }else{
+                    Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
+                }
+            });
+            zoom.setOnLongClickListener(v->{
+                if(ClusterZoom.manualStep(1)){
+                    Toast.makeText(activity,"Gösterge paneli haritası yakınlaştırıldı",Toast.LENGTH_SHORT).show();
+                }else{
+                    Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
+                }
+                return true;
             });
             column.addView(buttons);column.setVisibility(View.INVISIBLE);
             root.addView(column,new FrameLayout.LayoutParams(1,1,Gravity.TOP|Gravity.LEFT));
@@ -75,7 +92,7 @@ final class ClusterButtons {
             }
             if(template==null||bar==null||!bar.isShown()||activity.isInPictureInPictureMode()||template.getWidth()==0){
                 column.setVisibility(View.INVISIBLE);settingsSlot.setVisibility(View.INVISIBLE);voiceSlot.setVisibility(View.INVISIBLE);
-                authSlot.setVisibility(View.INVISIBLE);restoreSlot.setVisibility(View.INVISIBLE);return true;
+                authSlot.setVisibility(View.INVISIBLE);restoreSlot.setVisibility(View.INVISIBLE);zoomSlot.setVisibility(View.INVISIBLE);return true;
             }
             Rect anchor=new Rect(),area=new Rect();template.getGlobalVisibleRect(anchor);bar.getGlobalVisibleRect(area);
             int end=anchor.bottom;int slot=template.getHeight();
@@ -86,15 +103,25 @@ final class ClusterButtons {
                 }
             }}
             int limit=area.bottom;Rect obstacle=new Rect();if(bottom!=null&&bottom.isShown()&&bottom.getGlobalVisibleRect(obstacle))limit=Math.min(limit,obstacle.top);
-            int rows=GeminiLaunch.buttonEnabled()?2:1;
-            voiceSlot.setVisibility(rows==2?View.VISIBLE:View.GONE);
+            int nativeRows=GeminiLaunch.buttonEnabled()?2:1;
+            voiceSlot.setVisibility(nativeRows==2?View.VISIBLE:View.GONE);
             boolean showQuick=DiLink3Projection.isCandidate()&&ClusterSettings.quickButtonsEnabled();
             authSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);
             restoreSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);
-            if(showQuick)rows+=2;
-            int height=ClusterButtonPlacement.columnHeight(slot,rows,limit-end);
-            column.setVerticalScrollBarEnabled(height<rows*slot);column.setScrollbarFadingEnabled(false);
-            if(rows==1||height>=rows*slot)column.scrollTo(0,0);
+            zoomSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);
+
+            int available=Math.max(0,limit-end);
+            int remaining=Math.max(0,available-nativeRows*slot);
+            int quickSlot=dp(activity,44);
+            if(showQuick&&remaining>0){
+                quickSlot=Math.min(dp(activity,46),Math.max(dp(activity,36),remaining/3));
+            }
+            int quickBtnSize=Math.max(dp(activity,32),Math.min(dp(activity,42),Math.min(anchor.width(),quickSlot-dp(activity,4))));
+            int totalHeight=nativeRows*slot+(showQuick?3*quickSlot:0);
+            int height=Math.min(available,totalHeight);
+
+            column.setVerticalScrollBarEnabled(totalHeight>available);column.setScrollbarFadingEnabled(false);
+            if(totalHeight<=available)column.scrollTo(0,0);
             int[] origin=new int[2];root.getLocationOnScreen(origin);
             FrameLayout.LayoutParams right=(FrameLayout.LayoutParams)settingsSlot.getLayoutParams();
             // Mirror against the actual native column, including Maps' per-app language.
@@ -116,11 +143,17 @@ final class ClusterButtons {
             if(tx!=x||ty!=y||tw!=width||th!=height){
                 tx=x;ty=y;tw=width;th=height;FrameLayout.LayoutParams lp=(FrameLayout.LayoutParams)column.getLayoutParams();lp.width=width;lp.height=height;lp.leftMargin=x;lp.topMargin=y;column.setLayoutParams(lp);
             }
-            for(ImageButton b:new ImageButton[]{map,voice,auth,restore}){
+            for(ImageButton b:new ImageButton[]{map,voice}){
                 View slotView=(View)b.getParent();ViewGroup.LayoutParams sp=slotView.getLayoutParams();
                 if(sp.width!=width||sp.height!=slot){sp.width=width;sp.height=slot;slotView.setLayoutParams(sp);}
                 FrameLayout.LayoutParams bp=(FrameLayout.LayoutParams)b.getLayoutParams();
                 if(bp.width!=anchor.width()||bp.height!=template.getHeight()){bp.width=anchor.width();bp.height=template.getHeight();b.setLayoutParams(bp);}
+            }
+            for(ImageButton b:new ImageButton[]{auth,restore,zoom}){
+                View slotView=(View)b.getParent();ViewGroup.LayoutParams sp=slotView.getLayoutParams();
+                if(sp.width!=width||sp.height!=quickSlot){sp.width=width;sp.height=quickSlot;slotView.setLayoutParams(sp);}
+                FrameLayout.LayoutParams bp=(FrameLayout.LayoutParams)b.getLayoutParams();
+                if(bp.width!=quickBtnSize||bp.height!=quickBtnSize){bp.width=quickBtnSize;bp.height=quickBtnSize;bp.gravity=Gravity.CENTER;b.setLayoutParams(bp);}
             }
             style();updateState();column.setVisibility(View.VISIBLE);return true;
         }
@@ -133,8 +166,8 @@ final class ClusterButtons {
                 if(v.getBackground()!=null&&v.getBackground().getConstantState()!=null){nativeBackground=v.getBackground();break;}
                 if(!(v.getParent() instanceof View))break;v=(View)v.getParent();
             }
-            for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore}){b.setBackground(background(surface));b.setClipToOutline(true);}
-            float elevation=template.getElevation();for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore})b.setElevation(Math.max(elevation,dp(activity,2)));
+            for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore,zoom}){b.setBackground(background(surface));b.setClipToOutline(true);}
+            float elevation=template.getElevation();for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore,zoom})b.setElevation(Math.max(elevation,dp(activity,2)));
             settingsIcon.colour=ink;settingsIcon.invalidateSelf();voiceIcon.colour=ink;voiceIcon.invalidateSelf();styled=true;wasOn=!ClusterSettings.state().mapEnabled;
         }
         Drawable background(int colour){
@@ -150,7 +183,7 @@ final class ClusterButtons {
     }
     /** Dashboard toggle and instrument settings, at the same optical size as the native gear. */
     private static final class Icon extends Drawable {
-        final int kind; // 0: settings, 1: map, 2: voice, 3: auth ('Y'), 4: restore ('O')
+        final int kind; // 0: settings, 1: map, 2: voice, 3: auth ('Y'), 4: restore ('O'), 5: zoom ('U')
         boolean on;int colour=0xff303134;final Paint paint=new Paint(3);
         Icon(boolean m){this(m?1:0);}
         Icon(boolean m,boolean v){this(v?2:(m?1:0));}
@@ -178,6 +211,15 @@ final class ClusterButtons {
             }else if(kind==4){
                 paint.setColor(0xffffa726);paint.setStrokeWidth(3.4f);
                 canvas.drawCircle(24,24,9.5f,paint);
+            }else if(kind==5){
+                paint.setColor(0xff00e676);paint.setStrokeWidth(3.4f);
+                Path u=new Path();
+                u.moveTo(16,14);
+                u.lineTo(16,25);
+                u.quadTo(16,33,24,33);
+                u.quadTo(32,33,32,25);
+                u.lineTo(32,14);
+                canvas.drawPath(u,paint);
             }else{
                 canvas.drawRoundRect(13,15,35,33,4,4,paint);canvas.drawArc(17,19,31,31,195,150,false,paint);
                 canvas.drawLine(24,27,28,22,paint);canvas.drawLine(20,30,28,30,paint);
