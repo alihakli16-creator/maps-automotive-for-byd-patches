@@ -1,0 +1,18 @@
+{
+ "models": [
+  {
+   "id": "sealu",
+   "label": "BYD Seal U DM-i",
+   "paint": [
+    15
+   ]
+  },
+  {
+   "id": "tang2024",
+   "label": "BYD Tang 2024",
+   "paint": [
+    15
+   ]
+  }
+ ]
+}

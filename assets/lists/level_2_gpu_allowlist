@@ -1,0 +1,447 @@
+A640 MoZoiD v7
+AMD RAVEN2 (LLVM 12.0.1, DRM 3.35, 5.4.206-19241-g84d38d3cc531)
+AMD STONEY (DRM 3.27.0, 4.14.221-37010-g61523ee5d009, LLVM 9.0.0)
+AMD STONEY (LLVM 12.0.1, DRM 3.42, 5.10.131-19115-g2e2fb0ed324d)
+ANGLE ((Samsung Xclipse 530) on Vulkan 1.3.279)
+ANGLE ((Samsung Xclipse 530) on Vulkan 1.3.304)
+ANGLE ((Samsung Xclipse 540) on Vulkan 1.3.279)
+ANGLE ((Samsung Xclipse 540) on Vulkan 1.3.304)
+ANGLE ((Samsung Xclipse 550) on Vulkan 1.4.304)
+ANGLE ((Samsung Xclipse 920) on Vulkan 1.3.279)
+ANGLE ((Samsung Xclipse 940) on Vulkan 1.3.279)
+ANGLE ((Samsung Xclipse 940) on Vulkan 1.3.304)
+ANGLE ((Samsung Xclipse 950) on Vulkan 1.3.279)
+ANGLE ((Samsung Xclipse 950) on Vulkan 1.3.304)
+ANGLE ((Samsung Xclipse 960) on Vulkan 1.4.304)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon 610M (RADV RAPHAEL_MENDOCINO)) (0x00001506)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon 610M (RADV RAPHAEL_MENDOCINO)) (0x0000164E)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RAPHAEL_MENDOCINO)) (0x00001506)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.0.5)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.2.0)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.2.4)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.2.6)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.3.3)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RENOIR)) (0x000015E7)), venus-24.2.6)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RENOIR)) (0x000015E7)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RENOIR)) (0x00001636)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RENOIR)) (0x00001638)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Graphics (RADV RENOIR)) (0x0000164C)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 10 Graphics (RADV RAVEN)) (0x000015D8)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 3 Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.0.5)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 3 Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.2.4)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 3 Graphics (RADV RAVEN2)) (0x000015D8)), venus-24.2.8)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 8 Graphics (RADV RAVEN)) (0x000015D8)), venus-24.0.5)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 8 Graphics (RADV RAVEN)) (0x000015D8)), venus-24.2.0)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 8 Graphics (RADV RAVEN)) (0x000015D8)), venus-24.2.4)
+ANGLE (AMD, Vulkan 1.3.269 (Virtio-GPU Venus (AMD Radeon Vega 8 Graphics (RADV RAVEN)) (0x000015D8)), venus-24.2.8)
+ANGLE (ARM, Vulkan 1.1.177 (Mali-G52 MC2 (0x74021000)), Mali-G52 MC2-32.1.0)
+ANGLE (ARM, Vulkan 1.1.177 (Mali-G57 MC2 (0x90930010)), Mali-G57 MC2-32.1.0)
+ANGLE (ARM, Vulkan 1.1.177 (Mali-G610 MC3 (0xA8670000)), Mali-G610 MC3-32.1.0)
+ANGLE (ARM, Vulkan 1.1.177 (Mali-G68 (0x92041010)), Mali-G68-32.1.0)
+ANGLE (ARM, Vulkan 1.1.191 (Mali-G57 (0x90910010)), Mali-G57-34.0.0)
+ANGLE (ARM, Vulkan 1.1.213 (Mali-G72 (0x62210010)), Mali-G72-38.1.0)
+ANGLE (ARM, Vulkan 1.1.213 (Mali-G78 (0x92020010)), Mali-G78-38.0.0)
+ANGLE (ARM, Vulkan 1.1.219 (Mali-G610 MC6 (0xA8670000)), Mali-G610 MC6-38.1.0)
+ANGLE (ARM, Vulkan 1.1.219 (Mali-G710 MC10 (0xA8620004)), Mali-G710 MC10-38.1.0)
+ANGLE (ARM, Vulkan 1.1.255 (Virtio-GPU Venus (Mali-G72) (0x62210030)), venus-40.0.0)
+ANGLE (ARM, Vulkan 1.3.219 (Mali-G57 MC2 (0x90930010)), Mali-G57 MC2-38.1.0)
+ANGLE (ARM, Vulkan 1.3.219 (Mali-G610 MC4 (0xA8670000)), Mali-G610 MC4-38.1.0)
+ANGLE (ARM, Vulkan 1.3.219 (Mali-G68 (0x92041010)), Mali-G68-38.1.0)
+ANGLE (ARM, Vulkan 1.3.247 (Mali-G615 MC2 (0xB8A31030)), Mali-G615 MC2-44.1.0)
+ANGLE (ARM, Vulkan 1.3.247 (Mali-G615 MC6 (0xB8A31030)), Mali-G615 MC6-44.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G52) (0x70021000)), venus-54.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G52) (0x74021000)), venus-44.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G57) (0x90010000)), venus-54.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G57) (0x90010010)), venus-54.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G57) (0x90910000)), venus-44.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G57) (0x90910010)), venus-44.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G72) (0x60010030)), venus-54.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G72) (0x62210030)), venus-44.1.0)
+ANGLE (ARM, Vulkan 1.3.269 (Virtio-GPU Venus (Mali-G925-Immortalis) (0xD8300010)), venus-51.0.0)
+ANGLE (ARM, Vulkan 1.3.278 (Mali-G52 (0x72120000)), Mali-G52-49.1.0)
+ANGLE (ARM, Vulkan 1.3.278 (Mali-G52 MC2 (0x74021000)), Mali-G52 MC2-49.1.0)
+ANGLE (ARM, Vulkan 1.3.278 (Mali-G57 (0x90910010)), Mali-G57-49.1.0)
+ANGLE (ARM, Vulkan 1.3.278 (Mali-G57 MC2 (0x90930010)), Mali-G57 MC2-49.1.0)
+ANGLE (ARM, Vulkan 1.3.278 (Mali-G68 MC4 (0x92041010)), Mali-G68 MC4-49.1.0)
+ANGLE (ARM, Vulkan 1.3.278 (Mali-G720 MC7 (0xC8700010)), Mali-G720 MC7-49.1.0)
+ANGLE (ARM, Vulkan 1.3.278 (Mali-G720 MC8 (0xC8700010)), Mali-G720 MC8-49.1.0)
+ANGLE (ARM, Vulkan 1.3.283 (Mali-G52 (0x74021000)), Mali-G52-19.1.0)
+ANGLE (ARM, Vulkan 1.3.283 (Mali-G52 (0x74021000)), Mali-G52-25.0.0)
+ANGLE (ARM, Vulkan 1.3.283 (Mali-G57 (0x90910010)), Mali-G57-49.1.0)
+ANGLE (ARM, Vulkan 1.3.288 (Mali-G57 (0x90910010)), Mali-G57-48.0.0)
+ANGLE (ARM, Vulkan 1.3.303 (Mali-G57 MC2 (0x90930010)), Mali-G57 MC2-54.1.0)
+ANGLE (ARM, Vulkan 1.3.305 (Mali-G610 MC2 (0xA8670000)), Mali-G610 MC2-54.1.0)
+ANGLE (ARM, Vulkan 1.3.315 (Mali-G57 (0x90910010)), Mali-G57-54.1.0)
+ANGLE (ARM, Vulkan 1.4.303 (Mali-G78 (0x92020000)), Mali-G78-54.1.0)
+ANGLE (ARM, Vulkan 1.4.305 (Mali-G710 (0xA8620000)), Mali-G710-54.2.0)
+ANGLE (ARM, Vulkan 1.4.305 (Mali-G715 (0xB8A20000)), Mali-G715-54.1.0)
+ANGLE (ARM, Vulkan 1.4.305 (Mali-G715 (0xB8A20000)), Mali-G715-54.2.0)
+ANGLE (ARM, Vulkan 1.4.305 (Mali-G78 (0x92020000)), Mali-G78-54.3.0)
+ANGLE (ARM, Vulkan 1.4.343 (Mali-G710 (0xA8620000)), Mali-G710-54.3.0)
+ANGLE (ARM, Vulkan 1.4.343 (Mali-G715 (0xB8A20000)), Mali-G715-54.3.0)
+ANGLE (ARM, Vulkan 1.4.345 (Mali-G925-Immortalis MC12 (0xD8300000)), Mali-G925-Immortalis MC12-56.0.0)
+ANGLE (ARM, Vulkan 1.4.349 (Mali-G2-Ultra-NX MC12 (0xF0F08000)), Mali-G2-Ultra-NX MC12-56.0.0)
+ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 16.0.0) (0x0000C0DE)), SwiftShader driver-5.0.0)
+ANGLE (Google, Vulkan 1.3.0 (Virtio-GPU GFXStream (SwiftShader Device (LLVM google3-trunk)) (0x0000C0DE)), gfxstream (SwiftShader driver)-26.2.99)
+ANGLE (Imagination Technologies, Vulkan 1.3.288 (PowerVR C-Series CXTP-48-1536 MC1 (0x70061042)), PowerVR C-Series Vulkan Driver-1.602.400)
+ANGLE (Imagination Technologies, Vulkan 1.4.303 (PowerVR C-Series CXTP-48-1536 MC1 (0x70061042)), PowerVR C-Series Vulkan Driver-1.634.2906)
+ANGLE (Imagination Technologies, Vulkan 1.4.317 (PowerVR C-Series CXTP-48-1536 MC1 (0x70061042)), PowerVR C-Series Vulkan Driver-1.662.3024)
+ANGLE (Imagination Technologies, Vulkan 1.4.317 (PowerVR D-Series DXT-48-1536 MC1 (0x71061212)), PowerVR D-Series Vulkan Driver-1.662.3024)
+ANGLE (Imagination Technologies, Vulkan 1.4.344 (PowerVR C-Series CXTP-48-1536 MC1 (0x70061042)), PowerVR C-Series Vulkan Driver-1.677.310)
+ANGLE (Intel, Vulkan 1.1.255 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A8)), venus-23.2.0)
+ANGLE (Intel, Vulkan 1.1.255 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-23.2.0)
+ANGLE (Intel, Vulkan 1.3.252 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-23.2.0)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Arc(tm) Graphics (MTL)) (0x00007D55)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x00004626)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x00004628)), venus-24.2.0)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x00004628)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x00004628)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A3)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A6)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A6)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A8)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A8)), venus-24.2.2)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A8)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046A8)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-24.2.0)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-24.2.2)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-24.2.6)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL GT2)) (0x000046B3)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D0)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D0)), venus-24.2.0)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D0)), venus-24.2.2)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D0)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D0)), venus-24.2.6)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D0)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D0)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D1)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D1)), venus-24.2.0)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D1)), venus-24.2.2)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D1)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D1)), venus-24.2.6)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D1)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D1)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D2)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D3)), venus-24.2.6)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D3)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (ADL-N)) (0x000046D4)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (MTL)) (0x00007D45)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (MTL)) (0x00007D45)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (MTL)) (0x00007D45)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-P)) (0x0000A7A0)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-P)) (0x0000A7A8)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-P)) (0x0000A7AB)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A721)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A721)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7A1)), venus-24.2.6)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7A1)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7A9)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7A9)), venus-24.2.2)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7A9)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7A9)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7AC)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7AD)), venus-24.2.0)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Graphics (RPL-U)) (0x0000A7AD)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) HD Graphics 530 (SKL GT2)) (0x00001912)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) HD Graphics 620 (KBL GT2)) (0x00005916)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Iris(R) Plus Graphics (ICL GT2)) (0x00008A52)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT1)) (0x00009A68)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-24.2.0)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-24.2.2)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-24.2.6)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics (TGL GT2)) (0x00009A78)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics 630 (CFL GT2)) (0x00003E91)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics 630 (CML GT2)) (0x00009BC8)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) UHD Graphics 730 (ADL-S GT1)) (0x00004692)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Xe Graphics (TGL GT2)) (0x00009A40)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Xe Graphics (TGL GT2)) (0x00009A49)), venus-24.0.5)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Xe Graphics (TGL GT2)) (0x00009A49)), venus-24.2.4)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Xe Graphics (TGL GT2)) (0x00009A49)), venus-24.2.8)
+ANGLE (Intel, Vulkan 1.3.269 (Virtio-GPU Venus (Intel(R) Xe Graphics (TGL GT2)) (0x00009A49)), venus-24.3.3)
+ANGLE (Intel, Vulkan 1.3.328 (Intel(R) Graphics (RPL-U) (0x0000A7AC)), Intel open-source Mesa driver-25.3.2)
+ANGLE (Intel, Vulkan 1.4.335 (Intel(R) Graphics (PTL) (0x0000B090)), Intel open-source Mesa driver-26.0.2)
+ANGLE (Intel, Vulkan 1.4.335 (Intel(R) Graphics (PTL) (0x0000B090)), Intel open-source Mesa driver-26.0.6)
+ANGLE (Intel, Vulkan 1.4.335 (Intel(R) Iris(R) Xe Graphics (ADL GT2) (0x000046A8)), Intel open-source Mesa driver-26.0.6)
+ANGLE (Intel, Vulkan 1.4.348 (Intel(R) Graphics (ADL GT2) (0x000046B3)), Intel open-source Mesa driver-26.1.3)
+ANGLE (Intel, Vulkan 1.4.348 (Intel(R) Graphics (PTL) (0x0000B090)), Intel open-source Mesa driver-26.1.1)
+ANGLE (Intel, Vulkan 1.4.348 (Intel(R) Graphics (PTL) (0x0000B090)), Intel open-source Mesa driver-26.1.3)
+ANGLE (Intel, Vulkan 1.4.348 (Intel(R) Iris(R) Xe Graphics (ADL GT2) (0x000046A8)), Intel open-source Mesa driver-26.1.1)
+ANGLE (Intel, Vulkan 1.4.348 (Intel(R) Iris(R) Xe Graphics (ADL GT2) (0x000046A8)), Intel open-source Mesa driver-26.1.3)
+ANGLE (Intel, Vulkan 1.4.354 (Intel(R) Graphics (ADL GT2) (0x000046B3)), Intel open-source Mesa driver-26.1.6)
+ANGLE (Intel, Vulkan 1.4.354 (Intel(R) Graphics (PTL) (0x0000B090)), Intel open-source Mesa driver-26.1.6)
+ANGLE (Intel, Vulkan 1.4.354 (Intel(R) Graphics (PTL) (0x0000B090)), Intel open-source Mesa driver-26.2.0)
+ANGLE (Intel, Vulkan 1.4.354 (Intel(R) Iris(R) Xe Graphics (ADL GT2) (0x000046A8)), Intel open-source Mesa driver-26.2.1)
+ANGLE (Qualcomm, Opengles 1.1.177 (Adreno (TM) 750 (0x90930010)), Adreno (TM) 750-32.1.0)
+ANGLE (Qualcomm, Opengles 1.1.177 (Adreno (TM) 840 (0x90930010)), Adreno (TM) 840-32.1.0)
+ANGLE (Qualcomm, Vulkan 1.1.128 (Adreno (TM) 610 (0x06010001)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.615.1)
+ANGLE (Qualcomm, Vulkan 1.1.128 (Adreno (TM) 610 (0x06010001)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.615.102)
+ANGLE (Qualcomm, Vulkan 1.1.128 (Adreno (TM) 610 (0x06010001)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.615.98)
+ANGLE (Qualcomm, Vulkan 1.1.128 (Adreno (TM) 660 (0x06060001)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.530.0)
+ANGLE (Qualcomm, Vulkan 1.3.128 (Adreno (TM) 619 (0x06010901)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.762.40)
+ANGLE (Qualcomm, Vulkan 1.3.128 (Adreno (TM) 619 (0x06010901)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.762.43)
+ANGLE (Qualcomm, Vulkan 1.3.128 (Adreno (TM) 732 (0x43030B00)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.762.36)
+ANGLE (Qualcomm, Vulkan 1.3.128 (Adreno (TM) 732 (0x43030B00)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.762.41)
+ANGLE (Qualcomm, Vulkan 1.3.128 (Adreno (TM) 735 (0x43030B00)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.762.36)
+ANGLE (Qualcomm, Vulkan 1.3.128 (Adreno (TM) 740 (0x43050A01)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.676.1)
+ANGLE (Qualcomm, Vulkan 1.3.128 (Adreno (TM) 750 (0x43051401)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.762.41)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 710 (0x07010000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.51)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 710 (0x07010000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.58)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 710 (0x07010000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.64)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 710 (0x07010000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.70)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 810 (0x44010000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.46)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 810 (0x44010000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.63)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 825 (0x44030000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.69)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 825 (0x44030000)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.71)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 830 (0x44050001)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.1)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 830 (0x44050001)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.64)
+ANGLE (Qualcomm, Vulkan 1.3.284 (Adreno (TM) 830 (0x44050001)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.800.71)
+ANGLE (Qualcomm, Vulkan 1.4.295 (Adreno (TM)  X1-85 (0x43050C00)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.855.0)
+ANGLE (Qualcomm, Vulkan 1.4.295 (Adreno (TM)  X1-85 (0x43050C01)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.881.0)
+ANGLE (Qualcomm, Vulkan 1.4.295 (Adreno (TM)  X1-85 (0x43050C01)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.884.0)
+ANGLE (Qualcomm, Vulkan 1.4.295 (Adreno (TM)  X1-85 (0x43050C01)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.886.4)
+ANGLE (Qualcomm, Vulkan 1.4.295 (Adreno (TM)  X1-85 (0x43050C01)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.886.5)
+ANGLE (Qualcomm, Vulkan 1.4.295 (Adreno (TM)  X1-85 (0x43050C01)), Qualcomm Technologies Inc. Adreno Vulkan Driver-512.886.6)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 530 (0x01300100)), Samsung Proprietary driver-24.0.539)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 530 (0x01300100)), Samsung Proprietary driver-24.0.545)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 530 (0x01300100)), Samsung Proprietary driver-24.3.9)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 540 (0x02300100)), Samsung Proprietary driver-24.0.545)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 540 (0x02300100)), Samsung Proprietary driver-24.0.560)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 920 (0x000073A0)), Samsung Proprietary driver-24.0.534)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 920 (0x000073A0)), Samsung Proprietary driver-24.0.545)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 930 (0x02600200)), Samsung Proprietary driver-24.3.9)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 940 (0x02600200)), Samsung Proprietary driver-24.0.534)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 940 (0x02600200)), Samsung Proprietary driver-24.0.545)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.3.279 (Samsung Xclipse 940 (0x02600200)), Samsung Proprietary driver-24.3.9)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.304 (Samsung Xclipse 550 (0x03300100)), 26.1.72 git hash: f211a5d51c9c)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.342 (Samsung Xclipse 970 (0x05600100)), 26.1.53 git hash: 4df3c04588d3)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.342 (Samsung Xclipse 970 (0x05600200)), 26.1.67 git hash: 558ec66238b3)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.342 (Samsung Xclipse 970 (0x05600200)), 26.1.71 git hash: 5cbf037825ae)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.350 (Samsung Xclipse 960 (0x05600101)), 26.1.79 git hash: 1bfd310b67e8)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.350 (Samsung Xclipse 960 (0x05600200)), 26.1.75 git hash: eb0250539776)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.350 (Samsung Xclipse 960 (0x05600200)), 26.1.79 git hash: 1bfd310b67e8)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.350 (Samsung Xclipse 960 (0x05600200)), 26.1.93 git hash: 47f0eab5c088)
+ANGLE (Samsung Electronics Co. Ltd., Vulkan 1.4.350 (Samsung Xclipse 960 (0x05600201)), 26.1.93 git hash: 47f0eab5c088)
+ANGLE (Samsung Xclipse 530) on Vulkan 1.3.231
+ANGLE (Samsung Xclipse 530) on Vulkan 1.3.279
+ANGLE (Samsung Xclipse 540) on Vulkan 1.3.279
+ANGLE (Samsung Xclipse 920) on Vulkan 1.1.179
+ANGLE (Samsung Xclipse 920) on Vulkan 1.3.231
+ANGLE (Samsung Xclipse 920) on Vulkan 1.3.279
+ANGLE (Samsung Xclipse 940) on Vulkan 1.3.231
+ANGLE (Samsung Xclipse 940) on Vulkan 1.3.264
+ANGLE (Samsung Xclipse 940) on Vulkan 1.3.279
+ANGLE (Samsung Xclipse 950) on Vulkan 1.3.279
+Adreno (TM) 
+Adreno (TM)  X1-85
+Adreno (TM) 405
+Adreno (TM) 418
+Adreno (TM) 420
+Adreno (TM) 430
+Adreno (TM) 4XX
+Adreno (TM) 504
+Adreno (TM) 505
+Adreno (TM) 506
+Adreno (TM) 508
+Adreno (TM) 509
+Adreno (TM) 510
+Adreno (TM) 512
+Adreno (TM) 530
+Adreno (TM) 540
+Adreno (TM) 610
+Adreno (TM) 611
+Adreno (TM) 612
+Adreno (TM) 613
+Adreno (TM) 615
+Adreno (TM) 616
+Adreno (TM) 618
+Adreno (TM) 619
+Adreno (TM) 619L
+Adreno (TM) 620
+Adreno (TM) 629
+Adreno (TM) 629b
+Adreno (TM) 630
+Adreno (TM) 640
+Adreno (TM) 642
+Adreno (TM) 642L
+Adreno (TM) 643
+Adreno (TM) 644
+Adreno (TM) 650
+Adreno (TM) 660
+Adreno (TM) 702
+Adreno (TM) 704
+Adreno (TM) 710
+Adreno (TM) 720
+Adreno (TM) 722
+Adreno (TM) 725
+Adreno (TM) 730
+Adreno (TM) 732
+Adreno (TM) 735
+Adreno (TM) 740
+Adreno (TM) 750
+Adreno (TM) 752
+Adreno (TM) 810
+Adreno (TM) 812
+Adreno (TM) 825
+Adreno (TM) 829
+Adreno (TM) 830
+Adreno (TM) 840
+Adreno (TM) 845
+Adreno (TM) 850
+Adreno (TM) A12
+Adreno (TM) A21
+Adreno (TM) A32
+Adreno650
+FD618
+Maleoon 910
+Mali-G1-Ultra MC12
+Mali-G2-Ultra MC12
+Mali-G2-Ultra-NX MC12
+Mali-G31
+Mali-G310
+Mali-G51
+Mali-G52
+Mali-G52 MC1
+Mali-G52 MC2
+Mali-G57
+Mali-G57 MC2
+Mali-G57 MC3
+Mali-G57 MC4
+Mali-G57 MC5
+Mali-G610
+Mali-G610 MC2
+Mali-G610 MC3
+Mali-G610 MC4
+Mali-G610 MC6
+Mali-G615 MC2
+Mali-G615 MC5
+Mali-G615 MC6
+Mali-G625 MC1
+Mali-G625 MC2
+Mali-G68
+Mali-G68 MC4
+Mali-G71
+Mali-G71 MP2
+Mali-G710
+Mali-G710 MC10
+Mali-G710 MC7
+Mali-G715
+Mali-G715 MC7
+Mali-G715-Immortalis MC11
+Mali-G72
+Mali-G72 MP3
+Mali-G720 MC7
+Mali-G720 MC8
+Mali-G720-Immortalis
+Mali-G720-Immortalis MC12
+Mali-G76
+Mali-G76 MC4
+Mali-G77
+Mali-G77 MC7
+Mali-G77 MC9
+Mali-G78
+Mali-G78 MP9
+Mali-G925-Immortalis MC11
+Mali-G925-Immortalis MC12
+Mali-G925-Immortalis MC12 
+Mali-T760
+Mali-T820
+Mali-T830
+Mali-T860
+Mali-T880
+Mali-TNAX
+Mesa DRI Intel(R) UHD Graphics (EHL)
+Mesa DRI Intel(R) UHD Graphics 600 (Geminilake 2x6) 
+Mesa DRI Intel(R) UHD Graphics 610 (CML GT1)
+Mesa DRI Intel(R) UHD Graphics 630 (CML GT2)
+Mesa Intel(R) HD Graphics 5500 (BDW GT2)
+Mesa Intel(R) HD Graphics 615 (KBL GT2)
+Mesa Intel(R) UHD Graphics (JSL)
+Mesa Intel(R) UHD Graphics (TGL GT2)
+Mesa Intel(R) UHD Graphics 610 (CML GT1)
+Mesa Intel(R) UHD Graphics 620 (KBL GT2)
+Model A2926
+NVIDIA Tegra
+PowerVR B-Series BXE-2-32
+PowerVR B-Series BXM-4-64
+PowerVR B-Series BXM-8-256
+PowerVR C-Series CXTP-48-1536
+PowerVR D-Series DXT-48-1536
+PowerVR Rogue G6110
+PowerVR Rogue GE8100
+PowerVR Rogue GE8300
+PowerVR Rogue GE8320
+PowerVR Rogue GE8322
+PowerVR Rogue GM9446
+PowerVR Rogue GT7400 Plus
+PowerVR Rogue GX6250
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.194-23408-gfb04e5e80fd6)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.218-24956-ge89ca7a7931b)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.226-25570-g970e3fd14149)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.230-25844-gdc65f732bf53)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.230-25847-g1599c66ea127)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26056-g8244677da0f8)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26292-gdf85f5a3f1fa)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26293-ga8f9847b7701)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26294-g05d61bf3318b)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26299-g20aa2412f25a)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26304-g7b6d1f3f59f6)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26306-g43200b2e557b)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.234-26308-gbf84284d9744)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.236-26313-g0f3c32d14dc2)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.236-26319-ge78745698a7b)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26349-ge2bb63944638)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26353-gdcc92db1ebd9)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26358-g4ced774677ea)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26365-g1e523547d706)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26368-g8acd10ea6975)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26370-g50dcf5cfc1be)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26371-gc2598822363f)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26371-gffca53295675)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26372-g2d2775a1166d)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26372-g3dc708d43031)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26374-g19efe63104e4)
+STONEY (stoney, LLVM 15.0.7, DRM 3.42, 5.10.237-26374-g2a1a492d40b4)
+V3D 4.2.14.0
+V3D 7.1.10.2
+angle (Samsung Voyager EVT1) on Vulkan 1.1.179
+virgl (Mesa DRI Intel(R) HD Graphics 610 (KBL GT1))
+virgl (Mesa DRI Intel(R) HD Graphics 615 (KBL GT2))
+virgl (Mesa DRI Intel(R) UHD Graphics 600 (GLK 2))
+virgl (Mesa DRI Intel(R) UHD Graphics 605 (GLK 3))
+virgl (Mesa DRI Intel(R) UHD Graphics 615 (AML-KBL))
+virgl (Mesa DRI Intel(R) UHD Graphics 620 (WHL GT2))
+virgl (Mesa Intel(R) Graphics (ADL GT2))
+virgl (Mesa Intel(R) Graphics (ADL-N))
+virgl (Mesa Intel(R) Graphics (RPL-U))
+virgl (Mesa Intel(R) HD Graphics 500 (APL 2))
+virgl (Mesa Intel(R) HD Graphics 515 (SKL GT2))
+virgl (Mesa Intel(R) HD Graphics 520 (SKL GT2))
+virgl (Mesa Intel(R) HD Graphics 530 (SKL GT2))
+virgl (Mesa Intel(R) HD Graphics 610 (KBL GT1))
+virgl (Mesa Intel(R) HD Graphics 615 (KBL GT2))
+virgl (Mesa Intel(R) HD Graphics 620 (KBL GT2))
+virgl (Mesa Intel(R) HD Graphics 620 (KBL GT2F))
+virgl (Mesa Intel(R) HD Graphics 630 (KBL GT2))
+virgl (Mesa Intel(R) Iris(R) Plus Graphics (ICL GT2))
+virgl (Mesa Intel(R) UHD Graphics (CML GT1))
+virgl (Mesa Intel(R) UHD Graphics (CML GT2))
+virgl (Mesa Intel(R) UHD Graphics (EHL))
+virgl (Mesa Intel(R) UHD Graphics (ICL GT1))
+virgl (Mesa Intel(R) UHD Graphics (JSL))
+virgl (Mesa Intel(R) UHD Graphics 600 (GLK 2))
+virgl (Mesa Intel(R) UHD Graphics 605 (GLK 3))
+virgl (Mesa Intel(R) UHD Graphics 610 (CML GT1))
+virgl (Mesa Intel(R) UHD Graphics 610 (WHL GT1))
+virgl (Mesa Intel(R) UHD Graphics 615 (AML-KBL))
+virgl (Mesa Intel(R) UHD Graphics 620 (KBL GT2))
+virgl (Mesa Intel(R) UHD Graphics 620 (WHL GT2))
+virgl (Mesa Intel(R) UHD Graphics 630 (CFL GT2))
+virgl (Mesa Intel(R) UHD Graphics 630 (CML GT2))
+virgl (Mesa Intel(R) Xe Graphics (TGL GT2))

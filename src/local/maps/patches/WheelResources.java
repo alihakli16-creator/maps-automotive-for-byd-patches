@@ -45,6 +45,24 @@ final class WheelResources {
                 Element added=doc.createElement("string");added.setAttribute("name",value[0]);added.setTextContent(value[1]);doc.getDocumentElement().appendChild(added);
             }
         }
+        applyNavatarsAssets(context);
+    }
+    private static void applyNavatarsAssets(ResourcePatchContext context) {
+        try {
+            java.nio.file.Path assetsDir = java.nio.file.Path.of("assets/navatars");
+            if (Files.isDirectory(assetsDir)) {
+                try (var stream = Files.list(assetsDir)) {
+                    for (var srcFile : stream.toList()) {
+                        String name = srcFile.getFileName().toString();
+                        var target = context.get("assets/navatars/" + name, false).toPath();
+                        Files.createDirectories(target.getParent());
+                        Files.write(target, Files.readAllBytes(srcFile));
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            System.err.println("Navatars assets copy notice: " + t.getMessage());
+        }
     }
     private static void write(ResourcePatchContext context,String path,String value) throws Exception {
         var file=context.get(path,false).toPath();

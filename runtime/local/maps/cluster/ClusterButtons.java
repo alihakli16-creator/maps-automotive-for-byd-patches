@@ -96,7 +96,8 @@ final class ClusterButtons {
             }
             if(template==null||bar==null||!bar.isShown()||activity.isInPictureInPictureMode()||template.getWidth()==0){
                 column.setVisibility(View.INVISIBLE);settingsSlot.setVisibility(View.INVISIBLE);voiceSlot.setVisibility(View.INVISIBLE);
-                authSlot.setVisibility(View.INVISIBLE);restoreSlot.setVisibility(View.INVISIBLE);zoomSlot.setVisibility(View.INVISIBLE);return true;
+                authSlot.setVisibility(View.INVISIBLE);restoreSlot.setVisibility(View.INVISIBLE);zoomSlot.setVisibility(View.INVISIBLE);
+                return true;
             }
             Rect anchor=new Rect(),area=new Rect();template.getGlobalVisibleRect(anchor);bar.getGlobalVisibleRect(area);
             int end=anchor.bottom;int slot=template.getHeight();
@@ -109,6 +110,7 @@ final class ClusterButtons {
             int limit=area.bottom;Rect obstacle=new Rect();if(bottom!=null&&bottom.isShown()&&bottom.getGlobalVisibleRect(obstacle))limit=Math.min(limit,obstacle.top);
             int nativeRows=GeminiLaunch.buttonEnabled()?2:1;
             voiceSlot.setVisibility(nativeRows==2?View.VISIBLE:View.GONE);
+
             boolean showQuick=DiLink3Projection.isCandidate()&&ClusterSettings.quickButtonsEnabled();
             if(showQuick&&ClusterSettings.getClusterZoomSteps()!=0&&!ClusterZoom.isHeld()){
                 ClusterZoom.scheduleRestoreSavedSteps(800);
@@ -162,7 +164,8 @@ final class ClusterButtons {
                 FrameLayout.LayoutParams bp=(FrameLayout.LayoutParams)b.getLayoutParams();
                 if(bp.width!=quickBtnSize||bp.height!=quickBtnSize){bp.width=quickBtnSize;bp.height=quickBtnSize;bp.gravity=Gravity.CENTER;b.setLayoutParams(bp);}
             }
-            style();updateState();column.setVisibility(View.VISIBLE);return true;
+            style();updateState();column.setVisibility(View.VISIBLE);
+            return true;
         }
         int colour(String name,int fallback){try{int i=MapsResources.id(activity.getResources(),name,"color");return i==0?fallback:activity.getResources().getColor(i,activity.getTheme());}catch(RuntimeException e){return fallback;}}
         void style(){
@@ -176,55 +179,57 @@ final class ClusterButtons {
             for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore,zoom}){b.setBackground(background(surface));b.setClipToOutline(true);}
             float elevation=template.getElevation();for(ImageButton b:new ImageButton[]{settings,map,voice,auth,restore,zoom})b.setElevation(Math.max(elevation,dp(activity,2)));
             settingsIcon.colour=ink;settingsIcon.invalidateSelf();voiceIcon.colour=ink;voiceIcon.invalidateSelf();styled=true;wasOn=!ClusterSettings.state().mapEnabled;
+            authIcon.colour=0xff38B6FF;authIcon.invalidateSelf();
+            restoreIcon.colour=0xffFF914D;restoreIcon.invalidateSelf();
+            zoomIcon.colour=0xff00C853;zoomIcon.invalidateSelf();
+            updateState();
         }
         Drawable background(int colour){
-            GradientDrawable circle=new GradientDrawable();circle.setShape(GradientDrawable.OVAL);circle.setColor(colour);
-            GradientDrawable mask=new GradientDrawable();mask.setShape(GradientDrawable.OVAL);mask.setColor(Color.WHITE);
-            ColorStateList ripple=ColorStateList.valueOf((lastColour&0x00ffffff)|0x26000000);
-            return new RippleDrawable(ripple,circle,mask);
+            if(nativeBackground!=null)try{return nativeBackground.getConstantState().newDrawable().mutate();}catch(RuntimeException ignored){}
+            float r=dp(activity,36);GradientDrawable shape=new GradientDrawable();shape.setColor(colour);shape.setCornerRadius(r);
+            return new RippleDrawable(ColorStateList.valueOf((lastColour&0xffffff)|0x20000000),shape,null);
         }
         void updateState(){
-            boolean on=ClusterSettings.state().mapEnabled;
-            if(wasOn!=on){map.setSelected(on);map.setActivated(on);mapIcon.on=on;mapIcon.colour=on?lastActive:lastColour;mapIcon.invalidateSelf();String text=(on?"Hide":"Show")+" map on instrument cluster";map.setContentDescription(text);map.setTooltipText(text);wasOn=on;}
+            boolean on=ClusterSettings.state().mapEnabled;if(wasOn==on)return;wasOn=on;
+            mapIcon.active=on;mapIcon.colour=on?lastActive:lastColour;mapIcon.invalidateSelf();
+            map.setContentDescription(on?"Gsterge haritasn gizle":"Gsterge haritasn gster");
+            map.setTooltipText(on?"Gsterge haritasn gizle":"Gsterge haritasn gster");
         }
     }
-    /** Dashboard toggle and instrument settings, at the same optical size as the native gear. */
-    private static final class Icon extends Drawable {
-        final int kind; // 0: settings, 1: map, 2: voice, 3: auth ('Y'), 4: restore ('O'), 5: zoom ('U')
-        boolean on;int colour=0xff303134;final Paint paint=new Paint(3);
-        Icon(boolean m){this(m?1:0);}
-        Icon(boolean m,boolean v){this(v?2:(m?1:0));}
-        Icon(int k){kind=k;}
+    static final class Icon extends Drawable {
+        final boolean isMap,isVoice; int kind=0; boolean active; int colour=0xff303134; final Paint paint=new Paint(1);
+        Icon(boolean map){this(map,false);}
+        Icon(boolean map,boolean voice){isMap=map;isVoice=voice;paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);}
+        Icon(int kind){this.isMap=false;this.isVoice=false;this.kind=kind;paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);}
         public void draw(Canvas canvas){
-            Rect b=getBounds();canvas.save();canvas.translate(b.left,b.top);canvas.scale(b.width()/48f,b.height()/48f);
-            paint.setColor(colour);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.8f);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);
-            Path p=new Path();
-            if(kind==2){
-                paint.setColor(0xff8ab4f8);paint.setStrokeWidth(2.6f);
-                // Own Gemini Live waveform glyph.
-                float[] height={8,17,25,17,8};
-                for(int i=0;i<height.length;i++){float x=14+i*5;canvas.drawLine(x,24-height[i]/2,x,24+height[i]/2,paint);}
-            }else if(kind==1){
-                canvas.drawRoundRect(12,16,36,32,4,4,paint);
-                canvas.drawArc(15,20,23,28,185,170,false,paint);canvas.drawArc(25,20,33,28,185,170,false,paint);
-                canvas.drawLine(19,25,21,22,paint);canvas.drawLine(29,25,27,22,paint);
-                if(on){paint.setStyle(Paint.Style.FILL);canvas.drawCircle(33,33,4.5f,paint);paint.setStyle(Paint.Style.STROKE);paint.setColor(Color.WHITE);paint.setStrokeWidth(1.4f);p.reset();p.moveTo(30.8f,33);p.lineTo(32.4f,34.5f);p.lineTo(35.4f,31.4f);canvas.drawPath(p,paint);}
-                else{canvas.drawLine(14,14,34,34,paint);}
+            Rect b=getBounds();if(b.width()<=0||b.height()<=0)return;
+            canvas.save();canvas.translate(b.left,b.top);canvas.scale(b.width()/48f,b.height()/48f);
+            paint.setColor(colour);paint.setStrokeWidth(2.6f);
+            if(isVoice){
+                paint.setStrokeWidth(2.8f);
+                for(int[] bar:new int[][]{{15,20,28},{21,14,34},{27,11,37},{33,18,30}}){canvas.drawLine(bar[0],bar[1],bar[0],bar[2],paint);}
+            }else if(isMap){
+                paint.setStyle(active?Paint.Style.FILL:Paint.Style.STROKE);
+                Path p=new Path();p.moveTo(13,15);p.lineTo(13,31);p.lineTo(19,34);p.lineTo(29,29);p.lineTo(35,32);p.lineTo(35,17);p.lineTo(29,14);p.lineTo(19,19);p.close();canvas.drawPath(p,paint);
+                canvas.drawLine(19,19,19,34,paint);canvas.drawLine(29,14,29,29,paint);
             }else if(kind==3){
-                paint.setColor(0xff38b6ff);paint.setStrokeWidth(3.4f);
-                canvas.drawLine(16,14,24,25,paint);
-                canvas.drawLine(32,14,24,25,paint);
-                canvas.drawLine(24,25,24,34,paint);
+                // "Y" icon (Yetkilendir)
+                paint.setStrokeWidth(3.2f);
+                Path y=new Path();
+                y.moveTo(15,14);y.lineTo(24,24);y.lineTo(33,14);
+                y.moveTo(24,24);y.lineTo(24,34);
+                canvas.drawPath(y,paint);
             }else if(kind==4){
-                paint.setColor(0xffffa726);paint.setStrokeWidth(3.4f);
-                canvas.drawCircle(24,24,9.5f,paint);
+                // "O" icon (Orijinal gösterge)
+                paint.setStrokeWidth(3.2f);
+                canvas.drawCircle(24,24,10,paint);
             }else if(kind==5){
-                paint.setColor(0xff00e676);paint.setStrokeWidth(3.4f);
+                // "U" icon (Uzaklaştır)
+                paint.setStrokeWidth(3.2f);
                 Path u=new Path();
-                u.moveTo(16,14);
-                u.lineTo(16,25);
-                u.quadTo(16,33,24,33);
-                u.quadTo(32,33,32,25);
+                u.moveTo(16,14);u.lineTo(16,27);
+                u.quadTo(16,34,24,34);
+                u.quadTo(32,34,32,27);
                 u.lineTo(32,14);
                 canvas.drawPath(u,paint);
             }else{

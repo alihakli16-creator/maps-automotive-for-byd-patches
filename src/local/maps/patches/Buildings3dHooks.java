@@ -3,6 +3,7 @@ package local.maps.patches;
 
 import java.util.*;
 import kotlin.Unit;
+import app.morphe.patcher.extensions.InstructionExtensions;
 import app.morphe.patcher.patch.BytecodePatchContext;
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod;
 import com.android.tools.smali.dexlib2.Opcode;
@@ -108,9 +109,39 @@ final class Buildings3dHooks {
             require(method != null, "method disappeared");
             patch(method, site);
         }
+        applyNavatars(context);
         System.out.println("Native 3D Buildings: enabled one settings experiment at " + ENABLED.size() + " of nine audited reads"
             + (ENABLE_LAYER_WRAPPER ? " (incl. layer wrapper ier.d)" : " (ier.d layer wrapper stays native)")
             + "; native requested/active state, thermal and satellite rules preserved");
+    }
+
+    static void applyNavatars(BytecodePatchContext context) {
+        try {
+            var hpq = context.mutableClassDefBy("Lhpq;");
+            for (var m : hpq.getMethods()) {
+                if (m.getName().equals("aa") && m.getReturnType().equals("Z") && m.getParameterTypes().isEmpty() && m.getImplementation() != null) {
+                    InstructionExtensions.INSTANCE.addInstructions(m, 0, "invoke-static {}, Llocal/maps/cluster/Navatars;->enabled()Z\nmove-result v0\nreturn v0");
+                }
+            }
+            var mug = context.mutableClassDefBy("Lmug;");
+            for (var m : mug.getMethods()) {
+                if (m.getName().equals("c") && m.getReturnType().equals("Labbw;") && m.getParameterTypes().size() == 4 && m.getImplementation() != null) {
+                    InstructionExtensions.INSTANCE.addInstruction(m, 0, "invoke-static {p0}, Llocal/maps/cluster/Navatars;->keepLocalModel(Ljava/lang/Object;)V");
+                }
+                if (m.getName().equals("e") && m.getReturnType().equals("Labbw;") && m.getParameterTypes().size() == 1 && m.getImplementation() != null) {
+                    InstructionExtensions.INSTANCE.addInstruction(m, 0, "invoke-static {p0, p1}, Llocal/maps/cluster/Navatars;->loadLocalManifest(Ljava/lang/Object;I)V");
+                }
+            }
+            var uxp = context.mutableClassDefBy("Luxp;");
+            for (var m : uxp.getMethods()) {
+                if (m.getName().equals("j") && m.getReturnType().equals("V") && m.getParameterTypes().equals(List.of("Ljava/lang/String;")) && m.getImplementation() != null) {
+                    InstructionExtensions.INSTANCE.addInstruction(m, 0, "invoke-static {p1}, Llocal/maps/cluster/Navatars;->animation(Ljava/lang/String;)V");
+                }
+            }
+            System.out.println("3D car on map (Navatars): hpq.aa, mug.c, mug.e, uxp.j hooked successfully");
+        } catch (Throwable t) {
+            System.err.println("3D car hooks notice: " + t.getMessage());
+        }
     }
     private Buildings3dHooks() {}
 }
