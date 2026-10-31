@@ -132,7 +132,7 @@ public final class DiLink3Projection {
     /** Android window creation confirmation only; this never claims driver-visible pixels. */
     public static void windowVisible(boolean shown){
         if(!isCandidate()||!loaded)return;
-        if(shown){if(ready()){boolean first=!visible;visible=true;state="Yansıtma komutları ve Android harita penceresi hazır. Fiziksel göstergeyi kontrol edin.";if(first)confirmHealthyLater();}return;}
+        if(shown){if(ready()){boolean first=!visible;visible=true;state="Yansıtma komutları ve Android harita penceresi hazır. Fiziksel göstergeyi kontrol edin.";if(first)confirmHealthyLater();ClusterZoom.scheduleRestoreSavedSteps(1500);}return;}
         if(!ready&&!visible)return;
         windowFailed();
     }

@@ -67,6 +67,71 @@ public final class ClusterSettings {
     static boolean quickButtonsEnabled(){State s=current;return s==null||s.quickButtons;}
     static void toggleMap(){preferences.edit().putBoolean("map_enabled",!current.mapEnabled).apply();}
     static boolean untestedHud(){return preferences!=null&&preferences.getBoolean("hud_untested_firmware",false);}
+
+    static final String[] VEHICLE_MODELS={"DEFAULT","SUV","SPORTS_CAR","SEDAN","HATCHBACK","PICKUP"};
+    static final String[] VEHICLE_MODEL_NAMES={"Varsayılan Ok (Mavi)","SUV / Crossover","Spor Araba","Sedan","Kompakt / Hatchback","Pikap / Kamyonet"};
+    static final String[] VEHICLE_COLORS={"glacier_white","aqua_green","red","night_black","steel_gray","sky_blue","yellow","magenta"};
+    static final String[] VEHICLE_COLOR_NAMES={"Buz Beyazı (Glacier white)","Su Yeşili (Aqua green)","Ateş Kırmızısı (Red)","Gece Siyahı (Night black)","Çelik Grisi (Steel gray)","Gökyüzü Mavisi (Sky blue)","Güneş Sarısı (Yellow)","Fuşya / Mor (Magenta)"};
+    static final int[] VEHICLE_COLOR_INTS={0xfff8f9fa,0xff00897b,0xffe53935,0xff212121,0xff757575,0xff1e88e5,0xfffdd835,0xff8e24aa};
+
+    static int getClusterZoomSteps(){return preferences!=null?preferences.getInt("cluster_zoom_steps",0):0;}
+    static void adjustClusterZoomSteps(int delta){
+        if(preferences==null)return;
+        int current=getClusterZoomSteps();
+        int updated=Math.max(-10,Math.min(10,current+delta));
+        preferences.edit().putInt("cluster_zoom_steps",updated).apply();
+    }
+    static void resetClusterZoomSteps(){if(preferences!=null)preferences.edit().putInt("cluster_zoom_steps",0).apply();}
+
+    static int getVehicleModel(){return preferences!=null?preferences.getInt("vehicle_icon_model",0):0;}
+    static int getVehicleColor(){return preferences!=null?preferences.getInt("vehicle_icon_color",1):1;}
+    static void setVehicleAvatar(Context ctx,int modelIndex,int colorIndex){
+        if(preferences!=null)preferences.edit().putInt("vehicle_icon_model",modelIndex).putInt("vehicle_icon_color",colorIndex).apply();
+        applyVehicleAvatarToMaps(ctx,modelIndex,colorIndex);
+    }
+    static void applyVehicleAvatarToMaps(Context ctx,int modelIndex,int colorIndex){
+        if(ctx==null)return;
+        try{
+            String model=VEHICLE_MODELS[Math.max(0,Math.min(VEHICLE_MODELS.length-1,modelIndex))];
+            String color=VEHICLE_COLORS[Math.max(0,Math.min(VEHICLE_COLORS.length-1,colorIndex))];
+            int colorInt=VEHICLE_COLOR_INTS[Math.max(0,Math.min(VEHICLE_COLOR_INTS.length-1,colorIndex))];
+            for(String prefName:new String[]{"com.google.android.apps.maps","com.google.android.apps.maps_preferences","navigation_state","com.google.android.apps.maps.automotive"}){
+                try{
+                    SharedPreferences p=ctx.getSharedPreferences(prefName,Context.MODE_PRIVATE);
+                    if(p!=null){
+                        p.edit().putString("navigation_vehicle_icon",model).putString("driving_avatar",model).putString("vehicle_avatar_type",model).putString("vehicle_avatar_color",color).putString("driving_avatar_model",model).putString("driving_avatar_color",color).putInt("vehicle_avatar_color_int",colorInt).putInt("vehicle_icon_model_id",modelIndex).putInt("vehicle_icon_color_id",colorIndex).apply();
+                    }
+                }catch(Throwable ignored){}
+            }
+        }catch(Throwable ignored){}
+    }
+    static boolean launchOriginalVehiclePicker(Activity activity){
+        if(activity==null||activity.isFinishing()||activity.isDestroyed())return false;
+        try{
+            View decor=activity.getWindow().getDecorView();
+            int[] possibleIds={MapsResources.id(activity.getResources(),"navigation_chevron","id"),MapsResources.id(activity.getResources(),"my_location_button","id"),MapsResources.id(activity.getResources(),"driving_avatar_button","id"),MapsResources.id(activity.getResources(),"vehicle_icon","id")};
+            for(int id:possibleIds){
+                if(id!=0){View v=decor.findViewById(id);if(v!=null&&v.isShown()){v.performClick();return true;}}
+            }
+            try{
+                java.lang.reflect.Method getFm=activity.getClass().getMethod("getSupportFragmentManager");
+                Object fm=getFm.invoke(activity);
+                if(fm!=null){
+                    for(String fragClass:new String[]{"com.google.android.apps.gmm.navigation.avatar.DrivingAvatarDialogFragment","com.google.android.apps.gmm.navigation.avatar.DrivingAvatarBottomSheetDialogFragment","com.google.android.apps.gmm.car.embedded.navigation.VehicleAvatarBottomSheet"}){
+                        try{
+                            Class<?> clz=Class.forName(fragClass,false,activity.getClassLoader());
+                            Object frag=clz.getConstructor().newInstance();
+                            java.lang.reflect.Method show=clz.getMethod("show",Class.forName("androidx.fragment.app.FragmentManager"),String.class);
+                            show.invoke(frag,fm,"driving_avatar_picker");
+                            return true;
+                        }catch(Throwable ignored){}
+                    }
+                }
+            }catch(Throwable ignored){}
+        }catch(Throwable ignored){}
+        return false;
+    }
+
     /** Restarts Maps; a killed guidance session is cleared by the next launch. */
     static void restartMaps(Activity a) {
         Intent launch=a.getPackageManager().getLaunchIntentForPackage(a.getPackageName());
@@ -79,6 +144,7 @@ public final class ClusterSettings {
         if(preferences!=null)return;
         preferences=app.getSharedPreferences("local_cluster_settings",Context.MODE_PRIVATE);
         current=new State(preferences); preferences.registerOnSharedPreferenceChangeListener(changes);GeminiLaunch.init(app);
+        applyVehicleAvatarToMaps(app,getVehicleModel(),getVehicleColor());
         app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks(){
             public void onActivityResumed(Activity a){
                 AppCorners.resumed(a);

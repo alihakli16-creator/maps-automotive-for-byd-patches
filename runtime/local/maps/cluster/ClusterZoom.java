@@ -46,6 +46,40 @@ public final class ClusterZoom {
     private static void capture(Throwable error){if(error instanceof GateFailure)note(((GateFailure)error).reason,"none");else {Throwable shown=error instanceof java.lang.reflect.InvocationTargetException&&error.getCause()!=null?error.getCause():error;note(stage+"_exception",ClusterZoomTrace.token(shown.getClass().getSimpleName()));}}
     static ClusterZoomTrace.Snapshot diagnosticSnapshot(){return diagnostic;}
     static String diagnosticWriter(){return writerResult;}
+    static boolean isHeld(){return held!=null;}
+    private static int restoreAttempts=0;
+    static void restoreSavedSteps(){
+        if(Looper.myLooper()!=Looper.getMainLooper()){ui.post(ClusterZoom::restoreSavedSteps);return;}
+        synchronized(LOCK){
+            if(held!=null)return;
+            int saved=ClusterSettings.getClusterZoomSteps();
+            if(saved==0)return;
+            prepare();
+            if(!ready()||!surfaceReady())return;
+            int dir=saved>0?1:-1;
+            int count=Math.min(10,Math.abs(saved));
+            for(int i=0;i<count;i++){
+                step(dir);
+            }
+        }
+    }
+    static void scheduleRestoreSavedSteps(int delayMs){
+        ui.postDelayed(()->{
+            synchronized(LOCK){
+                if(held!=null)return;
+                int saved=ClusterSettings.getClusterZoomSteps();
+                if(saved==0)return;
+                prepare();
+                if(ready()&&surfaceReady()){
+                    restoreAttempts=0;
+                    restoreSavedSteps();
+                }else if(restoreAttempts<5){
+                    restoreAttempts++;
+                    scheduleRestoreSavedSteps(1500);
+                }
+            }
+        },delayMs);
+    }
     static boolean manualStep(int direction){
         ClusterZoomTrace.init();prepare();boolean before=ready();
         if(before)step(direction);else{writerResult="skipped_not_ready";publishDiagnostic();}
@@ -71,8 +105,10 @@ public final class ClusterZoom {
             if(!BydGuidance.sourceKnownForZoom())return "Cluster zoom: the guidance source is not verified yet. ["+savedReason+"]";
             if(!ready())return "Cluster zoom: this native camera mode is not ready or supported. ["+savedReason+"]";
             Session session=held;
-            if(session!=null)synchronized(session){if(session.valid&&session.policy.manual())return String.format(Locale.US,"Cluster zoom: %.1f (held until reset or map recreation).",session.policy.chosen());}
-            return "Cluster zoom: automatic. Wheel buttons change only the instrument cluster map.";
+            int savedSteps=ClusterSettings.getClusterZoomSteps();
+            String savedNote=savedSteps!=0?" [Kalıcı: "+savedSteps+" kademe]":"";
+            if(session!=null)synchronized(session){if(session.valid&&session.policy.manual())return String.format(Locale.US,"Cluster zoom: %.1f (held until reset or map recreation).",session.policy.chosen())+savedNote;}
+            return "Cluster zoom: automatic."+savedNote+" Wheel buttons change only the instrument cluster map.";
         }
     }
     static void mainCreated(Activity activity){
@@ -107,10 +143,11 @@ public final class ClusterZoom {
             catch(Exception|LinkageError error){fail(error);}
             shown=visible&&surfaceReady();try{rendererReady=shown&&clusterBinding!=null&&access!=null&&access.ready(clusterBinding,clusterView.get());}catch(Exception|LinkageError error){fail(error);}
             if(!shown||!rendererReady||!BydGuidance.sourceKnownForZoom())release(true);reevaluate();
+            if(visible&&shown)scheduleRestoreSavedSteps(1200);
             } finally { publishDiagnostic(); }
         }
     }
-    static void detach(){synchronized(LOCK){release(true);available=false;shown=false;presentationVisible=false;failed=false;rendererReady=false;clusterBinding=null;clusterOwner=new WeakReference<>(null);clusterView=new WeakReference<>(null);}}
+    static void detach(){synchronized(LOCK){restoreAttempts=0;release(true);available=false;shown=false;presentationVisible=false;failed=false;rendererReady=false;clusterBinding=null;clusterOwner=new WeakReference<>(null);clusterView=new WeakReference<>(null);}}
     static void reset(){if(Looper.myLooper()!=Looper.getMainLooper()){ui.post(ClusterZoom::reset);return;}synchronized(LOCK){release(true);reevaluate();}}
     static void step(final int direction){
         if(direction!=1&&direction!=-1)return;if(Looper.myLooper()!=Looper.getMainLooper()){ui.post(()->step(direction));return;}
@@ -282,6 +319,7 @@ public final class ClusterZoom {
     private static void invalidate(Session session){synchronized(session){session.valid=false;}if(held==session){held=null;available=false;failed=true;}}
     /** Caller holds only the app lock. No session lock is held while entering native/JNI. */
     private static void release(boolean restore){
+        restoreAttempts=0;
         Session session=held;if(session!=null&&session.navigation&&Looper.myLooper()==Looper.getMainLooper())restoreNavigationPacket(session,session.owners.cluster.xcl.get());
         held=null;if(session==null){policy.reset();return;}
         double baseline;Float navigationBaseline;synchronized(session){baseline=session.baseline;navigationBaseline=session.navigationBaseline;session.valid=false;session.policy.reset();}
@@ -365,6 +403,7 @@ public final class ClusterZoom {
         if(access==null){note("native_schema_missing","none");return;}if(!isolated()){note(mainBinding==null?mainBindReason:clusterBinding==null?clusterBindReason:"main_cluster_binding_shared",mainBinding==null?mainBindError:clusterBindError);return;}
         if(!BydGuidance.sourceKnownForZoom()){note("source_unknown","none");return;}
         try{Owners owners=access.owners(mainBinding,clusterBinding);if(navigation(owners.cluster)){navigationState(owners.cluster);zoomOverride(owners.cluster);}else staticState(owners.cluster);available=surfaceReady()&&liveIsolated();if(!available)note("owner_lifecycle_changed","none");}catch(Exception|LinkageError unavailable){capture(unavailable);}
+        if(available&&held==null&&ClusterSettings.getClusterZoomSteps()!=0)scheduleRestoreSavedSteps(500);
     }
     private static void fail(Throwable error){capture(error);savedReason=firstReason;savedError=errorClass;available=false;failed=true;rendererReady=false;release(false);Log.w("MapsClusterZoom","Native cluster zoom unavailable: "+error.getClass().getSimpleName());}
     private static String life(Activity a){return a==null?"missing":a.isDestroyed()?"destroyed":a.isFinishing()?"finishing":"alive";}

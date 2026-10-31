@@ -54,14 +54,18 @@ final class ClusterButtons {
             });
             zoom.setOnClickListener(v->{
                 if(ClusterZoom.manualStep(-1)){
-                    Toast.makeText(activity,"Gösterge paneli haritası uzaklaştırıldı",Toast.LENGTH_SHORT).show();
+                    ClusterSettings.adjustClusterZoomSteps(-1);
+                    int s=ClusterSettings.getClusterZoomSteps();
+                    Toast.makeText(activity,"Gösterge paneli haritası uzaklaştırıldı (Kalıcı: "+s+")",Toast.LENGTH_SHORT).show();
                 }else{
                     Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
                 }
             });
             zoom.setOnLongClickListener(v->{
                 if(ClusterZoom.manualStep(1)){
-                    Toast.makeText(activity,"Gösterge paneli haritası yakınlaştırıldı",Toast.LENGTH_SHORT).show();
+                    ClusterSettings.adjustClusterZoomSteps(1);
+                    int s=ClusterSettings.getClusterZoomSteps();
+                    Toast.makeText(activity,"Gösterge paneli haritası yakınlaştırıldı (Kalıcı: "+s+")",Toast.LENGTH_SHORT).show();
                 }else{
                     Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
                 }
@@ -106,6 +110,9 @@ final class ClusterButtons {
             int nativeRows=GeminiLaunch.buttonEnabled()?2:1;
             voiceSlot.setVisibility(nativeRows==2?View.VISIBLE:View.GONE);
             boolean showQuick=DiLink3Projection.isCandidate()&&ClusterSettings.quickButtonsEnabled();
+            if(showQuick&&ClusterSettings.getClusterZoomSteps()!=0&&!ClusterZoom.isHeld()){
+                ClusterZoom.scheduleRestoreSavedSteps(800);
+            }
             authSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);
             restoreSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);
             zoomSlot.setVisibility(showQuick?View.VISIBLE:View.GONE);

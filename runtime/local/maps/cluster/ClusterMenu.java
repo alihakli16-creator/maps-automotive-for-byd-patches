@@ -106,7 +106,7 @@ final class ClusterMenu {
         int y=Math.max(screen.top+dp(8),card.top);int height=screen.bottom-y-dp(16);int[] origin=new int[2];decor.getLocationOnScreen(origin);
         WindowManager.LayoutParams lp=window.getAttributes();lp.gravity=Gravity.TOP|Gravity.LEFT;lp.x=x-origin[0];lp.y=y-origin[1];lp.width=width;lp.height=Math.max(dp(200),height);window.setAttributes(lp);
     }
-    private void back(){if("main".equals(page))dialog.dismiss();else if("size".equals(page)||"side".equals(page))card();else if("logo_position".equals(page))layout();else if("evprofile".equals(page)||"autoreader".equals(page)||"readercompat".equals(page))vehicle();else main();}
+    private void back(){if("main".equals(page))dialog.dismiss();else if("size".equals(page)||"side".equals(page))card();else if("logo_position".equals(page))layout();else if("evprofile".equals(page)||"autoreader".equals(page)||"readercompat".equals(page))vehicle();else if("vehicle_model_picker".equals(page)||"vehicle_color_picker".equals(page))vehicleIconMenu();else main();}
     private void start(String name,String heading){page=name;++pageGeneration;title.setText(heading);switches.clear();body.removeAllViews();scroll.scrollTo(0,0);}
     private void rule(){View line=new View(context);line.setBackgroundColor(divider);body.addView(line,new LinearLayout.LayoutParams(-1,dp(2)));}
     private LinearLayout row(String name,String summary){
@@ -156,6 +156,7 @@ final class ClusterMenu {
         action("Harita düzeni",null,this::layout);
         if(DiLink51Setup.supported()){DiLink51Setup.init(activity.getApplication(),null);action("BYD gösterge teması","DiLink 5.1 · tam ve yan harita katmanları",this::oemLayout);}
         action("Direksiyondan yakınlaştırma",WheelServiceSetup.enabled()?"Açık · yalnızca gösterge paneli":"Kapalı",this::wheel);
+        action("Orijinal Araç İkonu ve Rengi",vehicleSummary(),this::vehicleIconMenu);
         action("Gemini sesli asistanı",GeminiLaunch.wheelEnabled()?"Mikrofona uzun basma etkin":"Harita butonu ve direksiyon",this::gemini);
         action("Araca gönder",SendToCarSetup.summary(activity),this::sendToCar);
         if(DiLink3Projection.isCandidate())action("DiLink 3 gösterge testi",DiLink3Projection.enabled()?"Deneysel yansıtma açık":"Kapalı",this::diLink3);
@@ -332,9 +333,10 @@ final class ClusterMenu {
         LinearLayout received=row("Son tuşlar",WheelKeyService.recentKeys());rule();
         if(WheelServiceSetup.enabled())action("Yetkilendir veya tekrar dene","Bu multimedyada Haritalar ADB anahtarına izin verin",()->
             WheelServiceSetup.configure(activity,true,true,()->{if(dialog.isShowing()&&"wheel".equals(page))wheel();}));
-        action("Yakınlaştır","Yalnızca gösterge paneli haritası",()->clusterZoom(1));
-        action("Uzaklaştır","Yalnızca gösterge paneli haritası",()->clusterZoom(-1));
-        action("Gösterge yakınlaştırmasını sıfırla","Otomatik harita yakınlaştırmasına dön",()->{ClusterZoom.reset();wheel();});
+        int savedZoom=ClusterSettings.getClusterZoomSteps();
+        action("Yakınlaştır",savedZoom!=0?"Mevcut kalıcı kademe: "+savedZoom:"Yalnızca gösterge paneli haritası",()->clusterZoom(1));
+        action("Uzaklaştır",savedZoom!=0?"Mevcut kalıcı kademe: "+savedZoom:"Yalnızca gösterge paneli haritası",()->clusterZoom(-1));
+        action("Gösterge yakınlaştırmasını sıfırla","Otomatik harita yakınlaştırmasına dön · kalıcı ayarı sıfırlar",()->{ClusterZoom.reset();ClusterSettings.resetClusterZoomSteps();wheel();});
         note("Press the custom steering wheel button to turn cluster zoom controls on, then use volume + or − to zoom the instrument cluster map. Press the custom button again to restore volume controls. A call, unavailable cluster map or turning this feature off ends the control mode; press the custom button again afterwards.");
         note("The chosen map zoom stays until Reset cluster zoom or the cluster map is recreated. The central map keeps its own scale. Outside the control mode, the volume buttons work normally.");
         note("Default buttons are for BYD Tang (DiLink 5.0). The console volume control may send the same events and zoom too. On other firmware, tap a button above and press the wheel button you want within 10 seconds; that press is not passed to the car. Recent keys lists what this head unit sends to Android and whether Maps kept it. If a wheel button never appears there, the head unit handles it itself and it cannot zoom the map.");
@@ -352,7 +354,12 @@ final class ClusterMenu {
         }},500);
     }
     private void clusterZoom(int direction){
-        if(!ClusterZoom.manualStep(direction))Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
+        if(ClusterZoom.manualStep(direction)){
+            ClusterSettings.adjustClusterZoomSteps(direction);
+            wheel();
+        }else{
+            Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
+        }
     }
     private static void summary(LinearLayout row,String value){
         View labels=row.getChildAt(0);
@@ -555,6 +562,81 @@ final class ClusterMenu {
         action("Yenile",null,this::vehicle);
         note("Use BYD vehicle data and Automatic reader are separate opt-ins. Sampling is once per minute; values expire after 90 seconds. For a confirmed BEV with live route data enabled, fresh trusted readings are sent to Maps. PHEV and HEV do not use our battery-only forecast. Advanced fallback readings require confirmation against the instrument cluster first. Unknown CAN protocol stays unsupported in Automatic mode. Battery capacity is entered by the owner; remaining energy and distance consumption used by Maps are estimates. The raw remaining-energy signal has no verified unit. Charging power is unknown. Stale data withdraws the battery prediction.");
         VehicleDataPage.bind(activity,status);
+    }
+    private String vehicleSummary(){
+        int m=ClusterSettings.getVehicleModel();
+        int c=ClusterSettings.getVehicleColor();
+        return ClusterSettings.VEHICLE_MODEL_NAMES[m]+" · "+ClusterSettings.VEHICLE_COLOR_NAMES[c];
+    }
+    private void vehicleIconMenu(){
+        start("vehicle_icon","Orijinal Araç İkonu ve Rengi");
+        int currentModel=ClusterSettings.getVehicleModel();
+        int currentColor=ClusterSettings.getVehicleColor();
+        action("Google Haritalar Orijinal Seçiciyi Başlat","Harita üzerindeki 3D araç seçim penceresini açmayı dener",()->{
+            if(!ClusterSettings.launchOriginalVehiclePicker(activity)){
+                Toast.makeText(activity,"Orijinal pencere yalnızca aktif navigasyonda açılabilir. Aşağıdan model ve renk seçebilirsiniz.",Toast.LENGTH_LONG).show();
+            }
+        });
+        rule();
+        note("Seçili Araç: "+ClusterSettings.VEHICLE_MODEL_NAMES[currentModel]+" / "+ClusterSettings.VEHICLE_COLOR_NAMES[currentColor]);
+        action("Araç Modeli",ClusterSettings.VEHICLE_MODEL_NAMES[currentModel],this::vehicleModelPicker);
+        action("Araç Rengi",ClusterSettings.VEHICLE_COLOR_NAMES[currentColor],this::vehicleColorPicker);
+        action("Varsayılan Orijinal Oka Sıfırla","Klasik mavi navigasyon oku",()->{
+            ClusterSettings.setVehicleAvatar(activity,0,0);
+            Toast.makeText(activity,"Varsayılan navigasyon oku ayarlandı",Toast.LENGTH_SHORT).show();
+            vehicleIconMenu();
+        });
+        note("Google Haritalar 3D araç modelleri (SUV, Spor Araba, Sedan, Kompakt, Pikap) ve orijinal renk paleti (Buz Beyazı, Su Yeşili, Ateş Kırmızısı vb.) navigasyon sırasında hem ana ekranda hem de gösterge panelinde görünür.");
+        note("Yapılan seçimler Haritalar'ın dahili tercihlerine (Driving Avatar) kaydedilir ve her açılışta korunur.");
+    }
+    private void vehicleModelPicker(){
+        start("vehicle_model_picker","Araç Modeli Seç");
+        int selected=ClusterSettings.getVehicleModel();
+        for(int i=0;i<ClusterSettings.VEHICLE_MODELS.length;i++){
+            final int index=i;
+            LinearLayout r=row(ClusterSettings.VEHICLE_MODEL_NAMES[i],null);
+            ImageView radio=new ImageView(context);
+            radio.setImageDrawable(new Mark(index==selected?4:3,index==selected?accent:ink));
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(28),dp(36));lp.leftMargin=dp(12);
+            r.addView(radio,lp);
+            r.setBackground(ripple(0));r.setFocusable(true);
+            r.setOnClickListener(v->{
+                ClusterSettings.setVehicleAvatar(activity,index,ClusterSettings.getVehicleColor());
+                Toast.makeText(activity,"Araç modeli seçildi: "+ClusterSettings.VEHICLE_MODEL_NAMES[index],Toast.LENGTH_SHORT).show();
+                vehicleIconMenu();
+            });
+            rule();
+        }
+        note("BYD Seal U ve Song Plus gibi araçlar için 'SUV / Crossover' modeli mükemmel uyum sağlar.");
+    }
+    private void vehicleColorPicker(){
+        start("vehicle_color_picker","Araç Rengi Seç");
+        int selected=ClusterSettings.getVehicleColor();
+        for(int i=0;i<ClusterSettings.VEHICLE_COLORS.length;i++){
+            final int index=i;
+            LinearLayout r=row(ClusterSettings.VEHICLE_COLOR_NAMES[i],null);
+            ImageView dot=new ImageView(context);
+            GradientDrawable d=new GradientDrawable();d.setShape(GradientDrawable.OVAL);
+            d.setColor(ClusterSettings.VEHICLE_COLOR_INTS[i]);
+            d.setStroke(dp(1),divider);
+            dot.setImageDrawable(d);
+            LinearLayout.LayoutParams dpLp=new LinearLayout.LayoutParams(dp(24),dp(24));dpLp.leftMargin=dp(8);dpLp.rightMargin=dp(8);
+            r.addView(dot,dpLp);
+
+            ImageView radio=new ImageView(context);
+            radio.setImageDrawable(new Mark(index==selected?4:3,index==selected?accent:ink));
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(28),dp(36));lp.leftMargin=dp(8);
+            r.addView(radio,lp);
+
+            r.setBackground(ripple(0));r.setFocusable(true);
+            r.setOnClickListener(v->{
+                ClusterSettings.setVehicleAvatar(activity,ClusterSettings.getVehicleModel(),index);
+                Toast.makeText(activity,"Araç rengi seçildi: "+ClusterSettings.VEHICLE_COLOR_NAMES[index],Toast.LENGTH_SHORT).show();
+                vehicleIconMenu();
+            });
+            rule();
+        }
+        note("Google Haritalar'ın orijinal paleti: Buz Beyazı, Su Yeşili, Ateş Kırmızısı, Gece Siyahı, Çelik Grisi, Gökyüzü Mavisi, Güneş Sarısı ve Fuşya.");
     }
     private void hud(){
         start("hud","HUD çıkışı");toggle("Bağımsız HUD","Bu yazılımda bağımsız HUD'u deneyin (deneysel)","hud_untested_firmware",ClusterSettings.untestedHud());
