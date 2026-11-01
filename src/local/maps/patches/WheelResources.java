@@ -48,20 +48,36 @@ final class WheelResources {
         applyNavatarsAssets(context);
     }
     private static void applyNavatarsAssets(ResourcePatchContext context) {
-        try {
-            java.nio.file.Path assetsDir = java.nio.file.Path.of("assets/navatars");
-            if (Files.isDirectory(assetsDir)) {
-                try (var stream = Files.list(assetsDir)) {
-                    for (var srcFile : stream.toList()) {
-                        String name = srcFile.getFileName().toString();
-                        var target = context.get("assets/navatars/" + name, false).toPath();
-                        Files.createDirectories(target.getParent());
-                        Files.write(target, Files.readAllBytes(srcFile));
+        String[] files = {
+            "assets/navatars/manifest_1.json",
+            "assets/navatars/models.json",
+            "assets/navatars/sealu.fbx",
+            "assets/navatars/sealu.png",
+            "assets/navatars/tang2024.fbx",
+            "assets/navatars/tang2024.png",
+            "assets/navatars/tang2024-LICENSE.txt",
+            "assets/chevron/Chvrn_DO.glb",
+            "assets/chevron/P_DO.png"
+        };
+        for (String filePath : files) {
+            try {
+                byte[] data = null;
+                java.nio.file.Path p = java.nio.file.Path.of(filePath);
+                if (Files.isRegularFile(p)) {
+                    data = Files.readAllBytes(p);
+                } else {
+                    try (java.io.InputStream in = WheelResources.class.getClassLoader().getResourceAsStream(filePath)) {
+                        if (in != null) data = in.readAllBytes();
                     }
                 }
+                if (data != null) {
+                    var target = context.get(filePath, false).toPath();
+                    Files.createDirectories(target.getParent());
+                    Files.write(target, data);
+                }
+            } catch (Throwable t) {
+                System.err.println("Asset copy notice (" + filePath + "): " + t.getMessage());
             }
-        } catch (Throwable t) {
-            System.err.println("Navatars assets copy notice: " + t.getMessage());
         }
     }
     private static void write(ResourcePatchContext context,String path,String value) throws Exception {

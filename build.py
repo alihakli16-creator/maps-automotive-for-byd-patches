@@ -139,6 +139,11 @@ def main():
             put(archive, "extensions/" + module + ".mpe", path.read_bytes())
         for path in patch_sources + runtime_sources + test_sources:
             put(archive, path.relative_to(ROOT).as_posix(), path.read_bytes())
+        assets_dir = ROOT / "assets"
+        if assets_dir.is_dir():
+            for path in sorted(assets_dir.rglob("*")):
+                if path.is_file():
+                    put(archive, path.relative_to(ROOT).as_posix(), path.read_bytes())
         for name in ("LICENSE", "UPSTREAM-NOTICE", "NOTICE"):
             put(archive, name, (ROOT / name).read_bytes())
 
