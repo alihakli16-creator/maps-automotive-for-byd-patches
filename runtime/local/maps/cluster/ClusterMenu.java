@@ -644,7 +644,7 @@ final class ClusterMenu {
     private static final class Mark extends Drawable {
         final int kind,colour;final Paint paint=new Paint(3);
         Mark(int kind,int colour){this.kind=kind;this.colour=colour;}
-        public void draw(Canvas canvas){Rect b=getBounds();canvas.save();canvas.translate(b.left,b.top);canvas.scale(b.width()/32f,b.height()/32f);paint.setColor(colour);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.6f);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);Path p=new Path();
+        public void draw(Canvas canvas){Rect b=getBounds();canvas.save();float s=Math.min(b.width(),b.height())/32f;canvas.translate(b.exactCenterX()-16*s,b.exactCenterY()-16*s);canvas.scale(s,s);paint.setColor(colour);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.6f);paint.setStrokeCap(Paint.Cap.ROUND);paint.setStrokeJoin(Paint.Join.ROUND);Path p=new Path();
             if(kind==0){p.moveTo(22,7);p.lineTo(12,16);p.lineTo(22,25);canvas.drawPath(p,paint);canvas.drawLine(12,16,28,16,paint);}
             else if(kind==1){canvas.drawLine(8,8,24,24,paint);canvas.drawLine(24,8,8,24,paint);}
             else if(kind==2){p.moveTo(12,9);p.lineTo(19,16);p.lineTo(12,23);canvas.drawPath(p,paint);}

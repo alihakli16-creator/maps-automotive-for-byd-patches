@@ -56,7 +56,7 @@ final class ClusterButtons {
                 if(ClusterZoom.manualStep(-1)){
                     ClusterSettings.adjustClusterZoomSteps(-1);
                     int s=ClusterSettings.getClusterZoomSteps();
-                    Toast.makeText(activity,"Gösterge paneli haritası uzaklaştırıldı (Kalıcı: "+s+")",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity,"Gösterge paneli haritası uzaklaştırıldı (Kalıcı: "+Math.abs(s)+" kademe)",Toast.LENGTH_SHORT).show();
                 }else{
                     Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
                 }
@@ -65,7 +65,7 @@ final class ClusterButtons {
                 if(ClusterZoom.manualStep(1)){
                     ClusterSettings.adjustClusterZoomSteps(1);
                     int s=ClusterSettings.getClusterZoomSteps();
-                    Toast.makeText(activity,"Gösterge paneli haritası yakınlaştırıldı (Kalıcı: "+s+")",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity,"Gösterge paneli haritası yakınlaştırıldı (Kalıcı: "+Math.abs(s)+" kademe)",Toast.LENGTH_SHORT).show();
                 }else{
                     Toast.makeText(activity,"Gösterge paneli haritasının hazır olmasını bekleyin.",Toast.LENGTH_SHORT).show();
                 }

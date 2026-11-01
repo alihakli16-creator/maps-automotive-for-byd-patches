@@ -45,40 +45,6 @@ final class WheelResources {
                 Element added=doc.createElement("string");added.setAttribute("name",value[0]);added.setTextContent(value[1]);doc.getDocumentElement().appendChild(added);
             }
         }
-        applyNavatarsAssets(context);
-    }
-    private static void applyNavatarsAssets(ResourcePatchContext context) {
-        String[] files = {
-            "assets/navatars/manifest_1.json",
-            "assets/navatars/models.json",
-            "assets/navatars/sealu.fbx",
-            "assets/navatars/sealu.png",
-            "assets/navatars/tang2024.fbx",
-            "assets/navatars/tang2024.png",
-            "assets/navatars/tang2024-LICENSE.txt",
-            "assets/chevron/Chvrn_DO.glb",
-            "assets/chevron/P_DO.png"
-        };
-        for (String filePath : files) {
-            try {
-                byte[] data = null;
-                java.nio.file.Path p = java.nio.file.Path.of(filePath);
-                if (Files.isRegularFile(p)) {
-                    data = Files.readAllBytes(p);
-                } else {
-                    try (java.io.InputStream in = WheelResources.class.getClassLoader().getResourceAsStream(filePath)) {
-                        if (in != null) data = in.readAllBytes();
-                    }
-                }
-                if (data != null) {
-                    var target = context.get(filePath, false).toPath();
-                    Files.createDirectories(target.getParent());
-                    Files.write(target, data);
-                }
-            } catch (Throwable t) {
-                System.err.println("Asset copy notice (" + filePath + "): " + t.getMessage());
-            }
-        }
     }
     private static void write(ResourcePatchContext context,String path,String value) throws Exception {
         var file=context.get(path,false).toPath();

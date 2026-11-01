@@ -1,14 +1,9 @@
-name: Build Turkish Morphe Bundle and Ready APK
+name: Build Turkish Morphe Bundle
 
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      base_apk_url:
-        description: 'Direct download URL for original Maps Automotive 26.10.120001.E APK (Optional)'
-        required: false
-        default: ''
 
 jobs:
   build:
@@ -36,8 +31,6 @@ jobs:
           yes | "$SDKMANAGER" --licenses || true
           yes | "$SDKMANAGER" "platforms;android-35" "build-tools;36.0.0"
           chmod +x /usr/local/lib/android/sdk/build-tools/36.0.0/d8 || true
-          chmod +x /usr/local/lib/android/sdk/build-tools/36.0.0/zipalign || true
-          chmod +x /usr/local/lib/android/sdk/build-tools/36.0.0/apksigner || true
 
       - name: Download Pinned Morphe Desktop CLI
         run: |
@@ -55,101 +48,21 @@ jobs:
             --cli morphe-desktop-1.18.1-all.jar \
             --out build-out || (echo "=== BUILD LOG ===" && cat build-out/BUILD.log 2>/dev/null && exit 1)
 
-      - name: Fetch Original Maps Automotive APK
-        id: fetch-base
-        continue-on-error: true
-        env:
-          INPUT_URL: ${{ github.event.inputs.base_apk_url }}
-          SECRET_URL: ${{ secrets.MAPS_APK_URL }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TARGET_SHA="d9dc74c9fa0f5bee0911ed1594a19adc0761258d524b5031ed480674d81f5ff9"
-          echo "Target SHA-256: $TARGET_SHA"
-          mkdir -p base_cache
-
-          # 1. Try URL from workflow input or secret
-          DL_URL="${INPUT_URL:-$SECRET_URL}"
-          if [ -n "$DL_URL" ]; then
-            echo "Attempting download from provided URL..."
-            curl -L -f --retry 3 -o base_cache/base.apk "$DL_URL" || true
-          fi
-
-          # 2. Try downloading from repo releases (e.g. tag 'base-apk')
-          if [ ! -f "base_cache/base.apk" ] || [ "$(sha256sum base_cache/base.apk 2>/dev/null | awk '{print $1}')" != "$TARGET_SHA" ]; then
-            echo "Attempting to fetch base APK from GitHub releases..."
-            gh release download base-apk --pattern "*.apk" --dir base_cache || true
-          fi
-
-          # 3. Check any candidate files in workspace
-          for cand in base_cache/*.apk base.apk original.apk maps-automotive.apk; do
-            if [ -f "$cand" ]; then
-              CAND_SHA="$(sha256sum "$cand" | awk '{print $1}')"
-              if [ "$CAND_SHA" = "$TARGET_SHA" ]; then
-                echo "Found valid base APK: $cand"
-                cp "$cand" build-out/maps-automotive-original.apk
-                echo "has_base=true" >> $GITHUB_OUTPUT
-                exit 0
-              fi
-            fi
-          done
-
-          echo "Base APK not found or hash mismatch. Will release .mpp bundle only."
-          echo "has_base=false" >> $GITHUB_OUTPUT
-
-      - name: Patch and Sign Ready APK
-        if: steps.fetch-base.outputs.has_base == 'true'
-        run: |
-          python3 tools/patch-ready-apk.py \
-            --base-apk build-out/maps-automotive-original.apk \
-            --bundle build-out/maps-automotive-for-byd-morphe-preview.9.mpp \
-            --cli morphe-desktop-1.18.1-all.jar \
-            --sdk "/usr/local/lib/android/sdk" \
-            --out-apk build-out/BYD-Maps-TR-Ready.apk
-
-          cd build-out
-          sha256sum BYD-Maps-TR-Ready.apk >> SHA256SUMS
-
-      - name: Upload Artifacts
+      - name: Upload .mpp as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BYD-Maps-TR-Turkish-Preview9
-          path: |
-            build-out/*.apk
-            build-out/*.mpp
-            build-out/SHA256SUMS
-            build-out/BUILD.json
+          name: maps-automotive-byd-turkish-preview11
+          path: build-out/*.mpp
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/')
         continue-on-error: true
         with:
-          tag_name: turkish-preview.9
-          name: "Maps Automotive for BYD - Türkçe Preview 9 (Hazır APK & 3D Araç)"
-          body: |
-            ## BYD Seal U DM-i & DiLink Uyumlu Google Haritalar Türkçe Sürüm
-
-            Bu sürüm, **BYD Seal U DM-i** ve diğer DiLink 3.0 / 4.0 / 5.0 araçlar için özel olarak optimize edilmiş Türkçe Google Haritalar paketidir.
-
-            ### ✨ Öne Çıkan Özellikler:
-            1. **🚗 Haritada 3D Araç (Navatars):**
-               - Klasik mavi ok yerine harita üzerinde 3D araç modeli görünür.
-               - **BYD Seal U DM-i** ve **BYD Tang 2024** modelleri eklendi.
-               - Seal U DM-i'ye özel **Titanyum Gri (#6E737B)** dahil olmak üzere Orijinal, Beyaz, Siyah, Gri, Mavi, Kırmızı, Yeşil renk seçenekleri.
-               - Ayarlar menüsünden "3D aracı göster" anahtarıyla açılıp kapatılabilir.
-
-            2. **⚡ Hızlı İşlem Butonları (Y / O / U):**
-               - **"Y" Butonu:** Tek tıkla ADB yetkilendirme ve gösterge yansıtmasını başlatır.
-               - **"O" Butonu:** Tek tıkla orijinal gösterge düzenine geri döner.
-               - **"U" Butonu (Kalıcı Uzaklaştırma):** Tek tıkla gösterge paneli haritasını bir kademe uzaklaştırır. Basılı tutulduğunda (uzun basış) yakınlaştırır. Yapılan ayar kalıcıdır, Haritalar her açıldığında otomatik hatırlanır!
-
-            3. **📦 Doğrudan Kurulabilir Hazır APK:**
-               - `BYD-Maps-TR-Ready.apk`: Morphe Desktop veya bilgisayarla manuel yama yapmanıza gerek kalmadan, indirip doğrudan aracınızın multimedya ekranına kurabileceğiniz imzalanmış hazır APK.
-
-            4. **🇹🇷 %100 Türkçe Arayüz:**
-               - Gösterge paneli ayarları, 3D araç menüsü ve tüm bildirimler eksiksiz Türkçeleştirildi.
+          tag_name: turkish-preview.11
+          name: "Maps Automotive for BYD - Türkçe Preview 11 (3D araç dahil)"
+          body: "Türkçe yerelleştirilmiş Morphe yama paketi (.mpp). Morphe Desktop veya Morphe Manager içerisine Local Source olarak ekleyebilirsiniz."
           files: |
-            build-out/*.apk
             build-out/*.mpp
             build-out/SHA256SUMS
             build-out/BUILD.json
