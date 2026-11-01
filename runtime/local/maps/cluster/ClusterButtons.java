@@ -11,7 +11,7 @@ import android.widget.*;
 /** Cluster, voice, and DiLink 3 quick-projection controls anchored to the measured native one-bar column. */
 final class ClusterButtons {
     private static final String TAG = "local.cluster.buttons";
-    private static final int BG_COLOR = 0xFF282C30; // Koyu antrasit dairesel taban (#282C30)
+    private static final int BG_COLOR = 0xFF181818; // Tam koyu mat siyah (#181818) - orijinal Google Maps butonlarıyla birebir aynı
 
     static void attach(Activity a) {
         if (a.isFinishing() || a.isDestroyed()) return;
@@ -32,7 +32,6 @@ final class ClusterButtons {
         GradientDrawable circle = new GradientDrawable();
         circle.setShape(GradientDrawable.OVAL);
         circle.setColor(BG_COLOR);
-        circle.setStroke(dp(ctx, 1), 0x22FFFFFF); // 1dp ince zarif beyaz kenarlık
 
         GradientDrawable mask = new GradientDrawable();
         mask.setShape(GradientDrawable.OVAL);
