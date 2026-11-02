@@ -53,12 +53,31 @@ final class ClusterButtons {
         b.setElevation(Math.max(elevation, dp(ctx, 3)));
     }
 
+    static void applyPillStyle(View pill, Context ctx, float radius, float elevation) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setShape(GradientDrawable.RECTANGLE);
+        shape.setCornerRadius(radius);
+        shape.setColor(BG_COLOR);
+        pill.setBackground(shape);
+        pill.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View v, Outline o) {
+                o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), v.getWidth() / 2f);
+            }
+        });
+        pill.setClipToOutline(true);
+        pill.setElevation(Math.max(elevation, dp(ctx, 3)));
+    }
+
     private static final class Controls implements ViewTreeObserver.OnPreDrawListener {
         final Activity activity; final ViewGroup root; final ScrollView column; final LinearLayout buttons;
-        final ImageButton settings, map, voice, auth, restore, zoom;
+        final ImageButton settings, map, voice, auth, restore;
+        final LinearLayout zoomPill;
+        final ImageButton zoomIn, zoomOut;
         final FrameLayout settingsSlot, voiceSlot, authSlot, restoreSlot, zoomSlot;
         final Icon settingsIcon = new Icon(false), mapIcon = new Icon(true), voiceIcon = new Icon(false, true),
-                   authIcon = new Icon(3), restoreIcon = new Icon(4), zoomIcon = new Icon(5);
+                   authIcon = new Icon(3), restoreIcon = new Icon(4),
+                   zoomInIcon = new Icon(6), zoomOutIcon = new Icon(7);
         View template, bar, bottom;
         boolean styled, wasOn; int tx, ty, tw, th;
 
@@ -81,15 +100,72 @@ final class ClusterButtons {
             restore = button(restoreIcon, "Orijinal göstergeyi geri yükle");
             restoreSlot = (FrameLayout) restore.getParent();
 
-            zoom = button(zoomIcon, "Gösterge haritasını uzaklaştır (uzun basış: yakınlaştır)");
-            zoomSlot = (FrameLayout) zoom.getParent();
+            // Yeşil "+ / -" dikey kapsül kontrolü
+            zoomSlot = new FrameLayout(a);
+            zoomSlot.setClipChildren(false);
+
+            zoomPill = new LinearLayout(a);
+            zoomPill.setOrientation(LinearLayout.VERTICAL);
+            zoomPill.setGravity(Gravity.CENTER_HORIZONTAL);
+            zoomPill.setTag("local.cluster.dilink3.zoom.pill");
+            applyPillStyle(zoomPill, a, dp(a, 19), dp(a, 3));
+
+            zoomIn = new ImageButton(a);
+            zoomIn.setImageDrawable(zoomInIcon);
+            zoomIn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            zoomIn.setPadding(0, 0, 0, 0);
+            zoomIn.setContentDescription("Gösterge haritasını yakınlaştır");
+            zoomIn.setTooltipText("Gösterge haritasını yakınlaştır");
+            zoomIn.setFocusable(true);
+            zoomIn.setTag("local.cluster.dilink3.zoom_in.button");
+            zoomIn.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), null, null));
+            zoomIn.setOnClickListener(v -> {
+                if (ClusterZoom.manualStep(1)) {
+                    ClusterSettings.adjustClusterZoomSteps(1);
+                    int s = ClusterSettings.getClusterZoomSteps();
+                    Toast.makeText(activity, "Gösterge paneli haritası yakınlaştırıldı (Kalıcı: " + (s > 0 ? "+" + s : "" + s) + " kademe)", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(activity, "Gösterge paneli haritasının hazır olmasını bekleyin.", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            View divider = new View(a);
+            divider.setBackgroundColor(0x4DFFFFFF); // #4DFFFFFF zarif yatay ayırıcı çizgi
+
+            zoomOut = new ImageButton(a);
+            zoomOut.setImageDrawable(zoomOutIcon);
+            zoomOut.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            zoomOut.setPadding(0, 0, 0, 0);
+            zoomOut.setContentDescription("Gösterge haritasını uzaklaştır");
+            zoomOut.setTooltipText("Gösterge haritasını uzaklaştır");
+            zoomOut.setFocusable(true);
+            zoomOut.setTag("local.cluster.dilink3.zoom_out.button");
+            zoomOut.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), null, null));
+            zoomOut.setOnClickListener(v -> {
+                if (ClusterZoom.manualStep(-1)) {
+                    ClusterSettings.adjustClusterZoomSteps(-1);
+                    int s = ClusterSettings.getClusterZoomSteps();
+                    Toast.makeText(activity, "Gösterge paneli haritası uzaklaştırıldı (Kalıcı: " + (s > 0 ? "+" + s : "" + s) + " kademe)", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(activity, "Gösterge paneli haritasının hazır olmasını bekleyin.", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            zoomPill.addView(zoomIn, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+            LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(a, 1));
+            divParams.leftMargin = dp(a, 6);
+            divParams.rightMargin = dp(a, 6);
+            zoomPill.addView(divider, divParams);
+            zoomPill.addView(zoomOut, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+            zoomSlot.addView(zoomPill, new FrameLayout.LayoutParams(1, 1, Gravity.CENTER));
+            buttons.addView(zoomSlot, new LinearLayout.LayoutParams(1, 1));
 
             settings.setTag("local.cluster.settings.button");
             map.setTag("local.cluster.map.button");
             voice.setTag("local.cluster.gemini.button");
             auth.setTag("local.cluster.dilink3.auth.button");
             restore.setTag("local.cluster.dilink3.restore.button");
-            zoom.setTag("local.cluster.dilink3.zoom.button");
 
             GeminiLaunch.init(a);
             voice.setOnClickListener(v -> GeminiLaunch.open(a));
@@ -106,27 +182,6 @@ final class ClusterButtons {
                 Toast.makeText(activity, "Orijinal gösterge düzenine dönüldü", Toast.LENGTH_SHORT).show();
                 DiLink3Projection.init(activity.getApplication(), null);
                 DiLink3Projection.restore(activity, null);
-            });
-
-            zoom.setOnClickListener(v -> {
-                if (ClusterZoom.manualStep(-1)) {
-                    ClusterSettings.adjustClusterZoomSteps(-1);
-                    int s = ClusterSettings.getClusterZoomSteps();
-                    Toast.makeText(activity, "Gösterge paneli haritası uzaklaştırıldı (Kalıcı: " + Math.abs(s) + " kademe)", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(activity, "Gösterge paneli haritasının hazır olmasını bekleyin.", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            zoom.setOnLongClickListener(v -> {
-                if (ClusterZoom.manualStep(1)) {
-                    ClusterSettings.adjustClusterZoomSteps(1);
-                    int s = ClusterSettings.getClusterZoomSteps();
-                    Toast.makeText(activity, "Gösterge paneli haritası yakınlaştırıldı (Kalıcı: " + Math.abs(s) + " kademe)", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(activity, "Gösterge paneli haritasının hazır olmasını bekleyin.", Toast.LENGTH_SHORT).show();
-                }
-                return true;
             });
 
             column.addView(buttons);
@@ -213,12 +268,22 @@ final class ClusterButtons {
 
             int available = Math.max(0, limit - end);
             int remaining = Math.max(0, available - nativeRows * slot);
+
+            // Yeni "+ / -" kapsülü ve "Y" / "O" dairesel butonları için boyut ve boşluk optimizasyonu
+            int pillHeight = Math.max(dp(activity, 68), Math.min(dp(activity, 74), Math.round(anchor.width() * 1.8f)));
+            int pillSlot = pillHeight + dp(activity, 4);
             int quickSlot = dp(activity, 44);
             if (showQuick && remaining > 0) {
-                quickSlot = Math.min(dp(activity, 46), Math.max(dp(activity, 36), remaining / 3));
+                int availForCircles = remaining - pillSlot;
+                if (availForCircles > 0) {
+                    quickSlot = Math.min(dp(activity, 46), Math.max(dp(activity, 34), availForCircles / 2));
+                }
             }
             int quickBtnSize = Math.max(dp(activity, 32), Math.min(dp(activity, 42), Math.min(anchor.width(), quickSlot - dp(activity, 4))));
-            int totalHeight = nativeRows * slot + (showQuick ? 3 * quickSlot : 0);
+            pillHeight = Math.max(dp(activity, 68), Math.min(dp(activity, 74), Math.round(quickBtnSize * 1.85f)));
+            pillSlot = pillHeight + dp(activity, 4);
+
+            int totalHeight = nativeRows * slot + (showQuick ? (2 * quickSlot + pillSlot) : 0);
             int height = Math.min(available, totalHeight);
 
             column.setVerticalScrollBarEnabled(totalHeight > available);
@@ -273,7 +338,7 @@ final class ClusterButtons {
                     b.setLayoutParams(bp);
                 }
             }
-            for (ImageButton b : new ImageButton[]{auth, restore, zoom}) {
+            for (ImageButton b : new ImageButton[]{auth, restore}) {
                 View slotView = (View) b.getParent();
                 ViewGroup.LayoutParams sp = slotView.getLayoutParams();
                 if (sp.width != width || sp.height != quickSlot) {
@@ -285,6 +350,19 @@ final class ClusterButtons {
                     b.setLayoutParams(bp);
                 }
             }
+
+            // Yeşil "+ / -" dikey kapsül boyutlandırması
+            ViewGroup.LayoutParams zsp = zoomSlot.getLayoutParams();
+            if (zsp.width != width || zsp.height != pillSlot) {
+                zsp.width = width; zsp.height = pillSlot; zoomSlot.setLayoutParams(zsp);
+            }
+            FrameLayout.LayoutParams pp = (FrameLayout.LayoutParams) zoomPill.getLayoutParams();
+            if (pp.width != quickBtnSize || pp.height != pillHeight) {
+                pp.width = quickBtnSize; pp.height = pillHeight; pp.gravity = Gravity.CENTER;
+                zoomPill.setLayoutParams(pp);
+                applyPillStyle(zoomPill, activity, quickBtnSize / 2f, template != null ? template.getElevation() : dp(activity, 3));
+            }
+
             style();
             updateState();
             column.setVisibility(View.VISIBLE);
@@ -294,9 +372,11 @@ final class ClusterButtons {
         void style() {
             if (styled) return;
             float elevation = template != null ? template.getElevation() : dp(activity, 3);
-            for (ImageButton b : new ImageButton[]{settings, map, voice, auth, restore, zoom}) {
+            for (ImageButton b : new ImageButton[]{settings, map, voice, auth, restore}) {
                 applyCircleStyle(b, activity, elevation);
             }
+            float r = zoomPill.getWidth() > 0 ? zoomPill.getWidth() / 2f : dp(activity, 19);
+            applyPillStyle(zoomPill, activity, r, elevation);
             styled = true;
             wasOn = !ClusterSettings.state().mapEnabled;
             updateState();
@@ -415,8 +495,25 @@ final class ClusterButtons {
                 paint.setStrokeCap(Paint.Cap.ROUND);
                 paint.setStrokeJoin(Paint.Join.ROUND);
                 canvas.drawCircle(24, 24, 10.5f, paint);
+            } else if (kind == 6) {
+                // "+" icon (Göstergeyi Yakınlaştır / Zoom In) - Canlı Yeşil #00E676
+                paint.setColor(0xFF00E676);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(3.4f);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setStrokeJoin(Paint.Join.ROUND);
+                canvas.drawLine(15, 24, 33, 24, paint);
+                canvas.drawLine(24, 15, 24, 33, paint);
+            } else if (kind == 7) {
+                // "−" icon (Göstergeyi Uzaklaştır / Zoom Out) - Canlı Yeşil #00E676
+                paint.setColor(0xFF00E676);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(3.4f);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setStrokeJoin(Paint.Join.ROUND);
+                canvas.drawLine(15, 24, 33, 24, paint);
             } else if (kind == 5) {
-                // "U" icon (Gösterge haritasını uzaklaştır / Zoom Out) - Canlı Yeşil
+                // "U" icon (Eski tekil buton uyumluluğu)
                 paint.setColor(0xFF00E676);
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(3.4f);
