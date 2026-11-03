@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 package local.maps.patches;
 
 import java.util.*;
@@ -152,6 +152,7 @@ public final class AutomotiveMicrogPatch {
    requireInput(context.getPackageMetadata());
    try{WheelResources.apply(context);}catch(Exception e){throw new IllegalStateException("Wheel key metadata resources failed",e);}
    try{VehicleIcon.apply(context);}catch(Exception e){throw new IllegalStateException("Vehicle icon resource failed",e);}
+   try{LauncherIcon.apply(context);}catch(Exception e){throw new IllegalStateException("Launcher dark icon resource failed",e);}
    try(var doc=context.document("AndroidManifest.xml")){
     isolateIdentity(doc);
     routePush(doc);
