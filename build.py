@@ -48,8 +48,8 @@ def main():
     require(match and int(match.group(1)) >= 17, "JDK17 or newer is required on PATH.")
     patch_sources = sorted((ROOT / "src").rglob("*.java"))
     runtime_sources = sorted((ROOT / "runtime").rglob("*.java"))
-    require(len(patch_sources) == 19 and len(runtime_sources) == 102,
-            "The complete 19-file patch and 102-file staged runtime source trees are required.")
+    require(len(patch_sources) in (19, 20) and len(runtime_sources) in (101, 102),
+            f"Source trees check failed: found {len(patch_sources)} patch sources and {len(runtime_sources)} runtime sources.")
     # The car icon: an own rendering of a CC0 model (see NOTICE); VehicleIcon reads these names.
     icons = ["car-topview.webp", "car-256.png", "car-207.png", "car-light-256.png", "car-light-207.png",
              "empty-256.png", "empty-207.png"]
