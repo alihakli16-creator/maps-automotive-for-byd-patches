@@ -2,6 +2,7 @@
 package local.maps.patches;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -9,6 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import app.morphe.patcher.patch.ResourcePatchContext;
 
 /** Our own top-down car picture for the map location arrow (raw/my_location_chevron_arrow) and the
@@ -16,12 +19,22 @@ import app.morphe.patcher.patch.ResourcePatchContext;
  * user's original model is rebuilt at patch time: its Draco geometry stays as it is, only the image
  * and the material colour change (black base keeps the picture's alpha, the picture itself is the
  * emissive colour, specular off), so the car shows in its own colours. No Google bytes are bundled.
- * The input is pinned by SHA-256; any other model fails the patch. */
+ * The input is pinned by SHA-256; any other model fails the patch.
+ * Also patches launcher (home screen) adaptive icon to match Morphe / YouTube dark style (#000000 with #1F2124 stroke). */
 final class VehicleIcon {
     static final String PATH="res/raw/my_location_chevron_arrow.glb";
     static final String ORIGINAL_SHA256="7eb76cc5898b285c4997bbad962db26a4bbb55990993c89e24e2f8024d01d821";
     static final String TEXTURE="vehicle-icon/car-topview.webp";
     static final int IMAGE_LENGTH=2630,DRACO_OFFSET=2632,DRACO_LENGTH=166;
+
+    private static final String DARK_BG_SHAPE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        + "<shape xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+        + "    android:shape=\"rectangle\">\n"
+        + "    <solid android:color=\"#000000\" />\n"
+        + "    <stroke\n"
+        + "        android:width=\"1.5dp\"\n"
+        + "        android:color=\"#1F2124\" />\n"
+        + "</shape>\n";
 
     static void apply(ResourcePatchContext context) throws Exception {
         Path file=context.get(PATH,false).toPath();
@@ -34,7 +47,92 @@ final class VehicleIcon {
         Files.write(file,rebuild(original,texture));
         int replaced=replaceChevrons(context);
         int navatars=bundleNavatars(context);
-        System.out.println("Vehicle icon: own top-down car in "+PATH+" ("+texture.length+" bytes WebP) and "+replaced+" navigation chevron/disc images; "+navatars+" Navatars files in assets/navatars");
+        patchLauncherIcon(context);
+        System.out.println("Vehicle icon: own top-down car in "+PATH+" ("+texture.length+" bytes WebP) and "+replaced+" navigation chevron/disc images; "+navatars+" Navatars files in assets/navatars; dark launcher icon applied");
+    }
+
+    private static void patchLauncherIcon(ResourcePatchContext context) {
+        try {
+            File res = context.get("res", false);
+            if (res == null || !res.exists() || !res.isDirectory()) return;
+
+            patchValuesColors(res);
+            patchBackgroundDrawables(res);
+            patchAdaptiveIconXmls(res);
+            patchForegroundVectors(res);
+        } catch (Exception e) {
+            System.err.println("Warning: Dark Launcher Icon patch skipped: " + e.getMessage());
+        }
+    }
+
+    private static void patchValuesColors(File res) throws Exception {
+        File[] valuesDirs = res.listFiles(f -> f.isDirectory() && f.getName().startsWith("values"));
+        if (valuesDirs == null) return;
+        Pattern bgPattern = Pattern.compile("(?i)(<color\\s+name=[\"'](?:ic_)?launcher_background[\"']>)[^<]+(</color>)");
+        for (File dir : valuesDirs) {
+            File[] xmls = dir.listFiles(f -> f.isFile() && f.getName().endsWith(".xml"));
+            if (xmls == null) continue;
+            for (File xml : xmls) {
+                String content = Files.readString(xml.toPath(), StandardCharsets.UTF_8);
+                Matcher m = bgPattern.matcher(content);
+                if (m.find()) {
+                    Files.writeString(xml.toPath(), m.replaceAll("$1#000000$2"), StandardCharsets.UTF_8);
+                }
+            }
+        }
+    }
+
+    private static void patchBackgroundDrawables(File res) throws Exception {
+        File drawableDir = new File(res, "drawable");
+        if (!drawableDir.exists()) drawableDir.mkdirs();
+        File bgXml = new File(drawableDir, "ic_launcher_background.xml");
+        Files.writeString(bgXml.toPath(), DARK_BG_SHAPE, StandardCharsets.UTF_8);
+
+        File[] allDirs = res.listFiles(f -> f.isDirectory() && (f.getName().startsWith("drawable") || f.getName().startsWith("mipmap")));
+        if (allDirs != null) {
+            for (File d : allDirs) {
+                File target = new File(d, "ic_launcher_background.xml");
+                if (target.exists() && !target.equals(bgXml)) {
+                    Files.writeString(target.toPath(), DARK_BG_SHAPE, StandardCharsets.UTF_8);
+                }
+            }
+        }
+    }
+
+    private static void patchAdaptiveIconXmls(File res) throws Exception {
+        File[] dirs = res.listFiles(f -> f.isDirectory() && (f.getName().startsWith("mipmap") || f.getName().startsWith("drawable")));
+        if (dirs == null) return;
+        for (File d : dirs) {
+            File[] files = d.listFiles(f -> f.isFile() && f.getName().endsWith(".xml") && f.getName().contains("launcher"));
+            if (files == null) continue;
+            for (File file : files) {
+                String content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+                if (content.contains("<adaptive-icon") && content.contains("<background")) {
+                    String updated = content.replaceAll("(?i)(<background\\s+android:drawable=[\"'])@(android:)?color/white([\"'])",
+                        "$1@drawable/ic_launcher_background$3");
+                    if (!updated.equals(content)) {
+                        Files.writeString(file.toPath(), updated, StandardCharsets.UTF_8);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void patchForegroundVectors(File res) throws Exception {
+        File[] dirs = res.listFiles(f -> f.isDirectory() && (f.getName().startsWith("drawable") || f.getName().startsWith("mipmap")));
+        if (dirs == null) return;
+        Pattern whitePattern = Pattern.compile("(?i)(android:fillColor\\s*=\\s*[\"'])(?:#(?:fff|ffffff|ffffffff)|@(android:)?color/white)([\"'])");
+        for (File d : dirs) {
+            File[] files = d.listFiles(f -> f.isFile() && f.getName().endsWith(".xml") && f.getName().contains("foreground"));
+            if (files == null) continue;
+            for (File file : files) {
+                String content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+                Matcher m = whitePattern.matcher(content);
+                if (m.find()) {
+                    Files.writeString(file.toPath(), m.replaceAll("$1#000000$3"), StandardCharsets.UTF_8);
+                }
+            }
+        }
     }
 
     /** Navigation draws flat chevron PNGs (256 or 207 px) over a disc PNG.
