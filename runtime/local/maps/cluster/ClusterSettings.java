@@ -11,8 +11,12 @@ import java.util.*;
 
 /** Persistent, live settings for our instrument-cluster route overlay. */
 public final class ClusterSettings {
+    public static final String KEY_SHOW_BTN_Y = "show_btn_y";
+    public static final String KEY_SHOW_BTN_O = "show_btn_o";
+    public static final String KEY_SHOW_BTN_ZOOM = "show_btn_zoom";
     static final class State {
         final boolean visible, mapEnabled, vehicleGuidance, pictureInPicture, satellite, backgroundStart, quickButtons;
+        final boolean showBtnY, showBtnO, showBtnZoom;
         final int size, side, margin, vertical, pointerVertical, pointerHorizontal, clusterTheme, logoPosition;
         State(android.content.SharedPreferences p) {
             mapEnabled=p.getBoolean("map_enabled",true);
@@ -32,6 +36,9 @@ public final class ClusterSettings {
             pictureInPicture=p.getBoolean("picture_in_picture",false);
             backgroundStart=p.getBoolean(ClusterBackgroundStart.KEY,false);
             quickButtons=p.getBoolean("dilink3_quick_buttons",true);
+            showBtnY=p.getBoolean(KEY_SHOW_BTN_Y,true);
+            showBtnO=p.getBoolean(KEY_SHOW_BTN_O,true);
+            showBtnZoom=p.getBoolean(KEY_SHOW_BTN_ZOOM,true);
         }
     }
     static final int THEME_DARK=0, THEME_LIGHT=1, THEME_SYSTEM=2, THEME_AUTO=3, LOGO_BOTTOM_LEFT=0, LOGO_TOP_RIGHT=1;
@@ -41,6 +48,7 @@ public final class ClusterSettings {
     private static final android.content.SharedPreferences.OnSharedPreferenceChangeListener changes=(p,key)->{
         if(AppCorners.KEY.equals(key)){AppCorners.refresh();return;}
         current=new State(p); CardPlacement.refresh();
+        if(KEY_SHOW_BTN_Y.equals(key)||KEY_SHOW_BTN_O.equals(key)||KEY_SHOW_BTN_ZOOM.equals(key)||"dilink3_quick_buttons".equals(key))ClusterButtons.refresh();
         if("pointer_vertical".equals(key)||"pointer_horizontal".equals(key))ClusterHost.refreshClusterCamera();
         if("map_enabled".equals(key))ClusterHost.mapSettingChanged();
         if("vehicle_guidance".equals(key))BydGuidance.settingsChanged();
@@ -67,7 +75,10 @@ public final class ClusterSettings {
         catch(RuntimeException e){android.util.Log.w("MapsClusterTest","AAOS PiP",e);}
     }
     static State state(){return current;}
-    static boolean quickButtonsEnabled(){State s=current;return s==null||s.quickButtons;}
+    static boolean quickButtonsEnabled(){State s=current;return s==null||(s.showBtnY||s.showBtnO||s.showBtnZoom||s.quickButtons);}
+    static boolean showButtonY(){State s=current;return s==null||s.showBtnY;}
+    static boolean showButtonO(){State s=current;return s==null||s.showBtnO;}
+    static boolean showButtonZoom(){State s=current;return s==null||s.showBtnZoom;}
     static void toggleMap(){preferences.edit().putBoolean("map_enabled",!current.mapEnabled).apply();}
     static boolean untestedHud(){return preferences!=null&&preferences.getBoolean("hud_untested_firmware",false);}
 

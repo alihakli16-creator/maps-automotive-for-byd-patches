@@ -123,7 +123,14 @@ final class ClusterMenu {
     private void toggle(String name,String description,String key,boolean checked){
         LinearLayout r=row(name,null);MapsSwitch sw=new MapsSwitch(context);sw.setChecked(checked);sw.setContentDescription(description);
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(64),dp(48));lp.leftMargin=dp(12);r.addView(sw,lp);
-        switches.put(key,sw);sw.setOnCheckedChangeListener((b,on)->{if((AppCorners.KEY.equals(key)?AppCorners.enabled(prefs):prefs.getBoolean(key,!on))!=on)prefs.edit().putBoolean(key,on).apply();});
+        switches.put(key,sw);sw.setOnCheckedChangeListener((b,on)->{
+            if((AppCorners.KEY.equals(key)?AppCorners.enabled(prefs):prefs.getBoolean(key,!on))!=on){
+                prefs.edit().putBoolean(key,on).apply();
+                if(ClusterSettings.KEY_SHOW_BTN_Y.equals(key)||ClusterSettings.KEY_SHOW_BTN_O.equals(key)||ClusterSettings.KEY_SHOW_BTN_ZOOM.equals(key)){
+                    ClusterButtons.refresh();
+                }
+            }
+        });
         r.setBackground(ripple(0));r.setOnClickListener(v->sw.performClick());rule();
     }
     private void note(String value){TextView v=text(value,22,secondary);v.setPadding(dp(18),dp(18),dp(18),dp(18));body.addView(v,new LinearLayout.LayoutParams(-1,-2));}
@@ -193,7 +200,9 @@ final class ClusterMenu {
             else DiLink3Projection.configure(activity,false,false,done);
         });
         enabledRow.setBackground(ripple(0));enabledRow.setOnClickListener(v->{if(control.isEnabled())control.performClick();});rule();
-        toggle("Hızlı işlem butonları (Y / O / + −)","Harita ekranında Yetkilendirme (Y), Orijinal Gösterge (O) ve Gösterge Yakınlaştır/Uzaklaştır (+ / −) butonlarını göster","dilink3_quick_buttons",prefs.getBoolean("dilink3_quick_buttons",true));
+        toggle("Hızlı Buton: Yetki / Giriş (Y)","Haritada ADB yetkilendirme ve tekrar deneme butonu (Y)",ClusterSettings.KEY_SHOW_BTN_Y,ClusterSettings.showButtonY());
+        toggle("Hızlı Buton: Orijinal / Kurtar (O)","Haritada orijinal göstergeye dönme butonu (O)",ClusterSettings.KEY_SHOW_BTN_O,ClusterSettings.showButtonO());
+        toggle("Hızlı Buton: Gösterge Yakınlaştır/Uzaklaştır (+ / −)","Haritada gösterge paneli kalıcı zoom kontrol kapsülü (+ / −)",ClusterSettings.KEY_SHOW_BTN_ZOOM,ClusterSettings.showButtonZoom());
         LinearLayout state=row("Yansıtma durumu",DiLink3Projection.status());rule();
         final long generation=pageGeneration;
         Runnable status=new Runnable(){public void run(){

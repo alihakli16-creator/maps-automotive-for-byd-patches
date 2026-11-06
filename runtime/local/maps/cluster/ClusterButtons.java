@@ -13,6 +13,15 @@ final class ClusterButtons {
     private static final String TAG = "local.cluster.buttons";
     private static final int BG_COLOR = 0xFF181818; // Tam koyu mat siyah (#181818) - orijinal Google Maps butonlarıyla birebir aynı
 
+    private static volatile Controls active;
+
+    static void refresh() {
+        Controls c = active;
+        if (c != null) {
+            c.root.post(c::updateVisibility);
+        }
+    }
+
     static void attach(Activity a) {
         if (a.isFinishing() || a.isDestroyed()) return;
         ViewGroup root = (ViewGroup) a.getWindow().getDecorView();
@@ -191,6 +200,7 @@ final class ClusterButtons {
             settingsSlot.setVisibility(View.INVISIBLE);
             root.addView(settingsSlot, new FrameLayout.LayoutParams(1, 1, Gravity.TOP | Gravity.LEFT));
 
+            active = this;
             root.getViewTreeObserver().addOnPreDrawListener(this);
             root.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
                 public void onViewAttachedToWindow(View v) {}
@@ -198,8 +208,25 @@ final class ClusterButtons {
                     if (root.getViewTreeObserver().isAlive()) {
                         root.getViewTreeObserver().removeOnPreDrawListener(Controls.this);
                     }
+                    if (active == Controls.this) {
+                        active = null;
+                    }
                 }
             });
+        }
+
+        void updateVisibility() {
+            if (activity.isDestroyed() || activity.isFinishing()) return;
+            boolean candidate = DiLink3Projection.isCandidate();
+            boolean showAuth = candidate && ClusterSettings.showButtonY();
+            boolean showRestore = candidate && ClusterSettings.showButtonO();
+            boolean showZoom = candidate && ClusterSettings.showButtonZoom();
+
+            authSlot.setVisibility(showAuth ? View.VISIBLE : View.GONE);
+            restoreSlot.setVisibility(showRestore ? View.VISIBLE : View.GONE);
+            zoomSlot.setVisibility(showZoom ? View.VISIBLE : View.GONE);
+
+            root.requestLayout();
         }
 
         ImageButton button(Icon icon, String description) {
@@ -258,13 +285,17 @@ final class ClusterButtons {
             int nativeRows = GeminiLaunch.buttonEnabled() ? 2 : 1;
             voiceSlot.setVisibility(nativeRows == 2 ? View.VISIBLE : View.GONE);
 
-            boolean showQuick = DiLink3Projection.isCandidate() && ClusterSettings.quickButtonsEnabled();
-            if (showQuick && ClusterSettings.getClusterZoomSteps() != 0 && !ClusterZoom.isHeld()) {
+            boolean candidate = DiLink3Projection.isCandidate();
+            if (candidate && ClusterSettings.getClusterZoomSteps() != 0 && !ClusterZoom.isHeld()) {
                 ClusterZoom.scheduleRestoreSavedSteps(800);
             }
-            authSlot.setVisibility(showQuick ? View.VISIBLE : View.GONE);
-            restoreSlot.setVisibility(showQuick ? View.VISIBLE : View.GONE);
-            zoomSlot.setVisibility(showQuick ? View.VISIBLE : View.GONE);
+            boolean showAuth = candidate && ClusterSettings.showButtonY();
+            boolean showRestore = candidate && ClusterSettings.showButtonO();
+            boolean showZoom = candidate && ClusterSettings.showButtonZoom();
+
+            authSlot.setVisibility(showAuth ? View.VISIBLE : View.GONE);
+            restoreSlot.setVisibility(showRestore ? View.VISIBLE : View.GONE);
+            zoomSlot.setVisibility(showZoom ? View.VISIBLE : View.GONE);
 
             int available = Math.max(0, limit - end);
             int remaining = Math.max(0, available - nativeRows * slot);
@@ -273,17 +304,21 @@ final class ClusterButtons {
             int pillHeight = Math.max(dp(activity, 68), Math.min(dp(activity, 74), Math.round(anchor.width() * 1.8f)));
             int pillSlot = pillHeight + dp(activity, 4);
             int quickSlot = dp(activity, 44);
-            if (showQuick && remaining > 0) {
-                int availForCircles = remaining - pillSlot;
+
+            int visibleCircleCount = (showAuth ? 1 : 0) + (showRestore ? 1 : 0);
+            boolean pillVisible = showZoom;
+
+            if (visibleCircleCount > 0 && remaining > 0) {
+                int availForCircles = remaining - (pillVisible ? pillSlot : 0);
                 if (availForCircles > 0) {
-                    quickSlot = Math.min(dp(activity, 46), Math.max(dp(activity, 34), availForCircles / 2));
+                    quickSlot = Math.min(dp(activity, 46), Math.max(dp(activity, 34), availForCircles / visibleCircleCount));
                 }
             }
             int quickBtnSize = Math.max(dp(activity, 32), Math.min(dp(activity, 42), Math.min(anchor.width(), quickSlot - dp(activity, 4))));
             pillHeight = Math.max(dp(activity, 68), Math.min(dp(activity, 74), Math.round(quickBtnSize * 1.85f)));
             pillSlot = pillHeight + dp(activity, 4);
 
-            int totalHeight = nativeRows * slot + (showQuick ? (2 * quickSlot + pillSlot) : 0);
+            int totalHeight = nativeRows * slot + (visibleCircleCount * quickSlot) + (pillVisible ? pillSlot : 0);
             int height = Math.min(available, totalHeight);
 
             column.setVerticalScrollBarEnabled(totalHeight > available);
@@ -340,6 +375,7 @@ final class ClusterButtons {
             }
             for (ImageButton b : new ImageButton[]{auth, restore}) {
                 View slotView = (View) b.getParent();
+                if (slotView.getVisibility() == View.GONE) continue;
                 ViewGroup.LayoutParams sp = slotView.getLayoutParams();
                 if (sp.width != width || sp.height != quickSlot) {
                     sp.width = width; sp.height = quickSlot; slotView.setLayoutParams(sp);
@@ -352,15 +388,17 @@ final class ClusterButtons {
             }
 
             // Yeşil "+ / -" dikey kapsül boyutlandırması
-            ViewGroup.LayoutParams zsp = zoomSlot.getLayoutParams();
-            if (zsp.width != width || zsp.height != pillSlot) {
-                zsp.width = width; zsp.height = pillSlot; zoomSlot.setLayoutParams(zsp);
-            }
-            FrameLayout.LayoutParams pp = (FrameLayout.LayoutParams) zoomPill.getLayoutParams();
-            if (pp.width != quickBtnSize || pp.height != pillHeight) {
-                pp.width = quickBtnSize; pp.height = pillHeight; pp.gravity = Gravity.CENTER;
-                zoomPill.setLayoutParams(pp);
-                applyPillStyle(zoomPill, activity, quickBtnSize / 2f, template != null ? template.getElevation() : dp(activity, 3));
+            if (pillVisible) {
+                ViewGroup.LayoutParams zsp = zoomSlot.getLayoutParams();
+                if (zsp.width != width || zsp.height != pillSlot) {
+                    zsp.width = width; zsp.height = pillSlot; zoomSlot.setLayoutParams(zsp);
+                }
+                FrameLayout.LayoutParams pp = (FrameLayout.LayoutParams) zoomPill.getLayoutParams();
+                if (pp.width != quickBtnSize || pp.height != pillHeight) {
+                    pp.width = quickBtnSize; pp.height = pillHeight; pp.gravity = Gravity.CENTER;
+                    zoomPill.setLayoutParams(pp);
+                    applyPillStyle(zoomPill, activity, quickBtnSize / 2f, template != null ? template.getElevation() : dp(activity, 3));
+                }
             }
 
             style();
